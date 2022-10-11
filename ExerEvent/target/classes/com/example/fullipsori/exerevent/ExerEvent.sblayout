@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><application-layout>
+    <component name="TestPythonRef1">
+        <param name="gui:x" value="438"/>
+        <param name="gui:y" value="102"/>
+    </component>
+    <component name="TestPythonRef2">
+        <param name="gui:x" value="-413"/>
+        <param name="gui:y" value="102"/>
+    </component>
+    <component name="QueryTable">
+        <param name="gui:x" value="-46"/>
+        <param name="gui:y" value="231"/>
+        <param name="gui:width" value="80"/>
+        <param name="gui:height" value="56"/>
+    </component>
+    <component name="InputAdapter">
+        <param name="gui:x" value="-626"/>
+        <param name="gui:y" value="102"/>
+    </component>
+    <component name="Iterate">
+        <param name="gui:x" value="124"/>
+        <param name="gui:y" value="102"/>
+    </component>
+    <component name="Iterate2">
+        <param name="gui:x" value="-196"/>
+        <param name="gui:y" value="102"/>
+    </component>
+    <component name="Map">
+        <param name="gui:x" value="-516"/>
+        <param name="gui:y" value="102"/>
+    </component>
+    <component name="Map2">
+        <param name="gui:x" value="44"/>
+        <param name="gui:y" value="102"/>
+    </component>
+    <component name="Map3">
+        <param name="gui:x" value="-276"/>
+        <param name="gui:y" value="102"/>
+    </component>
+    <component name="Map4">
+        <param name="gui:x" value="-116"/>
+        <param name="gui:y" value="102"/>
+    </component>
+    <component name="MapCopy">
+        <param name="gui:x" value="336"/>
+        <param name="gui:y" value="102"/>
+    </component>
+    <component name="OutputAdapter">
+        <param name="gui:x" value="221"/>
+        <param name="gui:y" value="102"/>
+    </component>
+    <component name="Query">
+        <param name="gui:x" value="-36"/>
+        <param name="gui:y" value="102"/>
+    </component>
+    <component name="OutputStream">
+        <param name="gui:x" value="567"/>
+        <param name="gui:y" value="102"/>
+    </component>
+</application-layout>

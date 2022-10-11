@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?><application-layout>
+    <component name="InputStream">
+        <param name="gui:x" value="-246"/>
+        <param name="gui:y" value="-55"/>
+    </component>
+    <component name="LocalInstance">
+        <param name="gui:x" value="-246"/>
+        <param name="gui:y" value="56"/>
+    </component>
+    <component name="Map">
+        <param name="gui:x" value="-163"/>
+        <param name="gui:y" value="-55"/>
+    </component>
+    <component name="Map2">
+        <param name="gui:x" value="47"/>
+        <param name="gui:y" value="-55"/>
+    </component>
+    <component name="ppp">
+        <param name="gui:x" value="-58"/>
+        <param name="gui:y" value="-55"/>
+    </component>
+    <component name="pythonoutput">
+        <param name="gui:x" value="145"/>
+        <param name="gui:y" value="-55"/>
+    </component>
+    <component name="OutputStream">
+        <param name="gui:x" value="249"/>
+        <param name="gui:y" value="-55"/>
+    </component>
+</application-layout>

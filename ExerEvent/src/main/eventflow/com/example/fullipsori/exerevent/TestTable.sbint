@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<application version="11.0.0_248f263d973a774f84731121e9d4527c932d77fd">
+    <annotations>
+        <annotation name="hygienic"/>
+    </annotations>
+    <type-metadata>
+        <param name="type" value="interface"/>
+        <param name="fully-qualified-name" value="com.example.fullipsori.exerevent.TestTable"/>
+    </type-metadata>
+    <memory-model-settings/>
+    <dynamic-variables/>
+    <table-schemas>
+        <table-schema name="testTable">
+            <schema>
+                <field name="keyId" type="int"/>
+                <field name="devId" type="string"/>
+                <field name="value" type="string"/>
+            </schema>
+            <primary-index type="btree">
+                <field name="keyId"/>
+            </primary-index>
+            <index type="btree">
+                <field name="devId"/>
+            </index>
+        </table-schema>
+    </table-schemas>
+</application>
