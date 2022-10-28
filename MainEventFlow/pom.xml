@@ -1,6 +1,20 @@
 <!-- vim: set tabstop=4 softtabstop=0 expandtab shiftwidth=4 smarttab : -->
 
-<modelVersion>4.0.0</modelVersion>
+<modelVersion>
+	4.0.0
+	<dependencies>
+		<dependency>
+			<groupId>com.tibco.ep.sb.adapter</groupId>
+			<artifactId>fileio</artifactId>
+			<version>11.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.tibco.ep.sb.adapter</groupId>
+			<artifactId>kafka</artifactId>
+			<version>11.0.0</version>
+		</dependency>
+	</dependencies>
+</modelVersion>
 
 <groupId>com.autoever.poc</groupId>
 <artifactId>MainEventFlow</artifactId>

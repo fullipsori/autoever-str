@@ -53,7 +53,8 @@
             <param name="truncate" value="false"/>
             <preload format="csv" mode="empty"/>
         </data>
-        <stream name="ConsumerControlCopy">
+        <stream name="FullControl" schema="HttpClientControlSchema"/>
+        <stream name="KafkaConsumerControl">
             <schema>
                 <parent-schemas>
                     <parent-schema name="KafkaConsumerFullControlSchema"/>
@@ -61,26 +62,13 @@
                 <field name="FetchFromDateTime" type="timestamp"/>
             </schema>
         </stream>
-        <stream name="FullControl" schema="HttpClientControlSchema"/>
         <stream name="PolicyInputStream">
             <schema>
                 <field name="command" type="string"/>
                 <field name="policyFolder" type="string"/>
             </schema>
         </stream>
-        <stream name="PublishData">
-            <schema>
-                <field name="topic" type="string"/>
-                <field name="myKey" type="string"/>
-                <field name="message" type="tuple">
-                    <schema>
-                        <field name="filePath" type="string"/>
-                    </schema>
-                </field>
-                <field name="partition" type="int"/>
-            </schema>
-        </stream>
-        <stream name="RegisterPublish" schema="KafkaProducerCommandSchema"/>
+        <output-stream name="KafkaStatus"/>
         <box name="Start" type="inputadapter">
             <output port="1" stream="out:Start_1"/>
             <param name="start:state" value="true"/>
@@ -88,25 +76,12 @@
             <param name="OutputField" value="time"/>
         </box>
         <box name="CreateTime" type="map">
-            <input port="1" stream="ConsumerControlCopy"/>
+            <input port="1" stream="KafkaConsumerControl"/>
             <output port="1" stream="out:CreateTime_1"/>
             <target-list>
                 <item name="input" selection="all"/>
                 <expressions>
                     <replace field="time">if (notnull(FetchFromDateTime)) then long(get_millisecond(FetchFromDateTime)) else time</replace>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="DefaultValues2Copy" type="map">
-            <input port="1" stream="PublishData"/>
-            <output port="1" stream="out:DefaultValues2Copy_1"/>
-            <target-list>
-                <item name="input" selection="none">
-                    <include field="message"/>
-                    <include field="topic"/>
-                </item>
-                <expressions>
-                    <replace field="topic">coalesce(input1.topic, 'AutoSubmitReq')</replace>
                 </expressions>
             </target-list>
         </box>
@@ -168,7 +143,7 @@
             <param name="PreserveWhitespace" value="false"/>
             <param name="QuoteChar" value=""/>
             <param name="Repeat" value="1"/>
-            <param name="Schema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema&gt;&#13;&#10;    &lt;field name=&quot;dtc_code&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;description&quot; type=&quot;string&quot;/&gt;&#13;&#10;&lt;/schema&gt;&#13;&#10;"/>
+            <param name="Schema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema&gt;&#10;    &lt;field name=&quot;dtc_code&quot; type=&quot;string&quot;/&gt;&#10;    &lt;field name=&quot;description&quot; type=&quot;string&quot;/&gt;&#10;&lt;/schema&gt;&#10;"/>
             <param name="StartControlPort" value="true"/>
             <param name="StartEventPort" value="true"/>
             <param name="TimeBasedEmitField" value=""/>
@@ -184,30 +159,6 @@
             <param name="tailMode" value="false"/>
             <param name="tailUpdateInterval" value="1000"/>
         </box>
-        <box name="OutputAdapterCopy" type="outputadapter">
-            <input port="1" stream="out:DefaultValues2Copy_1"/>
-            <input port="2" stream="RegisterPublish"/>
-            <output port="1" stream="OutputStream2Copy"/>
-            <output port="2" stream="OutputStream3Copy"/>
-            <param name="start:state" value="true"/>
-            <param name="javaclass" value="com.streambase.sb.adapter.kafka.KafkaProducer"/>
-            <param name="EnableMetricsPort" value="true"/>
-            <param name="EnableStatusPort" value="true"/>
-            <param name="brokers" value="localhost:9092"/>
-            <param name="closeOnException" value="false"/>
-            <param name="compressionType" value="None"/>
-            <param name="connectOnStartup" value="false"/>
-            <param name="enableCommandPort" value="true"/>
-            <param name="enablePassThroughFields" value="false"/>
-            <param name="keySerializeType" value="Custom"/>
-            <param name="logLevel" value="INFO"/>
-            <param name="serializeType" value="Custom"/>
-            <param name="synchronousSend" value="false"/>
-            <param name="userKeySerializerClass" value=""/>
-            <param name="userSerializerClass" value="com.autoever.poc.adapters.KafkaFileSerializer"/>
-        </box>
-        <output-stream name="OutputStream2Copy"/>
-        <output-stream name="OutputStream3Copy"/>
         <box name="EmitOnClose" type="aggregate">
             <input port="1" stream="out:LoadDT_2"/>
             <output port="1" stream="out:EmitOnClose_1"/>
@@ -386,7 +337,6 @@
         <box name="InputAdapter" type="inputadapter">
             <input port="1" stream="out:DefaultGroup_1"/>
             <output port="1" stream="out:InputAdapter_1"/>
-            <output port="2" stream="KafkaStatus"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.streambase.sb.adapter.kafka.KafkaConsumer"/>
             <param name="AdvancedConfig-col0.0" value="auto.offset.reset"/>
@@ -401,7 +351,7 @@
             <param name="enableCommandPort" value="true"/>
             <param name="enablePassThroughFields" value="false"/>
             <param name="keyDeserializerType" value="String"/>
-            <param name="keyOutputSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema&gt;&#13;&#10;    &lt;field description=&quot;단말기 시리얼 번호&quot; name=&quot;SerialNo&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;SequenceNo&quot; type=&quot;long&quot;/&gt;&#13;&#10;    &lt;field description=&quot;Body 크기&quot; name=&quot;BodyLength&quot; type=&quot;long&quot;/&gt;&#13;&#10;    &lt;field description=&quot;차종&quot; name=&quot;CIN&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field description=&quot;차량식별번호&quot; name=&quot;VIN&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field description=&quot;차량 키 아이디&quot; name=&quot;VehicleKeyID&quot; type=&quot;long&quot;/&gt;&#13;&#10;    &lt;field description=&quot;데이터 수집 정책 버전&quot; name=&quot;PolicyVersion&quot; type=&quot;int&quot;/&gt;&#13;&#10;    &lt;field description=&quot;데이터 건수&quot; name=&quot;RecordCount&quot; type=&quot;long&quot;/&gt;&#13;&#10;    &lt;field description=&quot;트립 번호&quot; name=&quot;RootCount&quot; type=&quot;int&quot;/&gt;&#13;&#10;    &lt;field description=&quot;트립 안에서의 데이터 순서&quot; name=&quot;BodySequenceNo&quot; type=&quot;long&quot;/&gt;&#13;&#10;    &lt;field description=&quot;단말기 시리얼 번호&quot; name=&quot;BodySerialNo&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field description=&quot;데이터 수집 시작 시간&quot; name=&quot;BaseTime&quot; type=&quot;long&quot;/&gt;&#13;&#10;    &lt;field description=&quot;수집 데이터의 종류&quot; name=&quot;MessageType&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field description=&quot;데이터 길이&quot; name=&quot;DataLength&quot; type=&quot;int&quot;/&gt;&#13;&#10;    &lt;field description=&quot;Time Stamp&quot; name=&quot;DeltaTime&quot; type=&quot;long&quot;/&gt;&#13;&#10;    &lt;field name=&quot;DataFlag&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field description=&quot;수집 채널 번호&quot; name=&quot;DataChannel&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field description=&quot;CAN ID&quot; name=&quot;DataID&quot; type=&quot;long&quot;/&gt;&#13;&#10;    &lt;field description=&quot;데이터&quot; name=&quot;Data&quot; type=&quot;string&quot;/&gt;&#13;&#10;&lt;/schema&gt;&#13;&#10;"/>
+            <param name="keyOutputSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema&gt;&#10;    &lt;field description=&quot;단말기 시리얼 번호&quot; name=&quot;SerialNo&quot; type=&quot;string&quot;/&gt;&#10;    &lt;field name=&quot;SequenceNo&quot; type=&quot;long&quot;/&gt;&#10;    &lt;field description=&quot;Body 크기&quot; name=&quot;BodyLength&quot; type=&quot;long&quot;/&gt;&#10;    &lt;field description=&quot;차종&quot; name=&quot;CIN&quot; type=&quot;string&quot;/&gt;&#10;    &lt;field description=&quot;차량식별번호&quot; name=&quot;VIN&quot; type=&quot;string&quot;/&gt;&#10;    &lt;field description=&quot;차량 키 아이디&quot; name=&quot;VehicleKeyID&quot; type=&quot;long&quot;/&gt;&#10;    &lt;field description=&quot;데이터 수집 정책 버전&quot; name=&quot;PolicyVersion&quot; type=&quot;int&quot;/&gt;&#10;    &lt;field description=&quot;데이터 건수&quot; name=&quot;RecordCount&quot; type=&quot;long&quot;/&gt;&#10;    &lt;field description=&quot;트립 번호&quot; name=&quot;RootCount&quot; type=&quot;int&quot;/&gt;&#10;    &lt;field description=&quot;트립 안에서의 데이터 순서&quot; name=&quot;BodySequenceNo&quot; type=&quot;long&quot;/&gt;&#10;    &lt;field description=&quot;단말기 시리얼 번호&quot; name=&quot;BodySerialNo&quot; type=&quot;string&quot;/&gt;&#10;    &lt;field description=&quot;데이터 수집 시작 시간&quot; name=&quot;BaseTime&quot; type=&quot;long&quot;/&gt;&#10;    &lt;field description=&quot;수집 데이터의 종류&quot; name=&quot;MessageType&quot; type=&quot;string&quot;/&gt;&#10;    &lt;field description=&quot;데이터 길이&quot; name=&quot;DataLength&quot; type=&quot;int&quot;/&gt;&#10;    &lt;field description=&quot;Time Stamp&quot; name=&quot;DeltaTime&quot; type=&quot;long&quot;/&gt;&#10;    &lt;field name=&quot;DataFlag&quot; type=&quot;string&quot;/&gt;&#10;    &lt;field description=&quot;수집 채널 번호&quot; name=&quot;DataChannel&quot; type=&quot;string&quot;/&gt;&#10;    &lt;field description=&quot;CAN ID&quot; name=&quot;DataID&quot; type=&quot;long&quot;/&gt;&#10;    &lt;field description=&quot;데이터&quot; name=&quot;Data&quot; type=&quot;string&quot;/&gt;&#10;&lt;/schema&gt;&#10;"/>
             <param name="logLevel" value="INFO"/>
             <param name="maxFailureCount" value="5"/>
             <param name="outputBeginningOffsetStatusMessage" value="false"/>
@@ -414,7 +364,6 @@
             <param name="userDeserializerClass" value="com.autoever.poc.adapters.KafkaDeserializer"/>
             <param name="userKeyDeserializerClass" value=""/>
         </box>
-        <output-stream name="KafkaStatus"/>
         <box name="NotNull" type="filter">
             <input port="1" stream="out:InputAdapter_1"/>
             <output port="1" stream="out:NotNull_1"/>

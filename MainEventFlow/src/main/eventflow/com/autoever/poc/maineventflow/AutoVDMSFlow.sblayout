@@ -1,23 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?><application-layout>
-    <component name="ConsumerControlCopy">
-        <param name="gui:x" value="-1014"/>
-        <param name="gui:y" value="-664"/>
-    </component>
     <component name="FullControl">
         <param name="gui:x" value="100"/>
         <param name="gui:y" value="-808"/>
     </component>
+    <component name="KafkaConsumerControl">
+        <param name="gui:x" value="-1014"/>
+        <param name="gui:y" value="-664"/>
+    </component>
     <component name="PolicyInputStream">
         <param name="gui:x" value="595"/>
         <param name="gui:y" value="-701"/>
-    </component>
-    <component name="PublishData">
-        <param name="gui:x" value="-2142"/>
-        <param name="gui:y" value="-481"/>
-    </component>
-    <component name="RegisterPublish">
-        <param name="gui:x" value="-2046"/>
-        <param name="gui:y" value="-387"/>
     </component>
     <component name="CANParserModule">
         <param name="gui:x" value="877"/>
@@ -68,10 +60,6 @@
     <component name="DefaultValues">
         <param name="gui:x" value="-903"/>
         <param name="gui:y" value="-570"/>
-    </component>
-    <component name="DefaultValues2Copy">
-        <param name="gui:x" value="-2046"/>
-        <param name="gui:y" value="-481"/>
     </component>
     <component name="Distribute">
         <param name="gui:x" value="711"/>
@@ -126,12 +114,6 @@
         <param name="gui:y" value="-619"/>
         <param name="gui:bends:1" value="-459,-599;-457,-589"/>
     </component>
-    <component name="OutputAdapterCopy">
-        <param name="gui:x" value="-1915"/>
-        <param name="gui:y" value="-439"/>
-        <param name="gui:bends:1" value="-1972,-446;-1966,-416"/>
-        <param name="gui:bends:2" value="-1961,-357;-1951,-397"/>
-    </component>
     <component name="OutputUnion">
         <param name="gui:x" value="1072"/>
         <param name="gui:y" value="-562"/>
@@ -164,7 +146,6 @@
     <component name="SetDT">
         <param name="gui:x" value="-1670"/>
         <param name="gui:y" value="-622"/>
-        <param name="gui:bends:1" value="-1775,-587;-1775,-589"/>
     </component>
     <component name="SetMGMT">
         <param name="gui:x" value="-1349"/>
@@ -172,8 +153,8 @@
         <param name="gui:bends:1" value="-1396,-540;-1388,-589"/>
     </component>
     <component name="Start">
-        <param name="gui:x" value="-1943"/>
-        <param name="gui:y" value="-617"/>
+        <param name="gui:x" value="-1827"/>
+        <param name="gui:y" value="-619"/>
     </component>
     <component name="Union">
         <param name="gui:x" value="205"/>
@@ -213,16 +194,6 @@
         <param name="gui:y" value="-599"/>
         <param name="gui:bends:1" value="-534,-580;-533,-568"/>
     </component>
-    <component name="OutputStream2Copy">
-        <param name="gui:x" value="-1768"/>
-        <param name="gui:y" value="-481"/>
-        <param name="gui:bends:1" value="-1816,-416;-1810,-446"/>
-    </component>
-    <component name="OutputStream3Copy">
-        <param name="gui:x" value="-1768"/>
-        <param name="gui:y" value="-387"/>
-        <param name="gui:bends:1" value="-1831,-397;-1821,-357"/>
-    </component>
     <component name="ParserOutputStream">
         <param name="gui:x" value="1171"/>
         <param name="gui:y" value="-562"/>
@@ -260,12 +231,6 @@
         <param name="gui:width" value="395"/>
         <param name="gui:height" value="194"/>
     </component>
-    <component name="KafkaProducer">
-        <param name="gui:x" value="-2146"/>
-        <param name="gui:y" value="-501"/>
-        <param name="gui:width" value="464"/>
-        <param name="gui:height" value="194"/>
-    </component>
     <gui.group color="255,128,255" name="Group_KafkaConsumer" visual-state="open">
         <member name="subscribeToKafka"/>
         <member name="KafkaStatus"/>
@@ -273,7 +238,7 @@
         <member name="Union2"/>
         <member name="InputAdapter"/>
         <member name="DefaultGroup"/>
-        <member name="ConsumerControlCopy"/>
+        <member name="KafkaConsumerControl"/>
         <member name="DefaultValues"/>
         <param name="gui:x" value="-1048"/>
         <param name="gui:y" value="-684"/>
@@ -312,17 +277,4 @@
         <param name="gui:width" value="395"/>
         <param name="gui:height" value="194"/>
     </gui.group>
-    <gui.group name="KafkaProducer" visual-state="open">
-        <member name="OutputAdapterCopy"/>
-        <member name="OutputStream2Copy"/>
-        <member name="RegisterPublish"/>
-        <member name="OutputStream3Copy"/>
-        <member name="DefaultValues2Copy"/>
-        <member name="PublishData"/>
-        <param name="gui:x" value="-2146"/>
-        <param name="gui:y" value="-501"/>
-        <param name="gui:width" value="464"/>
-        <param name="gui:height" value="194"/>
-    </gui.group>
 </application-layout>
-
