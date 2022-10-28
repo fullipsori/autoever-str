@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<application version="11.0.0_248f263d973a774f84731121e9d4527c932d77fd">
+    <annotations>
+        <annotation name="hygienic"/>
+    </annotations>
+    <type-metadata>
+        <param name="type" value="interface"/>
+        <param name="fully-qualified-name" value="com.autoever.poc.maineventflow.DataParser"/>
+    </type-metadata>
+    <memory-model-settings/>
+    <named-schemas>
+        <schema name="GPSParserDataSchema">
+            <field name="realTime" type="long"/>
+            <field name="RealTime" type="string"/>
+            <field name="DataFlag" type="int"/>
+            <field name="DataChannel" type="int"/>
+            <field name="DataID" type="int"/>
+            <field name="Latitude" type="double"/>
+            <field name="Longitude" type="double"/>
+            <field name="Heading" type="int"/>
+            <field name="Velocity" type="double"/>
+            <field name="Altitude" type="double"/>
+            <field name="NS" type="string"/>
+            <field name="EW" type="string"/>
+        </schema>
+        <schema name="GPSParserSchema">
+            <field name="messageID" type="string"/>
+            <field name="dataList" type="list">
+                <element-type type="tuple" value="GPSParserDataSchema"/>
+            </field>
+        </schema>
+    </named-schemas>
+    <dynamic-variables/>
+</application>
+

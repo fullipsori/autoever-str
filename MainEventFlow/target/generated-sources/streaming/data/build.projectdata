@@ -1,0 +1,18 @@
+{
+  "dependencyInterfaceHashes" : {
+    "com.autoever.poc.maineventflow.DataParser" : "156CE3005102C1890130E49B19136F4E",
+    "com.autoever.poc.maineventflow.LiveViewTable" : "EC6A8ACB0781116FE23A80EB37C6D3E5"
+  },
+  "mainModules" : [ {
+    "typeName" : "com.autoever.poc.maineventflow.DataParser"
+  }, {
+    "typeName" : "com.autoever.poc.parser.GPSParser"
+  }, {
+    "typeName" : "com.autoever.poc.maineventflow.LiveViewTable"
+  }, {
+    "typeName" : "com.autoever.poc.parser.DIAGParser"
+  }, {
+    "typeName" : "com.autoever.poc.maineventflow.AutoVDMSFlow"
+  } ],
+  "testModules" : [ ]
+}

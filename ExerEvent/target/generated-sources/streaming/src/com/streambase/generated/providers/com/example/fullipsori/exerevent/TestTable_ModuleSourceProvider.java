@@ -14,20 +14,20 @@ public class TestTable_ModuleSourceProvider extends com.streambase.sb.build.impl
     public static java.lang.String makeXMLAppIr() {
         java.lang.StringBuilder sb = new java.lang.StringBuilder();
 
-        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n<modify version=\"11.0.0_");
-        sb.append("248f263d973a774f84731121e9d4527c932d77fd\">\r\n    <add>\r\n        <annotations>\r\n  ");
-        sb.append("          <annotation name=\"hygienic\"/>\r\n        </annotations>\r\n        <type-m");
-        sb.append("etadata>\r\n            <param name=\"type\" value=\"interface\"/>\r\n            <param");
-        sb.append(" name=\"fully-qualified-name\" value=\"com.example.fullipsori.exerevent.TestTable\"/");
-        sb.append(">\r\n        </type-metadata>\r\n        <memory-model-settings/>\r\n        <dynamic-");
-        sb.append("variables/>\r\n        <table-schemas>\r\n            <table-schema name=\"testTable\"");
-        sb.append(">\r\n                <schema>\r\n                    <field name=\"keyId\" type=\"int\"/");
-        sb.append(">\r\n                    <field name=\"devId\" type=\"string\"/>\r\n                    ");
-        sb.append("<field name=\"value\" type=\"string\"/>\r\n                </schema>\r\n                ");
-        sb.append("<primary-index type=\"btree\">\r\n                    <field name=\"keyId\"/>\r\n       ");
-        sb.append("         </primary-index>\r\n                <index type=\"btree\">\r\n               ");
-        sb.append("     <field name=\"devId\"/>\r\n                </index>\r\n            </table-schema");
-        sb.append(">\r\n        </table-schemas>\r\n    </add>\r\n</modify>\r\n");
+        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<modify version=\"11.0.0_2");
+        sb.append("48f263d973a774f84731121e9d4527c932d77fd\">\n    <add>\n        <annotations>\n      ");
+        sb.append("      <annotation name=\"hygienic\"/>\n        </annotations>\n        <type-metadat");
+        sb.append("a>\n            <param name=\"type\" value=\"interface\"/>\n            <param name=\"f");
+        sb.append("ully-qualified-name\" value=\"com.example.fullipsori.exerevent.TestTable\"/>\n      ");
+        sb.append("  </type-metadata>\n        <memory-model-settings/>\n        <dynamic-variables/>");
+        sb.append("\n        <table-schemas>\n            <table-schema name=\"testTable\">\n           ");
+        sb.append("     <schema>\n                    <field name=\"keyId\" type=\"int\"/>\n             ");
+        sb.append("       <field name=\"devId\" type=\"string\"/>\n                    <field name=\"valu");
+        sb.append("e\" type=\"string\"/>\n                </schema>\n                <primary-index type");
+        sb.append("=\"btree\">\n                    <field name=\"keyId\"/>\n                </primary-in");
+        sb.append("dex>\n                <index type=\"btree\">\n                    <field name=\"devId");
+        sb.append("\"/>\n                </index>\n            </table-schema>\n        </table-schemas");
+        sb.append(">\n    </add>\n</modify>\n");
         return sb.toString();
     }
 

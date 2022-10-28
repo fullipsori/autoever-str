@@ -14,27 +14,27 @@ public class TestJavaOp_ModuleSourceProvider extends com.streambase.sb.build.imp
     public static java.lang.String makeXMLAppIr() {
         java.lang.StringBuilder sb = new java.lang.StringBuilder();
 
-        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n<modify version=\"11.0.0_");
-        sb.append("248f263d973a774f84731121e9d4527c932d77fd\">\r\n    <add>\r\n        <annotations>\r\n  ");
-        sb.append("          <annotation name=\"hygienic\"/>\r\n        </annotations>\r\n        <type-m");
-        sb.append("etadata>\r\n            <param name=\"type\" value=\"module\"/>\r\n            <param na");
-        sb.append("me=\"fully-qualified-name\" value=\"com.example.fullipsori.exerevent.TestJavaOp\"/>\r");
-        sb.append("\n        </type-metadata>\r\n        <memory-model-settings/>\r\n        <dynamic-va");
-        sb.append("riables/>\r\n        <stream name=\"InputStreamCopy\">\r\n            <schema>\r\n      ");
-        sb.append("          <field name=\"filePath\" type=\"string\"/>\r\n                <field name=\"t");
-        sb.append("ime\" type=\"timestamp\"/>\r\n            </schema>\r\n        </stream>\r\n        <box ");
-        sb.append("name=\"Java\" type=\"java\">\r\n            <input port=\"1\" stream=\"InputStreamCopy\"/>");
-        sb.append("\r\n            <output port=\"1\" stream=\"out:Java_1\"/>\r\n            <param name=\"s");
-        sb.append("tart:state\" value=\"true\"/>\r\n            <param name=\"javaclass\" value=\"com.examp");
-        sb.append("le.fullipsori.exerevent.TestFile\"/>\r\n        </box>\r\n        <box name=\"Map2\" ty");
-        sb.append("pe=\"map\">\r\n            <input port=\"1\" stream=\"out:Java_1\"/>\r\n            <outpu");
-        sb.append("t port=\"1\" stream=\"OutputStream\"/>\r\n            <target-list>\r\n                <");
-        sb.append("item name=\"input\" selection=\"none\"/>\r\n                <expressions>\r\n           ");
-        sb.append("         <include field=\"elapsed\">to_milliseconds(now())-to_milliseconds(time)</");
-        sb.append("include>\r\n                    <include field=\"result_data\">string(input1.result_");
-        sb.append("data)</include>\r\n                    <include field=\"timestamp\">input1.time</inc");
-        sb.append("lude>\r\n                </expressions>\r\n            </target-list>\r\n        </box");
-        sb.append(">\r\n        <output-stream name=\"OutputStream\"/>\r\n    </add>\r\n</modify>\r\n");
+        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<modify version=\"11.0.0_2");
+        sb.append("48f263d973a774f84731121e9d4527c932d77fd\">\n    <add>\n        <annotations>\n      ");
+        sb.append("      <annotation name=\"hygienic\"/>\n        </annotations>\n        <type-metadat");
+        sb.append("a>\n            <param name=\"type\" value=\"module\"/>\n            <param name=\"full");
+        sb.append("y-qualified-name\" value=\"com.example.fullipsori.exerevent.TestJavaOp\"/>\n        ");
+        sb.append("</type-metadata>\n        <memory-model-settings/>\n        <dynamic-variables/>\n ");
+        sb.append("       <stream name=\"InputStreamCopy\">\n            <schema>\n                <fie");
+        sb.append("ld name=\"filePath\" type=\"string\"/>\n                <field name=\"time\" type=\"time");
+        sb.append("stamp\"/>\n            </schema>\n        </stream>\n        <box name=\"Java\" type=\"");
+        sb.append("java\">\n            <input port=\"1\" stream=\"InputStreamCopy\"/>\n            <outpu");
+        sb.append("t port=\"1\" stream=\"out:Java_1\"/>\n            <param name=\"start:state\" value=\"tr");
+        sb.append("ue\"/>\n            <param name=\"javaclass\" value=\"com.example.fullipsori.exereven");
+        sb.append("t.TestFile\"/>\n        </box>\n        <box name=\"Map2\" type=\"map\">\n            <i");
+        sb.append("nput port=\"1\" stream=\"out:Java_1\"/>\n            <output port=\"1\" stream=\"OutputS");
+        sb.append("tream\"/>\n            <target-list>\n                <item name=\"input\" selection=");
+        sb.append("\"none\"/>\n                <expressions>\n                    <include field=\"elaps");
+        sb.append("ed\">to_milliseconds(now())-to_milliseconds(time)</include>\n                    <");
+        sb.append("include field=\"result_data\">string(input1.result_data)</include>\n               ");
+        sb.append("     <include field=\"timestamp\">input1.time</include>\n                </expressi");
+        sb.append("ons>\n            </target-list>\n        </box>\n        <output-stream name=\"Outp");
+        sb.append("utStream\"/>\n    </add>\n</modify>\n");
         return sb.toString();
     }
 
