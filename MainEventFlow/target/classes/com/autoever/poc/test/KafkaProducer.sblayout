@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?><application-layout>
+    <component name="PublishData">
+        <param name="gui:x" value="-228"/>
+        <param name="gui:y" value="-77"/>
+    </component>
+    <component name="RegisterPublish">
+        <param name="gui:x" value="-132"/>
+        <param name="gui:y" value="17"/>
+    </component>
+    <component name="DefaultValues2Copy">
+        <param name="gui:x" value="-132"/>
+        <param name="gui:y" value="-77"/>
+    </component>
+    <component name="OutputAdapterCopy">
+        <param name="gui:x" value="-1"/>
+        <param name="gui:y" value="-35"/>
+    </component>
+    <component name="OutputStream2Copy">
+        <param name="gui:x" value="146"/>
+        <param name="gui:y" value="-77"/>
+    </component>
+    <component name="OutputStream3Copy">
+        <param name="gui:x" value="146"/>
+        <param name="gui:y" value="17"/>
+    </component>
+</application-layout>
