@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -31,7 +32,7 @@ public class PolicyParser implements Parseable {
 	public String KeyStatus = "ON";
 	public TriggerParser KeyTrig;
 
-	private List<EventParser> EventList = new ArrayList<>();
+//	private List<EventParser> EventList = new ArrayList<>();
 	private static EventCallback eventCallback = (a,b) -> null;
 
 	public PolicyParser(Path filePath, DocumentBuilder documentBuilder) {
@@ -43,11 +44,18 @@ public class PolicyParser implements Parseable {
 		} catch (Exception e) {
 			rootNode = null;
 		}
-		EventList.clear();
+		//fullipsori
+//		EventList.clear();
+		parse();
+	}
+	
+	public String GetFileName() {
+		return filename;
 	}
 
 	public long minPreTime = 0;
-	public Object[] msgFilter = {null, null, null, null, null, null};
+	public Map<Integer, ?> msgFilter;
+
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -63,40 +71,27 @@ public class PolicyParser implements Parseable {
 				});
 			});
 			
-			for(Element event : GetElements.apply(children, "Event")) {
-				EventParser e = new EventParser(event);
-				if(minPreTime < e.preTime) {
-					minPreTime = e.preTime;
-				}
-				EventList.add(e);
-				
-				// [returnVal=[,,],returnVal]
-				for(Object el : e.msgTable) {
-					List<Object> ta = (List<Object>)el;
-					int ch = (Integer)ta.get(0);
-					int id = (Integer)ta.get(1);
+			List<Element> eventList = GetElements.apply(children, "Event");
+			msgFilter = eventList.stream()
+				.map(EventParser::new)
+				.peek(e -> minPreTime = (minPreTime < e.preTime)? e.preTime : minPreTime)
+				.flatMap(e -> e.msgTable.stream())
+				.map(ta -> (List<Object>)ta)
+				.flatMap(ta -> (ta.size() > 3)? 
+						Stream.of(
+							List.of(ta.get(0), ta.get(1), ta.get(2)), 
+							List.of(ta.get(0), ta.get(3), ta.get(2)))
+						:
+						Stream.of( List.of(ta.get(0), ta.get(1), ta.get(2)))
+						)
+				.filter(ta -> ta.get(1) != null)
+				.collect(Collectors.groupingBy(ta -> (int)ta.get(0), 
+							Collectors.groupingBy(ta->(int)ta.get(1), 
+								Collectors.mapping(ta -> (BiFunction<?,?,?>)ta.get(2), Collectors.toList())  )));
 
-					if(msgFilter[ch] == null) {
-						msgFilter[ch] = new HashMap<Integer,Object>();
-					}
-//					((Map<Integer,Object>)msgFilter[ch]).compute(id, (k, v) -> (v == null)? new ArrayList<>(Arrays.asList(ta.get(2))): ((ArrayList<Object>)v).add(ta.get(2)));
-					if(((Map<Integer,Object>)msgFilter[ch]).containsKey(id)) {
-						((ArrayList<Object>)((Map<Integer,Object>)msgFilter[ch]).get(id)).add(ta.get(2));
-					}else {
-						((Map<Integer,Object>)msgFilter[ch]).put(id, new ArrayList<>(Arrays.asList(ta.get(2))));
-					}
-					if(ta.size() > 3) { //tpdtID  type?
-						int tpdtID = (Integer)ta.get(3);
-						if(((Map<Integer,Object>)msgFilter[ch]).containsKey(id)) {
-							((ArrayList<Object>)((Map<Integer,Object>)msgFilter[ch]).get(tpdtID)).add(ta.get(2));
-						}else {
-							((Map<Integer,Object>)msgFilter[ch]).put(tpdtID, new ArrayList<>(Arrays.asList(ta.get(2))));
-						}
-					}
-				}
-			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
+			System.out.println(e.getMessage());
 		};
 	}
 
@@ -111,8 +106,7 @@ public class PolicyParser implements Parseable {
 			
 			Path policyPath = Paths.get("e:/projects/str/workspace/MainEventFlow/src/main/resources/can_policy.xml");
 			PolicyParser policyParser =  new PolicyParser(policyPath, documentBuilder);
-			policyParser.parse();
-			System.out.println("result:" + policyParser.msgFilter.length);
+			System.out.println("result:" + policyParser.msgFilter.size());
 			
 		}catch(Exception e) {
 			e.printStackTrace();

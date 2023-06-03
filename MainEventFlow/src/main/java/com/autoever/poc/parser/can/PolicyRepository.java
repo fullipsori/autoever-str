@@ -4,44 +4,43 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 public class PolicyRepository {
 
-	public Map<String, PolicyParser> mPolicyMap = new HashMap<>();
+	public Map<String, PolicyParser> mPolicyMap = null;
 
 	private static PolicyRepository mInstance = new PolicyRepository();
 	public static PolicyRepository getInstance() {
 		return mInstance;
 	}
+	
+	public void setPolicy(Map<String,PolicyParser> map) {
+		mPolicyMap  = map;
+	}
 
+	//fullipsori
 	public static void LoadPolicy(String dirPath, String ext) {
 		if(dirPath == null || dirPath.isBlank()) return;
 		
-		Map<String, PolicyParser> policyMap = PolicyRepository.getInstance().mPolicyMap;
+//		Map<String, PolicyParser> policyMap = PolicyRepository.getInstance().mPolicyMap;
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder documentBuilder;
 
 		try {
 			documentBuilder = factory.newDocumentBuilder();
-			policyMap.clear();
-			Files.list(Paths.get(dirPath))
+			PolicyRepository.getInstance().setPolicy( 
+				Files.list(Paths.get(dirPath))
 				.filter(path -> path.toString().endsWith(ext))
-				.forEach(path -> {
-					try {
-						String filename = path.getFileName().toString();
-						PolicyParser policy = new PolicyParser(path, documentBuilder);
-						policy.parse();
-						policyMap.put(
-								filename.substring(0, filename.lastIndexOf('.')), 
-								policy
-							);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				});
+				.parallel()
+				.map(path -> new PolicyParser(path, documentBuilder))
+				.collect(Collectors.toConcurrentMap(PolicyParser::GetFileName, Function.identity())) 
+			);
+
 		} catch (Exception e) {
 			return;
 		}

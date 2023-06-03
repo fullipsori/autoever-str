@@ -1,11 +1,14 @@
 package com.autoever.poc.parser.can;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.stream.IntStream;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -177,8 +180,10 @@ public class TriggerParser {
 		}
 		*/
 		rawvalue = rawvalue & (((int)1<< trigger.siglength) - 1);
-		if((rawvalue & (((int)1)<<(trigger.siglength - 1))) != 0)
-			rawvalue = (-(((~rawvalue) & (((int)1)<<trigger.siglength - 1)) + 1));
+		if("signed".equals(trigger.sigtype)) {
+			if((rawvalue & (((int)1)<<(trigger.siglength - 1))) != 0)
+				rawvalue = (-(((~rawvalue) & ((((int)1)<<trigger.siglength) - 1)) + 1));
+		}
 
 		double value = rawvalue * trigger.sigfactor + trigger.sigoffset;
 
@@ -354,13 +359,89 @@ public class TriggerParser {
 		return null; //check null or False
 	};
 	
+	public static void  endian(String sigendian, byte[] rawdata, String sigtype, int sigstartbit, int siglength) {
+
+		int startbyte = sigstartbit >> 3;
+		int lastbyte = (sigstartbit + siglength -1) >> 3;
+		int lengthbyte = lastbyte - startbyte + 1;
+		int sigendbit = (sigstartbit+siglength)%8;
+		int finallength = siglength / 8 + ((siglength % 8) == 0? 0 : 1);
+		
+		BigInteger bigInt = new BigInteger(Arrays.copyOfRange(rawdata, startbyte, lastbyte+1));
+		byte[] shifted = bigInt.shiftRight( (8 - sigendbit)%8 ).shiftLeft(sigstartbit%8 + (8 - sigendbit)%8).toByteArray();
+		
+		IntStream.range(0, shifted.length).forEach(i -> System.out.printf("0x%x ", shifted[i]));
+		
+		ByteBuffer byteBuffer = ByteBuffer.allocate(4).clear();
+		int x_startbyte = ("Little".equals(sigendian))? 0 : 4-finallength;
+		IntStream.range(0, finallength).forEach(i-> byteBuffer.put(x_startbyte+i, shifted[i]));
+		byteBuffer.rewind();
+		
+		System.out.println("");
+		if("Little".equals(sigendian)) {
+			System.out.printf("0x%x", byteBuffer.order(ByteOrder.LITTLE_ENDIAN).getInt());
+		}else {
+			System.out.printf("0x%x", (int)byteBuffer.order(ByteOrder.BIG_ENDIAN).getInt());
+		}
+		
+	}
+
+	//fullipsori
+	public static void  endian2(String sigendian, byte[] rawdata, String sigtype, int sigstartbit, int siglength) {
+
+		int startbyte = sigstartbit >> 3;
+		int lastbyte = (sigstartbit + siglength -1) >> 3;
+		int lengthbyte = lastbyte - startbyte + 1;
+		int sigendbit = (sigstartbit+siglength)%8;
+		int finallength = siglength / 8 + ((siglength % 8) == 0? 0 : 1);
+		
+		/** second **/
+		long rawvalue = 0;
+		for(int i=startbyte; i<=lastbyte; i++) {
+			if(i==startbyte) {
+				rawvalue += (0xFFFFFFF & ((rawdata[i] << (sigstartbit%8))>>(sigstartbit%8))) << 8*(lastbyte-i);
+			}else if(i==lastbyte) {
+				rawvalue += (0xFFFFFFFF & (rawdata[i] >> sigendbit)) << sigendbit;
+			}else {
+				rawvalue += (0xFFFFFFFF &rawdata[i]) << 8*(lastbyte-i);
+			}
+		}
+		
+		rawvalue <<= (sigstartbit%8);
+		
+		ByteBuffer byteBuffer = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt((int)rawvalue).rewind();
+		byte[] shifted = byteBuffer.array();
+		IntStream.range(0, shifted.length).forEach(i -> System.out.printf("0x%x ", shifted[i]));
+
+		ByteBuffer endianBuffer = ByteBuffer.allocate(4).clear().order(ByteOrder.BIG_ENDIAN);
+		int x_startbyte = ("Little".equals(sigendian))? 0 : 4-finallength;
+		IntStream.range(0, finallength).forEach(i-> endianBuffer.put(x_startbyte+i, shifted[i]));
+		
+		System.out.println("");
+		if("Little".equals(sigendian)) {
+			System.out.printf("0x%x", endianBuffer.order(ByteOrder.LITTLE_ENDIAN).getInt());
+		}else {
+			System.out.printf("0x%x", (int)endianBuffer.order(ByteOrder.BIG_ENDIAN).getInt());
+		}
+		
+
+	}
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
 		byte[] x = {0x01, 0x02, 0x03,0x04};
+		TriggerParser.endian("Big", x, "unsigned", 3, 24);
+		System.out.println("\n\n");
+		TriggerParser.endian2("Big", x, "unsigned", 3, 24);
+
+//		byte[] x = {0x08, 0x10, 0x18,0x00};
+//		ByteBuffer byteBuffer = ByteBuffer.wrap(x);
+//		int xx = byteBuffer.order(ByteOrder.LITTLE_ENDIAN).getInt();
+//		System.out.printf("Result:%d:0x%x" , xx, xx);
+		/*
 		long rawvalue = 0;
 		
-		byte[] x_p = {0x01<<3&0xFF, 0x02<<3&0xFF,0x03<<3&0xFF,0x04<<3&0xFF};
+		byte[] x_p = {0x01, 0x02,0x03,0x04};
 		int mask = 0xFFFFFFFF << 3;
 		
 		// Little
@@ -417,11 +498,8 @@ public class TriggerParser {
 //
 //		System.out.printf("avalue:0x%x" , avalue);
 		
+		*/
 		
-        List<String> list = Arrays.asList("apple", "grape", "banana", "kiwi");
-        System.out.println(list);
-
-        ArrayList<String> arrayList = new ArrayList<>(Arrays.asList("apple", "grape", "banana", "kiwi"));
-        System.out.println(arrayList);
+		
 	}
 }
