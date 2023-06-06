@@ -46,6 +46,9 @@ public class EVTParser implements Parseable {
 		parse();
 	}
 	
+	public String GetFilename() {
+		return filename;
+	}
 
 	@Override
 	public void parse() {

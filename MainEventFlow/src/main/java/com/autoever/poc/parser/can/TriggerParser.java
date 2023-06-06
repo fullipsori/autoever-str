@@ -460,7 +460,7 @@ public class TriggerParser {
 
 	}
 
-	public static void  endian_org(String sigendian, byte[] rawdata, String sigtype, int sigstartbit, int siglength) {
+	public static long endian_org(String sigendian, byte[] rawdata, String sigtype, int sigstartbit, int siglength) {
 
 		long rawvalue = 0;
 		int startbyte = sigstartbit >> 3;
@@ -486,6 +486,7 @@ public class TriggerParser {
 				rawvalue = (-(((~rawvalue) & ((((long)1)<<siglength) - 1)) + 1));
 		}
 		System.out.printf("endian_org:%s,%s(%d=0x%x)" , sigendian, sigtype, rawvalue, rawvalue);
+		return rawvalue;
 	}
 
 	public static void  endian3(String sigendian, byte[] rawdata, String sigtype, int sigstartbit, int siglength) {
