@@ -396,7 +396,7 @@ public class TriggerParser {
 				rawvalue = (-(((~rawvalue) & ((((int)1)<<siglength) - 1)) + 1));
 		}
 		
-		System.out.printf("\nfinal:%d, 0x%x", rawvalue, rawvalue);
+		System.out.printf("\nendian: %s==>%d, 0x%x", sigendian, rawvalue, rawvalue);
 	}
 
 	//fullipsori
@@ -460,6 +460,34 @@ public class TriggerParser {
 
 	}
 
+	public static void  endian_org(String sigendian, byte[] rawdata, String sigtype, int sigstartbit, int siglength) {
+
+		long rawvalue = 0;
+		int startbyte = sigstartbit >> 3;
+		int lastbyte = (sigstartbit + siglength -1) >> 3;
+		
+		/** fullipsori: java 에서 동작하는지 확인 필요함 **/
+		if("Little".equals(sigendian)) {
+			for(int i=lastbyte; i > startbyte-1; i--) {
+				rawvalue = rawvalue*256 + (rawdata[i]&0xff);
+			}
+			rawvalue = rawvalue >> (sigstartbit % 8);
+		}else {
+			
+			for(int i=startbyte; i<lastbyte+1; i++) {
+				rawvalue = rawvalue * 256 + (rawdata[i]&0xff);
+			}
+			rawvalue = rawvalue >> ((8000 - sigstartbit - siglength) % 8);
+		}
+
+		rawvalue = rawvalue & (((long)1<< siglength) - 1);
+		if("signed".equals(sigtype)) {
+			if((rawvalue & (((long)1)<<(siglength - 1))) != 0)
+				rawvalue = (-(((~rawvalue) & ((((long)1)<<siglength) - 1)) + 1));
+		}
+		System.out.printf("endian_org:%s,%s(%d=0x%x)" , sigendian, sigtype, rawvalue, rawvalue);
+	}
+
 	public static void  endian3(String sigendian, byte[] rawdata, String sigtype, int sigstartbit, int siglength) {
 
 		int realLength = siglength / 8 + ((siglength % 8) == 0? 0 : 1);
@@ -472,6 +500,7 @@ public class TriggerParser {
 			rawvalue |= ((((byte)((0x1 << bitshift) & rawdata[byteIndex]) & (byte)0xff) == 0x00)? 0x00 : 0x01) << i;
 		}
 
+		System.out.printf("0x%x\n", rawvalue);
 		ByteBuffer byteBuffer = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt((int)rawvalue).rewind();
 		byte[] rawbytes = byteBuffer.array();
 
@@ -493,84 +522,15 @@ public class TriggerParser {
 				realvalue = (-(((~realvalue) & ((((int)1)<<siglength) - 1)) + 1));
 		}
 
-		System.out.printf("\nfinal:%d, 0x%x", realvalue, realvalue);
+		System.out.printf("endian3=>%s,%s(%d=0x%x)" , sigendian, sigtype, realvalue, realvalue);
 
 	}
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
-		byte[] x = {0x11, 0x12, 0x13,0x04};
-//		TriggerParser.endian("Big", x, "unsigned", 3, 16);
+		byte[] x = {(byte)0xf1, 0x02, 0x04,0x08, 0x10};
+		TriggerParser.endian_org("Little", x, "unsigned", 3, 32);
+		TriggerParser.endian_org("Big", x, "unsigned", 3, 32);
 		System.out.println("\n\n");
-		TriggerParser.endian3("Little", x, "signed", 3, 16);
-		
-
-//		byte[] x = {0x08, 0x10, 0x18,0x00};
-//		ByteBuffer byteBuffer = ByteBuffer.wrap(x);
-//		int xx = byteBuffer.order(ByteOrder.LITTLE_ENDIAN).getInt();
-//		System.out.printf("Result:%d:0x%x" , xx, xx);
-		/*
-		long rawvalue = 0;
-		
-		byte[] x_p = {0x01, 0x02,0x03,0x04};
-		int mask = 0xFFFFFFFF << 3;
-		
-		// Little
-		for(int i=1; i > -1; i--) {
-			rawvalue = rawvalue*256 + x_p[i];
-		}
-//		rawvalue = rawvalue >> ( 3% 8);
-//		rawvalue = rawvalue & ((int)Math.pow(2, 16) -1);
-		rawvalue = rawvalue & (((int)1<<16) - 1);
-//		rawvalue = rawvalue & mask;
-		if((rawvalue & (1<<(16-1))) != 0) {
-			rawvalue = (-(((~rawvalue) & (((int)1)<<16 - 1)) + 1));
-		}
-		System.out.printf("rawvalue:0x%x\n" , rawvalue);
-		
-//		ByteBuffer byteBuffer = ByteBuffer.wrap(x, 0, 2).order(ByteOrder.LITTLE_ENDIAN);
-//		System.out.println("little:" + byteBuffer.order(ByteOrder.LITTLE_ENDIAN).get(0) + " " 
-//					+ byteBuffer.order(ByteOrder.LITTLE_ENDIAN).get(1) + " "
-//					+ byteBuffer.order(ByteOrder.LITTLE_ENDIAN).get(2) + " "
-//					+ byteBuffer.order(ByteOrder.LITTLE_ENDIAN).get(3) + " "
-//					+ "result:" + Integer.toHexString(byteBuffer.order(ByteOrder.LITTLE_ENDIAN).getInt())
-//				);
-
-//		int avalue = byteBuffer.getShort();
-//		avalue = (avalue << (3%8));
-//		avalue = avalue & (((int)1<<16) - 1);
-//		if((avalue & (((int)1)<<(16-1))) != 0)
-//			avalue = (-(((~avalue) & (((int)1)<<16 - 1)) + 1));
-//		System.out.printf("avalue:0x%x\n" , avalue);
-
-
-		// Big
-		rawvalue = 0;
-		for(int i=0; i<2; i++) {
-			rawvalue = rawvalue * 256 + x_p[i];
-		}
-		rawvalue = rawvalue >> ((8000 - 3 - 16) % 8);
-		rawvalue = rawvalue & (((int)1<<16) - 1);
-//		rawvalue = rawvalue & mask;
-		if((rawvalue & (1<<(16-1))) != 0) {
-			rawvalue = (-(((~rawvalue) & (((int)1)<<16 - 1)) + 1));
-		}
-		System.out.printf("rawvalue:0x%x\n" , rawvalue);
-		
-//		avalue = 0;
-//		
-//		byteBuffer = ByteBuffer.wrap(x).order(ByteOrder.BIG_ENDIAN);
-//
-//		avalue = byteBuffer.getInt();
-//		avalue = avalue << ((8000 - 3 - 16) % 8);
-//		avalue = avalue & ((((int)1)<<16) -1);
-//		if((avalue & (((int)1)<<(16-1))) != 0)
-//			avalue = (-(((~avalue) & (((int)1)<<16 - 1)) + 1));
-//
-//		System.out.printf("avalue:0x%x" , avalue);
-		
-		*/
-		
-		
 	}
 }

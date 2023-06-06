@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -22,6 +23,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import com.autoever.poc.parser.Parseable;
+import com.streambase.sb.util.Pair;
 
 
 public class EVTParser implements Parseable {
@@ -29,9 +31,7 @@ public class EVTParser implements Parseable {
 	private String filename;
 	private Path filePath;
 	private Element rootNode;
-	private List<Element> measurements;
-	
-	private List<List<String>> measurement_list;
+	private List<Pair<String,String>> measurement_list;
 	public List<Object[]> odt_map = new ArrayList<>();
 	
 	public EVTParser(Path filePath, DocumentBuilder documentBuilder) {
@@ -43,6 +43,7 @@ public class EVTParser implements Parseable {
 		} catch (Exception e) {
 			rootNode = null;
 		}
+		parse();
 	}
 	
 
@@ -52,26 +53,17 @@ public class EVTParser implements Parseable {
 		
 		if(rootNode == null) return;
 		try {
-			measurements = Parseable.GetElement.apply(rootNode.getChildNodes(), "ChannelSetting")
-						.filter(el -> el != null)
-						.map(el -> Parseable.GetElement.apply(el.getChildNodes(), "Channel").orElse(null))
-						.filter(el -> el != null)
-						.map(el -> Parseable.GetElement.apply(el.getChildNodes(), "Protocols").orElse(null))
-						.filter(el -> el != null)
-						.map(el -> Parseable.GetElement.apply(el.getChildNodes(), "CCP").orElse(null))
-						.filter(el -> el != null)
-						.map(el -> Parseable.GetElements.apply(el.getChildNodes(), "Measurement"))
-						.orElse(Collections.emptyList());
-			
-			measurement_list = measurements.stream()
-					.map(el -> Arrays.asList(
-							Parseable.GetElement.apply(el.getChildNodes(), "identName").get().getTextContent(),
-							Parseable.GetElement.apply(el.getChildNodes(), "Datatype").get().getTextContent()
-							))
-					.collect(Collectors.toList());
-
-//					collect(Collectors.toMap(el -> el.getAttribute("identName"), el -> el.getAttribute("Datatype")));
-
+			measurement_list = GetElement.apply(rootNode.getChildNodes(), "ChannelSetting")
+						.flatMap(el -> GetElement.apply(el.getChildNodes(), "Channel"))
+						.flatMap(el -> GetElement.apply(el.getChildNodes(), "Protocols"))
+						.flatMap(el -> GetElement.apply(el.getChildNodes(), "CCP"))
+						.map(el -> GetElements.apply(el.getChildNodes(), "Measurement"))
+						.orElse(Collections.emptyList()).stream()
+						.map(el -> new Pair<String,String>(
+							GetElement.apply(el.getChildNodes(), "identName").get().getTextContent(),
+							GetElement.apply(el.getChildNodes(), "Datatype").get().getTextContent()
+							)
+						).collect(Collectors.toList());
 			genODT(measurement_list);
 
 		} catch(Exception e) { }
@@ -83,58 +75,45 @@ public class EVTParser implements Parseable {
 	final String byteStr = "UBYTE";
 	final String byteInit = "BBBBBBBB";
 
+	final BiConsumer<Pair<?,?>, String> alignODT = (el, type) ->  {
+		int needCount = ("L".equals(type))? 4 : ("H".equals(type))? 2 : 1;
+		odt_map.stream().filter(d -> ((Integer)d[1]) >= needCount).findFirst().ifPresent(a -> {
+			((ArrayList<String>)a[0]).add((String)el.getFirst());
+			a[1] = (Integer)a[1] - needCount;
+			a[2] = ((String)a[2]).concat(type);
+		});
+	};
+	
+	
 	@SuppressWarnings("unchecked")
-	public void genODT(List<List<String>> dataList) {
+	public void genODT(List<Pair<String,String>> dataList) {
 		odt_map.clear();
 		
 		int max_odt = 50;
 		IntStream.range(0, max_odt)
 			.forEach(i -> odt_map.add(new Object[]{new ArrayList<String>(), 7, new String("")}));
 		
-		for(List<String> m : measurement_list) {
-			if(longStrSet.contains(m.get(1))) {
-				odt_map.stream()
-					.filter(l -> ((Integer)l[1]) >= 4)
-					.limit(1)
-					.forEach(el -> {
-						((ArrayList<String>)el[0]).add(m.get(0));
-						el[1] = (Integer)el[1] - 4;
-						el[2] = ((String)el[2]).concat("L");
-					});
-			}
-		}
+		Map<String, List<Pair<?,?>>> groups = dataList.stream()
+			.collect(Collectors.groupingBy(pair -> {
+				if(longStrSet.contains(pair.getSecond())) return "L";
+				else if(wordStrSet.contains(pair.getSecond())) return "H";
+				else return "B";
+			}));
+				
+		Optional.ofNullable(groups.get("L")).ifPresent(g -> {
+			g.stream().forEach(el -> alignODT.accept(el, "L"));
+		});
+		Optional.ofNullable(groups.get("H")).ifPresent(g -> {
+			g.stream().forEach(el -> alignODT.accept(el, "H"));
+		});
+		Optional.ofNullable(groups.get("B")).ifPresent(g -> {
+			g.stream().forEach(el -> alignODT.accept(el, "B"));
+		});
 
-		for(List<String> m : measurement_list) {
-			if(wordStrSet.contains(m.get(1))) {
-				odt_map.stream()
-					.filter(l -> ((Integer)l[1]) >= 2)
-					.limit(1)
-					.forEach(el -> {
-						((ArrayList<String>)el[0]).add(m.get(0));
-						el[1] = (Integer)el[1] - 2;
-						el[2] = ((String)el[2]).concat("H");
-					});
-			}
-		}
-
-		for(List<String> m : measurement_list) {
-			if(byteStr.equals(m.get(1))) {
-				odt_map.stream()
-					.filter(l -> ((Integer)l[1]) >= 1)
-					.limit(1)
-					.forEach(el -> {
-						((ArrayList<String>)el[0]).add(m.get(0));
-						el[1] = (Integer)el[1] - 1;
-						el[2] = ((String)el[2]).concat("B");
-					});
-			}
-		}
-		
 		// finalize
 		odt_map.stream()
 			.filter(el -> ((Integer)el[1]) >= 1)
 			.forEach(el -> {
-//				((String)el[2]).concat(IntStream.range(0, ((Byte)el[1])).mapToObj(i -> new String("B")).toArray() );
 				el[2] = ((String)el[2]).concat(byteInit.substring(0, ((Integer)el[1])));
 			});
 	}
@@ -150,7 +129,6 @@ public class EVTParser implements Parseable {
 			
 			Path evtPath = Paths.get("e:/projects/str/workspace/MainEventFlow/src/main/resources/ccp_odt.evt");
 			EVTParser evtParser =  new EVTParser(evtPath, documentBuilder);
-			evtParser.parse();
 			
 			evtParser.odt_map.stream()
 				.forEach(el -> System.out.printf("[[%s],%d,%s]\n", String.join(",", ((ArrayList<String>)el[0])), (Integer)el[1], (String)el[2]));
