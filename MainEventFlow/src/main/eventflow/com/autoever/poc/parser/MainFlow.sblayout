@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?><application-layout>
     <component name="InputStream">
-        <param name="gui:x" value="-424"/>
-        <param name="gui:y" value="-24"/>
+        <param name="gui:x" value="-220"/>
+        <param name="gui:y" value="-1"/>
     </component>
-    <component name="Map">
-        <param name="gui:x" value="-223"/>
-        <param name="gui:y" value="-15"/>
+    <component name="Aggregate">
+        <param name="gui:x" value="-12"/>
+        <param name="gui:y" value="-1"/>
     </component>
     <component name="OutputStream">
-        <param name="gui:x" value="-11"/>
-        <param name="gui:y" value="-34"/>
+        <param name="gui:x" value="213"/>
+        <param name="gui:y" value="-8"/>
     </component>
 </application-layout>

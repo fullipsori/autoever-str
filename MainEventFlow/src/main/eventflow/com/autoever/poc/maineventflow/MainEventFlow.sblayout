@@ -1,2 +1,50 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<application-layout/>
+<?xml version="1.0" encoding="UTF-8"?><application-layout>
+    <component name="InputStream">
+        <param name="gui:x" value="-198"/>
+        <param name="gui:y" value="-258"/>
+    </component>
+    <component name="QueryTable">
+        <param name="gui:x" value="-45"/>
+        <param name="gui:y" value="-139"/>
+        <param name="gui:width" value="80"/>
+        <param name="gui:height" value="56"/>
+    </component>
+    <component name="Filter">
+        <param name="gui:x" value="72"/>
+        <param name="gui:y" value="-248"/>
+    </component>
+    <component name="Map">
+        <param name="gui:x" value="340"/>
+        <param name="gui:y" value="-253"/>
+    </component>
+    <component name="OutputAdapter">
+        <param name="gui:x" value="72"/>
+        <param name="gui:y" value="-342"/>
+        <param name="gui:bends:1" value="35,-238;51,-312"/>
+    </component>
+    <component name="Query">
+        <param name="gui:x" value="-115"/>
+        <param name="gui:y" value="-258"/>
+    </component>
+    <component name="Query2">
+        <param name="gui:x" value="218"/>
+        <param name="gui:y" value="-248"/>
+    </component>
+    <component name="Split">
+        <param name="gui:x" value="-35"/>
+        <param name="gui:y" value="-258"/>
+    </component>
+    <component name="OutputStream">
+        <param name="gui:x" value="462"/>
+        <param name="gui:y" value="-258"/>
+    </component>
+    <component name="OutputStream2">
+        <param name="gui:x" value="191"/>
+        <param name="gui:y" value="-342"/>
+        <param name="gui:bends:1" value="147,-208;173,-312"/>
+    </component>
+    <component name="OutputStream3">
+        <param name="gui:x" value="283"/>
+        <param name="gui:y" value="-146"/>
+    </component>
+</application-layout>
