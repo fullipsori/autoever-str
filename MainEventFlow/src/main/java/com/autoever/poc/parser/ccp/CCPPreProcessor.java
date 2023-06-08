@@ -16,6 +16,8 @@ import com.streambase.sb.TupleException;
 import com.streambase.sb.util.Base64;
 import com.streambase.sb.util.Pair;
 
+import avro.shaded.com.google.common.base.Optional;
+
 public class CCPPreProcessor implements PreProcessable {
 
 	int prevCmd = 0;
@@ -118,7 +120,7 @@ public class CCPPreProcessor implements PreProcessable {
 		if(((List<?>)odt[0]).isEmpty()) return null;
 
 		int index = 1;
-		for(int i=0; i<((String)odt[2]).length(); i++) {
+		for(int i=0; i<((List<String>)odt[0]).size(); i++) {
 			switch(((String)odt[2]).charAt(i)) {
 				case 'L' :
 					resultList.add(new Pair<String,Long>(

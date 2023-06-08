@@ -214,9 +214,9 @@
             <output port="2" stream="out:Split3_2"/>
             <param name="output-count" value="2"/>
         </box>
-        <box name="Aggregate" type="aggregate">
+        <box name="AGGToHCP" type="aggregate">
             <input port="1" stream="out:Split3_2"/>
-            <output port="1" stream="out:Aggregate_1"/>
+            <output port="1" stream="out:AGGToHCP_1"/>
             <param name="dimension-name.0" value="Dimension1"/>
             <param name="dimension-type.0" value="Predicate"/>
             <param name="dimension-partial.0" value="no"/>
@@ -238,7 +238,7 @@
             <param name="expression.0" value="!IsStarted &amp;&amp; !IsEnded"/>
         </box>
         <box name="AddTime" type="map">
-            <input port="1" stream="out:Aggregate_1"/>
+            <input port="1" stream="out:AGGToHCP_1"/>
             <output port="1" stream="out:AddTime_1"/>
             <target-list>
                 <item name="input" selection="all"/>
@@ -311,33 +311,8 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="Filter4" type="filter">
-            <input port="1" stream="out:MapToPerfData_1"/>
-            <output port="1" stream="out:Filter4_1"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="true"/>
-        </box>
-        <box name="Split_status" type="split">
-            <input port="1" stream="out:Iter_TrigData_1"/>
-            <output port="1" stream="out:Split_status_1"/>
-            <output port="2" stream="out:Split_status_2"/>
-            <output port="3" stream="out:Split_status_3"/>
-            <param name="output-count" value="3"/>
-        </box>
-        <box name="Filter_NotTrig" type="filter">
-            <input port="1" stream="out:Split_status_1"/>
-            <output port="1" stream="out:Filter_NotTrig_1"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="status != 'NOMATCH' &amp;&amp; status != 'RET'"/>
-        </box>
-        <box name="FilterChangedEvent" type="filter">
-            <input port="1" stream="out:Split_status_2"/>
-            <output port="1" stream="out:FilterChangedEvent_1"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="!isempty(value) &amp;&amp; (eventName == compEvent) &amp;&amp; (isempty(compValue) || value !=compValue)"/>
-        </box>
         <box name="PublishPerf" type="outputadapter">
-            <input port="1" stream="out:Filter4_1"/>
+            <input port="1" stream="out:MapToPerfData_1"/>
             <output port="1" stream="out:PublishPerf_1"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.streambase.sb.adapter.liveview.LiveViewPublish"/>
@@ -361,6 +336,24 @@
             <param name="throughPort" value="false"/>
             <param name="uri" value="${LV_SERVER_URI}"/>
             <param name="useRuntimeURI" value="false"/>
+        </box>
+        <box name="Split_status" type="split">
+            <input port="1" stream="out:Iter_TrigData_1"/>
+            <output port="1" stream="out:Split_status_1"/>
+            <output port="2" stream="out:Split_status_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <box name="Filter_NotTrig" type="filter">
+            <input port="1" stream="out:Split_status_1"/>
+            <output port="1" stream="out:Filter_NotTrig_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="status != 'NOMATCH' &amp;&amp; status != 'RET'"/>
+        </box>
+        <box name="FilterChangedEvent" type="filter">
+            <input port="1" stream="out:Split_status_2"/>
+            <output port="1" stream="out:FilterChangedEvent_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="!isempty(value) &amp;&amp; (eventName == compEvent) &amp;&amp; (isempty(compValue) || value !=compValue)"/>
         </box>
         <box name="Sequence" type="seqnum">
             <input port="1" stream="out:Filter_NotTrig_1"/>
@@ -421,23 +414,8 @@
             <output port="1" stream="UpdateEventStatus"/>
             <param name="strict" value="false"/>
         </box>
-        <box name="Filter2" type="filter">
-            <input port="1" stream="out:ADD_seqId_1"/>
-            <output port="1" stream="out:Filter2_1"/>
-            <output port="2" stream="out:Filter2_2"/>
-            <param name="autogen-nomatch-port" value="true"/>
-            <param name="expression.0" value="true"/>
-            <param name="expression.1" value="true"/>
-        </box>
-        <output-stream name="UpdateEventStatus"/>
-        <box name="Filter3" type="filter">
-            <input port="1" stream="out:ADD_seq2id_1"/>
-            <output port="1" stream="out:Filter3_1"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="true"/>
-        </box>
         <box name="PublishCan" type="outputadapter">
-            <input port="1" stream="out:Filter2_1"/>
+            <input port="1" stream="out:ADD_seqId_1"/>
             <output port="1" stream="out:PublishCan_1"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.streambase.sb.adapter.liveview.LiveViewPublish"/>
@@ -462,8 +440,9 @@
             <param name="uri" value="${LV_SERVER_URI}"/>
             <param name="useRuntimeURI" value="false"/>
         </box>
+        <output-stream name="UpdateEventStatus"/>
         <box name="PublishRaw" type="outputadapter">
-            <input port="1" stream="out:Filter3_1"/>
+            <input port="1" stream="out:ADD_seq2id_1"/>
             <output port="1" stream="out:PublishRaw_1"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.streambase.sb.adapter.liveview.LiveViewPublish"/>
@@ -492,7 +471,6 @@
             <input port="1" stream="out:PublishCan_1"/>
             <input port="2" stream="out:PublishRaw_1"/>
             <input port="3" stream="out:PublishPerf_1"/>
-            <input port="4" stream="out:Filter2_2"/>
             <output port="1" stream="CanOutputStream"/>
             <param name="strict" value="false"/>
         </box>

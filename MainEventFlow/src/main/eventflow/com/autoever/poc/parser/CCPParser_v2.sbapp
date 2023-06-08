@@ -51,28 +51,207 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="FilterUnused" type="filter">
+        <box name="FilterCCP" type="filter">
             <input port="1" stream="out:Organize_1"/>
-            <output port="1" stream="out:FilterUnused_1"/>
+            <output port="1" stream="out:FilterCCP_1"/>
+            <output port="2" stream="out:FilterCCP_2"/>
+            <output port="3" stream="out:FilterCCP_3"/>
+            <output port="4" stream="out:FilterCCP_4"/>
+            <output port="5" stream="out:FilterCCP_5"/>
+            <output port="6" stream="out:FilterCCP_6"/>
+            <output port="7" stream="out:FilterCCP_7"/>
+            <output port="8" stream="out:FilterCCP_8"/>
             <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="true"/>
+            <param name="expression.0" value="IsStarted"/>
+            <param name="expression.1" value="IsEnded"/>
+            <param name="expression.2" value="contains(ODTField, 'cell_')"/>
+            <param name="expression.3" value="contains(ODTField, 'msr_tb_')"/>
+            <param name="expression.4" value="ODTField == 'SOC'"/>
+            <param name="expression.5" value="ODTField == 'msr_data.ibm'"/>
+            <param name="expression.6" value="ODTField == 'chg_charging_now'"/>
+            <param name="expression.7" value="ODTField == 'msr_data.isol'"/>
         </box>
-        <box name="AggregateData" type="map">
-            <input port="1" stream="out:FilterUnused_1"/>
-            <output port="1" stream="out:AggregateData_1"/>
+        <box name="AGG_MSR" type="aggregate">
+            <input port="1" stream="out:FilterCCP_4"/>
+            <output port="1" stream="out:AGG_MSR_1"/>
+            <param name="dimension-name.0" value="Dimension1"/>
+            <param name="dimension-type.0" value="Predicate"/>
+            <param name="dimension-partial.0" value="no"/>
+            <param name="dimension-close-predicate.0" value="IsEnded || (countif(!isempty(ODTField)) &gt;= 9)"/>
+            <param name="dimension-emit-close-first.0" value="false"/>
+            <param name="output-group-by" value="true"/>
+            <target-list>
+                <expressions>
+                    <include field="msrTBList">aggregatelist(tuple(ODTField as ODTField, ODTValue as ODTValue))</include>
+                    <include field="messageID">firstval(messageID)</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="MAP_CHG" type="map">
+            <input port="1" stream="out:FilterCCP_7"/>
+            <output port="1" stream="out:MAP_CHG_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="messageID">messageID</include>
+                    <include field="chg_charging_now">ODTValue</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="MAP_ISOL" type="map">
+            <input port="1" stream="out:FilterCCP_8"/>
+            <output port="1" stream="out:MAP_ISOL_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="messageID">messageID</include>
+                    <include field="isol">ODTValue</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="MAP_MSR_IBM" type="map">
+            <input port="1" stream="out:FilterCCP_6"/>
+            <output port="1" stream="out:MAP_MSR_IBM_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="IBM">ODTValue</include>
+                    <include field="messageID">messageID</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="MAP_SOC" type="map">
+            <input port="1" stream="out:FilterCCP_5"/>
+            <output port="1" stream="out:MAP_SOC_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="SOC">ODTValue</include>
+                    <include field="messageID">messageID</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Union" type="union">
+            <input port="1" stream="out:FilterCCP_3"/>
+            <output port="1" stream="out:Union_1"/>
+            <param name="strict" value="false"/>
+        </box>
+        <box name="Union3" type="union">
+            <input port="1" stream="out:FilterCCP_1"/>
+            <input port="2" stream="out:FilterCCP_2"/>
+            <output port="1" stream="MarkerOutputStream"/>
+            <param name="strict" value="false"/>
+        </box>
+        <output-stream name="MarkerOutputStream"/>
+        <box name="AGG_CELL" type="aggregate">
+            <input port="1" stream="out:Union_1"/>
+            <output port="1" stream="out:AGG_CELL_1"/>
+            <param name="dimension-name.0" value="Dimension1"/>
+            <param name="dimension-type.0" value="Predicate"/>
+            <param name="dimension-partial.0" value="no"/>
+            <param name="dimension-close-predicate.0" value="IsEnded || (countif(!isempty(ODTField)) &gt;= 90)"/>
+            <param name="dimension-emit-close-first.0" value="false"/>
+            <param name="output-group-by" value="true"/>
+            <target-list>
+                <expressions>
+                    <include field="messageID">firstval(messageID)</include>
+                    <include field="cellLIst">aggregatelist(tuple(ODTField as ODTField, ODTValue as ODTValue))</include>
+                    <include field="diffVol">max(ODTValue) - min(ODTValue)</include>
+                    <include field="meanVal">avg(ODTValue)</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="AddDeviation" type="map">
+            <input port="1" stream="out:AGG_CELL_1"/>
+            <output port="1" stream="out:AddDeviation_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="Split" type="split">
+            <input port="1" stream="out:AddDeviation_1"/>
+            <output port="1" stream="out:Split_1"/>
+            <output port="2" stream="out:Split_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <box name="Gather" type="gather">
+            <input port="1" stream="out:Split_1"/>
+            <input port="2" stream="out:AGG_MSR_1"/>
+            <input port="3" stream="out:MAP_SOC_1"/>
+            <input port="4" stream="out:MAP_MSR_IBM_1"/>
+            <input port="5" stream="out:MAP_CHG_1"/>
+            <input port="6" stream="out:MAP_ISOL_1"/>
+            <output port="1" stream="out:Gather_1"/>
+            <target-list>
+                <item name="input1" selection="none">
+                    <include field="cellLIst"/>
+                    <include field="diffVol"/>
+                    <include field="meanVal"/>
+                    <include field="messageID"/>
+                </item>
+                <item name="input2" selection="none">
+                    <include field="msrTBList"/>
+                </item>
+                <item name="input3" selection="none">
+                    <include field="SOC"/>
+                </item>
+                <item name="input4" prefix="input4_" selection="none">
+                    <include field="IBM"/>
+                </item>
+                <item name="input5" selection="none">
+                    <include field="chg_charging_now"/>
+                </item>
+                <item name="input6" selection="none">
+                    <declare field="isol">isol</declare>
+                </item>
+            </target-list>
+            <param name="key-field" value="messageID"/>
+            <param name="output-last-time-field" value="false"/>
+            <param name="emit-on-completion" value="true"/>
+            <param name="replacement-type" value="keep_first"/>
+        </box>
+        <box name="OutputAdapter" type="outputadapter">
+            <input port="1" stream="out:Split_2"/>
+            <output port="1" stream="out:OutputAdapter_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.liveview.LiveViewPublish"/>
+            <param name="ackPeriod" value="0"/>
+            <param name="adHoc" value="false"/>
+            <param name="bufferSize" value="1024"/>
+            <param name="connectInline" value="false"/>
+            <param name="connectionKey" value=""/>
+            <param name="deleteField" value=""/>
+            <param name="dynamicTableName" value="false"/>
+            <param name="enableCompressedConnection" value="false"/>
+            <param name="encapsulatingLV" value="false"/>
+            <param name="flushInterval" value="250"/>
+            <param name="logLevel" value="INFO"/>
+            <param name="lvTableName" value="AutoCCPBatTable"/>
+            <param name="pubName" value=""/>
+            <param name="reliablePub" value="false"/>
+            <param name="seqField" value=""/>
+            <param name="shareConnection" value="true"/>
+            <param name="strictSchema" value="false"/>
+            <param name="throughPort" value="false"/>
+            <param name="uri" value="${LV_SERVER_URI}"/>
+            <param name="useRuntimeURI" value="false"/>
+        </box>
+        <box name="MAP_RES" type="map">
+            <input port="1" stream="out:Gather_1"/>
+            <output port="1" stream="out:MAP_RES_1"/>
             <target-list>
                 <item name="input" selection="all"/>
             </target-list>
         </box>
         <box name="ReduceFilter" type="filter">
-            <input port="1" stream="out:AggregateData_1"/>
+            <input port="1" stream="out:MAP_RES_1"/>
             <output port="1" stream="out:ReduceFilter_1"/>
             <param name="autogen-nomatch-port" value="false"/>
             <param name="expression.0" value="true"/>
         </box>
         <box name="PublishCCP" type="outputadapter">
             <input port="1" stream="out:ReduceFilter_1"/>
-            <output port="1" stream="ccpOutputStream"/>
+            <output port="1" stream="out:PublishCCP_1"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.streambase.sb.adapter.liveview.LiveViewPublish"/>
             <param name="ackPeriod" value="0"/>
@@ -96,6 +275,24 @@
             <param name="uri" value="${LV_SERVER_URI}"/>
             <param name="useRuntimeURI" value="false"/>
         </box>
+        <box name="Union2" type="union">
+            <input port="1" stream="out:OutputAdapter_1"/>
+            <input port="2" stream="out:PublishCCP_1"/>
+            <output port="1" stream="ccpOutputStream"/>
+            <param name="strict" value="false"/>
+        </box>
         <output-stream name="ccpOutputStream"/>
+        <gui.note name="Note">
+            <property name="description" value="분산값을 추가해야함"/>
+            <note-target name="AddDeviation"/>
+        </gui.note>
+        <gui.note name="Note2">
+            <property name="description" value="RawData 가 완료되었을때를 체크해야함"/>
+            <note-target name="Gather"/>
+        </gui.note>
+        <gui.note name="Note3">
+            <property name="description" value="주행저항체크 방법&#13;&#10;  - 주행 상태 확인 방법&#13;&#10;  - 1초 간의 변화량 확인 방법"/>
+            <note-target name="MAP_RES"/>
+        </gui.note>
     </add>
 </modify>

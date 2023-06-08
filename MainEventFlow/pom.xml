@@ -22,22 +22,12 @@
     <dependencies>
     	<dependency>
     		<groupId>com.tibco.ep.sb.adapter</groupId>
-    		<artifactId>kafka</artifactId>
+    		<artifactId>httpclient</artifactId>
     		<version>11.0.1</version>
     	</dependency>
     	<dependency>
-    		<groupId>redis.clients</groupId>
-    		<artifactId>jedis</artifactId>
-    		<version>4.2.3</version>
-    	</dependency>
-    	<dependency>
-    		<groupId>org.apache.commons</groupId>
-    		<artifactId>commons-pool2</artifactId>
-    		<version>2.11.1</version>
-    	</dependency>
-    	<dependency>
     		<groupId>com.tibco.ep.sb.adapter</groupId>
-    		<artifactId>httpclient</artifactId>
+    		<artifactId>kafka</artifactId>
     		<version>11.0.1</version>
     	</dependency>
     	<dependency>
@@ -45,27 +35,15 @@
     		<artifactId>fileio</artifactId>
     		<version>11.0.1</version>
     	</dependency>
-    	<!-- https://mvnrepository.com/artifact/com.googlecode.json-simple/json-simple -->
-		<dependency>
-			<groupId>com.googlecode.json-simple</groupId>
-			<artifactId>json-simple</artifactId>
-			<version>1.1.1</version>
-		</dependency>
-		<dependency>
-			<groupId>com.tibco.ep.sb.adapter</groupId>
-			<artifactId>ldm</artifactId>
-			<version>11.0.1</version>
-		</dependency>
-		<dependency>
-			<groupId>com.tibco.ep.sb.adapter</groupId>
-			<artifactId>python</artifactId>
-			<version>11.0.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.tibco.ep.sb.adapter</groupId>
-			<artifactId>dataprep</artifactId>
-			<version>11.0.1</version>
-		</dependency>
+    	<dependency>
+    		<groupId>com.tibco.ep.sb.adapter</groupId>
+    		<artifactId>python</artifactId>
+    		<version>11.0.1</version>
+    	</dependency>
+    	<dependency>
+    		<groupId>com.tibco.ep.sb.adapter</groupId>
+    		<artifactId>ldm</artifactId>
+    		<version>11.0.1</version>
+    	</dependency>
     </dependencies>
 </project>

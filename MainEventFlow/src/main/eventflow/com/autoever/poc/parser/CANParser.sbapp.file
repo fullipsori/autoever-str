@@ -5,8 +5,8 @@
             <annotation name="hygienic"/>
         </annotations>
         <type-metadata>
-            <param name="type" value="module"/>
-            <param name="fully-qualified-name" value="com.autoever.poc.parser.CANParser"/>
+            <param name="type" value="interface"/>
+            <param name="fully-qualified-name" value="com.autoever.poc.parser.CANParser.sbapp"/>
         </type-metadata>
         <memory-model-settings/>
         <implements module-reference="com.autoever.poc.maineventflow.LiveViewTable"/>

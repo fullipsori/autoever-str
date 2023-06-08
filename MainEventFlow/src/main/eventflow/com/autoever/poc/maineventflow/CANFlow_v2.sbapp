@@ -13,7 +13,7 @@
         <implements module-reference="com.autoever.poc.maineventflow.kafkaSchemas"/>
         <import alias="MainOutputSchema" from="com.autoever.poc.maineventflow.AutoVDMSFlow_v2" item="MainOutputSchema"/>
         <import from="com.autoever.poc.maineventflow.LiveViewTable"/>
-        <import alias="ControlCANSchema" from="com.autoever.poc.parser.CANParser" item="ControlCANSchema"/>
+        <import alias="ControlCANSchema" from="com.autoever.poc.parser.CANParser_v3" item="ControlCANSchema"/>
         <parameter-definitions>
             <parameter default="D:/projects/vdms_env/Scripts/python.exe" name="PYTHON_EXECUTABLE"/>
             <parameter default="d:/projects/vdms/resources" name="RESOURCE_ROOT"/>

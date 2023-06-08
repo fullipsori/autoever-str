@@ -128,9 +128,8 @@ public class ODTParser implements Parseable {
 		try {
 			documentBuilder = factory.newDocumentBuilder();
 			
-			Path evtPath = Paths.get("e:/projects/str/workspace/MainEventFlow/src/main/resources/ccp_odt.evt");
+			Path evtPath = Paths.get("d:/projects/autoever-str/MainEventFlow/src/main/resources/evt/VM-21C-0016.evt");
 			ODTParser evtParser =  new ODTParser(evtPath, documentBuilder);
-			evtParser.parse();
 			
 			evtParser.odt_map.stream()
 				.forEach(el -> System.out.printf("[[%s],%d,%s]\n", String.join(",", ((ArrayList<String>)el[0])), (Integer)el[1], (String)el[2]));
