@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<modify version="11.0.1_9ac66cf38631f8473e37c39091c4b798f01bbf41">
+    <add>
+        <annotations>
+            <annotation name="hygienic"/>
+        </annotations>
+        <type-metadata>
+            <param name="type" value="module"/>
+            <param name="fully-qualified-name" value="com.autoever.poc.parser.CCPParser"/>
+        </type-metadata>
+        <memory-model-settings/>
+        <import alias="MainOutputSchema" from="com.autoever.poc.maineventflow.AutoVDMSFlow_v2" item="MainOutputSchema"/>
+        <import from="com.autoever.poc.maineventflow.LiveViewTable"/>
+        <named-schemas>
+            <schema name="ControlCCPSchema">
+                <field name="command" type="string"/>
+                <field name="newThresholdValue" type="double"/>
+                <field name="evtFolder" type="string"/>
+            </schema>
+        </named-schemas>
+        <parameter-definitions>
+            <parameter default="D:/projects/vdms_env/Scripts/python.exe" name="PYTHON_EXECUTABLE"/>
+            <parameter default="d:/projects/vdms/resources" name="RESOURCE_ROOT"/>
+            <parameter default="lv://localhost:11080" name="LV_SERVER_URI"/>
+        </parameter-definitions>
+        <dynamic-variables>
+            <dynamic-variable initial-expression="999.0" name="thresholdValue" setter-expression="newThresholdValue" setter-stream="UpdateThreshold"/>
+        </dynamic-variables>
+        <stream name="ControlInstance">
+            <schema>
+                <field name="command" type="string"/>
+            </schema>
+        </stream>
+        <stream name="ControlStream">
+            <schema>
+                <field name="command" type="string"/>
+                <field name="newThresholdValue" type="double"/>
+                <field name="evtFolder" type="string"/>
+            </schema>
+        </stream>
+        <stream name="InputStream" schema="MainOutputSchema"/>
+        <box name="Initialize" type="inputadapter">
+            <output port="1" stream="out:Initialize_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.once.Once"/>
+            <param name="OutputField" value="time"/>
+        </box>
+        <box name="InitModule" type="java">
+            <input port="1" stream="out:Initialize_1"/>
+            <output port="1" stream="InitOutputStream"/>
+            <error stream="out:InitModule_2_error"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.python.PythonAdapter"/>
+            <param name="Asynchronous" value="false"/>
+            <param name="GlobalInstanceId" value=""/>
+            <param name="InstanceType" value="Local"/>
+            <param name="LocalInstanceId" value="python_ccp_instance"/>
+            <param name="LogLevel" value="INFO"/>
+            <param name="OutputVarsSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema/&gt;&#13;&#10;"/>
+            <param name="Script" value=""/>
+            <param name="ScriptFile" value="ccp_init_module.py"/>
+            <param name="ScriptSource" value="File"/>
+            <param name="amsRequiredOnStartup" value="false"/>
+            <param name="artifactName" value=""/>
+            <param name="artifactVersion" value=""/>
+            <param name="enableControlPort" value="false"/>
+        </box>
+        <box name="Map3" type="map">
+            <input port="1" stream="InputStream"/>
+            <output port="1" stream="out:Map3_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="inputVars.*">input1.*</include>
+                    <include field="inputVars.evt">kafkaMessage.TerminalID</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="python_ccp_instance" type="java">
+            <input port="1" stream="ControlInstance"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.python.PythonInstanceAdapter"/>
+            <param name="CaptureOutput" value="false"/>
+            <param name="EnableControlPort" value="true"/>
+            <param name="Executable" value="${PYTHON_EXECUTABLE}"/>
+            <param name="GlobalInstanceId" value=""/>
+            <param name="InstanceType" value="Local"/>
+            <param name="LogLevel" value="INFO"/>
+            <param name="UseTempFile" value="false"/>
+            <param name="WorkingDir" value="."/>
+        </box>
+        <box name="Split2" type="split">
+            <input port="1" stream="ControlStream"/>
+            <output port="1" stream="out:Split2_1"/>
+            <output port="2" stream="out:Split2_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <output-stream name="InitOutputStream"/>
+        <box name="CCPParser" type="java">
+            <input port="1" stream="out:Map3_1"/>
+            <output port="1" stream="out:CCPParser_1"/>
+            <error stream="out:CCPParser_2_error"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.python.PythonAdapter"/>
+            <param name="Asynchronous" value="true"/>
+            <param name="GlobalInstanceId" value=""/>
+            <param name="InstanceType" value="Local"/>
+            <param name="LocalInstanceId" value="python_ccp_instance"/>
+            <param name="LogLevel" value="INFO"/>
+            <param name="OutputVarsSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema&gt;&#13;&#10;    &lt;field name=&quot;messageID&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;terminalID&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;vehicleKeyID&quot; type=&quot;long&quot;/&gt;&#13;&#10;    &lt;field name=&quot;baseTime&quot; type=&quot;long&quot;/&gt;&#13;&#10;    &lt;field name=&quot;recordCount&quot; type=&quot;long&quot;/&gt;&#13;&#10;    &lt;field name=&quot;rootCount&quot; type=&quot;int&quot;/&gt;&#13;&#10;    &lt;field name=&quot;mgmtNO&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;ccp_data&quot; type=&quot;string&quot;/&gt;&#13;&#10;    &lt;field name=&quot;ccp_count&quot; type=&quot;long&quot;/&gt;&#13;&#10;&lt;/schema&gt;&#13;&#10;"/>
+            <param name="Script" value="import sys, os&#13;&#10;import numpy as np&#13;&#10;import pandas as pd&#13;&#10;import json&#13;&#10;&#13;&#10;KAFKA_MSG = kafkaMessage&#13;&#10;CCP_FILE_PATH = filePath&#13;&#10;BIN_DATA = binaryData&#13;&#10;EVT = evt&#13;&#10;ccp_data = None&#13;&#10;ccp_count = 0&#13;&#10;&#13;&#10;if not CCP_DATAS or CCP_DATAS[EVT] is None:&#13;&#10;    return&#13;&#10;&#13;&#10;ccpRAW = CCPRAW(CCP_FILE_PATH, BIN_DATA, KAFKA_MSG, CCP_DATAS[EVT])&#13;&#10;&#13;&#10;result = ccpRAW.processSingleFile()&#13;&#10;ccpRAW.close()&#13;&#10;if not result:&#13;&#10;    ccp_count = len(result)&#13;&#10;&#13;&#10;if CCP_FILE_PATH:&#13;&#10;    os.remove(CCP_FILE_PATH)&#13;&#10;&#13;&#10;data_np = np.array(result, dtype=object)&#13;&#10;data_df = pd.DataFrame(data_np)&#13;&#10;if not data_df.empty:&#13;&#10;    data_df.columns = ['DeltaTime','DataFlag','DataChannel','DataID','data','parsed']&#13;&#10;    ccp_data = f'{{&quot;ccp_data&quot;: { data_df.to_json(orient=&quot;records&quot;)}}}'&#13;&#10;"/>
+            <param name="ScriptFile" value=""/>
+            <param name="ScriptSource" value="Script text"/>
+            <param name="amsRequiredOnStartup" value="false"/>
+            <param name="artifactName" value=""/>
+            <param name="artifactVersion" value=""/>
+            <param name="enableControlPort" value="false"/>
+        </box>
+        <box name="Filter" type="filter">
+            <input port="1" stream="out:Split2_1"/>
+            <output port="1" stream="UpdateThreshold"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="!isnull(newThresholdValue)"/>
+        </box>
+        <box name="Filter2" type="filter">
+            <input port="1" stream="out:Split2_2"/>
+            <output port="1" stream="out:Filter2_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="!isempty(evtFolder)"/>
+        </box>
+        <output-stream name="UpdateThreshold"/>
+        <box name="CheckNull" type="map">
+            <input port="1" stream="out:Filter2_1"/>
+            <output port="1" stream="out:CheckNull_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="inputVars.*">*</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Map2" type="map">
+            <input port="1" stream="out:CCPParser_1"/>
+            <output port="1" stream="out:Map2_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="*">outputVars.*</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="LoadEVTFile" type="java">
+            <input port="1" stream="out:CheckNull_1"/>
+            <output port="1" stream="LoadEVTOutputStream"/>
+            <error stream="out:LoadEVTFile_2_error"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.python.PythonAdapter"/>
+            <param name="Asynchronous" value="false"/>
+            <param name="GlobalInstanceId" value=""/>
+            <param name="InstanceType" value="Local"/>
+            <param name="LocalInstanceId" value="python_ccp_instance"/>
+            <param name="LogLevel" value="INFO"/>
+            <param name="OutputVarsSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema&gt;&#13;&#10;    &lt;field name=&quot;updated_evt&quot; type=&quot;string&quot;/&gt;&#13;&#10;&lt;/schema&gt;&#13;&#10;"/>
+            <param name="Script" value=""/>
+            <param name="ScriptFile" value="ccp_evt_loader.py"/>
+            <param name="ScriptSource" value="File"/>
+            <param name="amsRequiredOnStartup" value="false"/>
+            <param name="artifactName" value=""/>
+            <param name="artifactVersion" value=""/>
+            <param name="enableControlPort" value="false"/>
+        </box>
+        <box name="Split" type="split">
+            <input port="1" stream="out:Map2_1"/>
+            <output port="1" stream="out:Split_1"/>
+            <output port="2" stream="ParserOutputStream"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <output-stream name="LoadEVTOutputStream"/>
+        <output-stream name="ParserOutputStream"/>
+        <box name="Block" type="filter">
+            <input port="1" stream="out:Split_1"/>
+            <output port="1" stream="out:Block_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="false"/>
+        </box>
+        <box name="Union" type="union">
+            <input port="1" stream="out:CCPParser_2_error"/>
+            <input port="2" stream="out:LoadEVTFile_2_error"/>
+            <input port="3" stream="out:InitModule_2_error"/>
+            <output port="1" stream="ErrorOutputStream"/>
+            <param name="strict" value="false"/>
+        </box>
+        <error-output-stream name="ErrorOutputStream"/>
+        <box name="OutputAdapter" type="outputadapter">
+            <input port="1" stream="out:Block_1"/>
+            <output port="1" stream="OutputStream"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.liveview.LiveViewPublish"/>
+            <param name="ackPeriod" value="0"/>
+            <param name="adHoc" value="false"/>
+            <param name="bufferSize" value="100"/>
+            <param name="connectInline" value="false"/>
+            <param name="connectionKey" value=""/>
+            <param name="deleteField" value=""/>
+            <param name="dynamicTableName" value="false"/>
+            <param name="enableCompressedConnection" value="false"/>
+            <param name="encapsulatingLV" value="false"/>
+            <param name="flushInterval" value="250"/>
+            <param name="logLevel" value="INFO"/>
+            <param name="lvTableName" value="CCPDataTable"/>
+            <param name="pubName" value=""/>
+            <param name="reliablePub" value="false"/>
+            <param name="seqField" value=""/>
+            <param name="shareConnection" value="true"/>
+            <param name="strictSchema" value="false"/>
+            <param name="throughPort" value="false"/>
+            <param name="uri" value="${LV_SERVER_URI}"/>
+            <param name="useRuntimeURI" value="false"/>
+        </box>
+        <output-stream name="OutputStream"/>
+    </add>
+</modify>

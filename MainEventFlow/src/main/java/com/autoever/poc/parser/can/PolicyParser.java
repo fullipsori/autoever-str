@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -18,12 +17,17 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import com.autoever.poc.common.RawDataField;
 import com.autoever.poc.parser.Parseable;
+import com.streambase.sb.NullValueException;
+import com.streambase.sb.Tuple;
+import com.streambase.sb.TupleException;
 
 public class PolicyParser implements Parseable {
+
+	public static int[] debug_val = new int[] {0,0,0,0,0};
 
 	private String filename;
 	private Path xmlFilePath;
@@ -32,8 +36,12 @@ public class PolicyParser implements Parseable {
 	public String KeyStatus = "ON";
 	public TriggerParser KeyTrig;
 
-//	private List<EventParser> EventList = new ArrayList<>();
-	private static EventCallback eventCallback = (a,b) -> null;
+	private static EventCallback eventCallback = (a,b,c) -> {
+		return null;
+	};
+	
+	/* Atomic 변수가 되어야 하는지 체크 필요함. */
+	public int rootCount = 0;
 
 	public PolicyParser(Path filePath, DocumentBuilder documentBuilder) {
 		this.xmlFilePath = filePath;
@@ -44,18 +52,16 @@ public class PolicyParser implements Parseable {
 		} catch (Exception e) {
 			rootNode = null;
 		}
-		//fullipsori
-//		EventList.clear();
 		parse();
-	}
-	
-	public String GetFileName() {
-		return filename;
 	}
 
 	public long minPreTime = 0;
-	public Map<Integer, ?> msgFilter;
+				
+	public Map<Integer, Map<Integer, List<Evaluable>>> msgFilter;
 
+	public String GetFileName() {
+		return this.filename;
+	}
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -71,42 +77,173 @@ public class PolicyParser implements Parseable {
 				});
 			});
 			
-			List<Element> eventList = GetElements.apply(children, "Event");
-			msgFilter = eventList.stream()
-				.map(EventParser::new)
-				.peek(e -> minPreTime = (minPreTime < e.preTime)? e.preTime : minPreTime)
-				.flatMap(e -> e.msgTable.stream())
-				.map(ta -> (List<Object>)ta)
-				.flatMap(ta -> (ta.size() > 3)? 
+
+			msgFilter = GetElements.apply(children, "Event").stream()
+					.map(EventParser::new)
+					.peek(e -> minPreTime = (minPreTime < e.preTime)? e.preTime : minPreTime)
+					.flatMap(e -> e.msgTable.stream())
+					.map(ta -> (List<Object>)ta)
+					.flatMap(ta -> (ta.size() > 3)?
 						Stream.of(
 							List.of(ta.get(0), ta.get(1), ta.get(2)), 
 							List.of(ta.get(0), ta.get(3), ta.get(2)))
 						:
 						Stream.of( List.of(ta.get(0), ta.get(1), ta.get(2)))
-						)
-				.filter(ta -> ta.get(1) != null)
-				.collect(Collectors.groupingBy(ta -> (int)ta.get(0), 
-							Collectors.groupingBy(ta->(int)ta.get(1), 
-								Collectors.mapping(ta -> (BiFunction<?,?,?>)ta.get(2), Collectors.toList())  )));
+					)
+					.filter(ta -> ta.get(1) != null)
+					.collect(Collectors.groupingBy(ta -> (int)ta.get(0), 
+								Collectors.groupingBy(ta->(int)ta.get(1), 
+									Collectors.mapping(ta -> (Evaluable)ta.get(2), Collectors.toList())  )));
+
 
 		} catch (Exception e) {
+			System.out.println("Parse Exception:" + "filename:" + this.filename +  e.getMessage());
 			// TODO Auto-generated catch block
-			System.out.println(e.getMessage());
 		};
 	}
 
+	//[DataChannel, DeltaTime, MSGInfo, DataID, DLC, data[10:10 + dlc_Size[DLC]]]
+	public boolean GetKeyFlag(Tuple message) {
+		try {
+			int dataChannel = message.getInt("DataChannel");
+			int dataID = message.getInt("DataID");
+			if((dataID & 0x00FFFFFF) == KeyTrig.id && dataChannel == KeyTrig.ch) {
+				KeyTrig.callback.Evaluate(message);
+			}
+			
+			if(!"ON".equalsIgnoreCase(KeyStatus) || KeyTrig.status) {
+				return true;
+			}else {
+				return false;
+			}
+		} catch (Exception e) {
+			System.out.println("GetKeyFlag Exception:" + e.getMessage());
+			return false;
+		}
+	}
+	
+	
+	@SuppressWarnings("unchecked")
+	public List<Tuple> GetTrigData(Tuple message) {
+
+		try {
+
+			int dataChannel = message.getInt("DataChannel");
+			double deltaTime = message.getDouble("DeltaTime");
+			int dataID = message.getInt("DataID");
+
+			if(msgFilter.get(dataChannel) == null) return null;
+
+			List<Evaluable> callbacks = (List<Evaluable>)((Map<Integer, List<Evaluable>>)msgFilter.get(dataChannel)).get(dataID & 0x00FFFFFF);
+			if(callbacks != null) {
+				// [name, String.valueOf(preTime), String.valueOf(postTime), category, "OnFalse", value]
+				// name, String.valueOf(preTime), String.valueOf(postTime), category, "NOT or RET or status", value
+				return callbacks.stream()
+					.map(c -> (List<String>)c.Evaluate(message))
+					.filter(e -> e != null)
+					.collect(Collectors.toMap(e-> e.get(0), e->e, (existVal, newVal) -> newVal))
+					.values().stream()
+					.filter(e -> e != null)
+					.map(e -> {
+						try {
+							Tuple tuple = PolicyRepository.trigDataSchema.createTuple();
+							tuple.setDouble(0, (double)(deltaTime-Double.parseDouble(e.get(1))));
+							tuple.setDouble(1, (double)(deltaTime+Double.parseDouble(e.get(2))));
+							tuple.setDouble(2, (double)deltaTime);
+							tuple.setString(3, e.get(0));
+							tuple.setString(4, e.get(3));
+							tuple.setString(5, e.get(4));
+							tuple.setString(6, e.get(5));
+							return tuple;
+						}catch (Exception x){
+							System.out.println("PolicyParser Tuple Gen Excep:" + x.getMessage());
+							return null;
+						}
+					})
+					.filter(t -> t != null)
+					.collect(Collectors.toList());
+			}
+
+			return null;
+		}catch (Exception e) {
+			System.out.println("GetTrigData Exception:" + e.getMessage());
+			return null;
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	public boolean InitParams(int rootCount) { //check kafka.RootCount(trip number)
+
+		if(this.rootCount != rootCount) { 
+			this.rootCount = rootCount;
+
+			KeyTrig.initData();
+			msgFilter.values().stream()
+				.map(e -> (Map<Integer, List<Evaluable>>)e)
+				.flatMap(e -> e.values().stream())
+				.filter(o -> o != null)
+				.map(o -> (List<Evaluable>)o)
+				.flatMap(o -> o.stream())
+				.filter(ev -> ev != null)
+				.forEach(ev -> {
+					ev.trigger.initData();
+				});
+
+			return true;
+		}
+		return true;
+	}
+	
+	public boolean IsAvailable(Tuple dataTuple) {
+		try {
+			int dataChannel = dataTuple.getInt(RawDataField.DataChannel.getValue());
+			int dataID = dataTuple.getInt(RawDataField.DataID.getValue()) & 0x00FFFFFF;
+			if(dataID == KeyTrig.id && dataChannel == KeyTrig.ch) {
+				return true;
+			}
+			Map<Integer,List<Evaluable>> channelInfo = Optional.ofNullable((Map<Integer,List<Evaluable>>)msgFilter.get(dataChannel)).orElse(null);
+			if(channelInfo != null && channelInfo.containsKey(dataID)) {
+				return true;
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+		return false;
+	}
+
+	public boolean IsAvailable(int ch, int id) {
+		try {
+			int dataChannel = ch;
+			int dataID = id & 0x00FFFFFF;
+			if(dataID == KeyTrig.id && dataChannel == KeyTrig.ch) {
+				return true;
+			}
+			Map<Integer,List<Evaluable>> channelInfo = Optional.ofNullable((Map<Integer,List<Evaluable>>)msgFilter.get(dataChannel)).orElse(null);
+			if(channelInfo != null && channelInfo.containsKey(dataID)) {
+				return true;
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+		return false;
+	}
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		// new PolicyParser("d:/projects/vdms/resources/policy/BM-15C-0008.xml").parse();
+		// new PolicyParser("d:/projects/vdms/resources/policy/BM-15C-0003.xml").parse();
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder documentBuilder;
 		try {
 			documentBuilder = factory.newDocumentBuilder();
 			
-			Path policyPath = Paths.get("e:/projects/str/workspace/MainEventFlow/src/main/resources/can_policy.xml");
+			Path policyPath = Paths.get("d:/projects/vdms/resources/policy/BM-16L-0030.xml");
 			PolicyParser policyParser =  new PolicyParser(policyPath, documentBuilder);
 			System.out.println("result:" + policyParser.msgFilter.size());
+			policyParser.InitParams(0);
 			
 		}catch(Exception e) {
 			e.printStackTrace();

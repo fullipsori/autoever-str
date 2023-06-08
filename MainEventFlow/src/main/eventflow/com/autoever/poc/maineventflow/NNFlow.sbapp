@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<modify version="11.0.1_9ac66cf38631f8473e37c39091c4b798f01bbf41">
+    <add>
+        <annotations>
+            <annotation name="hygienic"/>
+        </annotations>
+        <type-metadata>
+            <param name="type" value="module"/>
+            <param name="fully-qualified-name" value="com.autoever.poc.maineventflow.NNFlow"/>
+        </type-metadata>
+        <memory-model-settings/>
+        <parameter-definitions>
+            <parameter default="D:/projects/vdms_env/Scripts/python.exe" name="PYTHON_EXECUTABLE"/>
+            <parameter default="d:/projects/vdms/resources" name="RESOURCE_ROOT"/>
+            <parameter default="lv://localhost:11080" name="LV_SERVER_URI"/>
+        </parameter-definitions>
+        <dynamic-variables/>
+        <stream name="ControlInstance">
+            <schema>
+                <field name="command" type="string"/>
+            </schema>
+        </stream>
+        <stream name="ControlStream">
+            <schema>
+                <field name="command" type="string"/>
+                <field name="modelFolder" type="string"/>
+            </schema>
+        </stream>
+        <box name="InputAdapter" type="inputadapter">
+            <output port="1" stream="out:InputAdapter_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.once.Once"/>
+            <param name="OutputField" value="time"/>
+        </box>
+        <box name="LoadModel2" type="map">
+            <input port="1" stream="out:InputAdapter_1"/>
+            <output port="1" stream="out:LoadModel2_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="inputVars.modelFolder">"${RESOURCE_ROOT}/NE_LSTM_AE_V8"</include>
+                    <include field="inputVars.command">"Load"</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="nn_instance" type="java">
+            <input port="1" stream="ControlInstance"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.python.PythonInstanceAdapter"/>
+            <param name="CaptureOutput" value="false"/>
+            <param name="EnableControlPort" value="true"/>
+            <param name="Executable" value="${PYTHON_EXECUTABLE}"/>
+            <param name="GlobalInstanceId" value=""/>
+            <param name="InstanceType" value="Local"/>
+            <param name="LogLevel" value="INFO"/>
+            <param name="UseTempFile" value="false"/>
+            <param name="WorkingDir" value="."/>
+        </box>
+        <box name="ReloadModel" type="map">
+            <input port="1" stream="ControlStream"/>
+            <output port="1" stream="out:ReloadModel_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="inputVars.command">command</include>
+                    <include field="inputVars.modelFolder">if(isempty(modelFolder) || isempty(trim(modelFolder))) then "${RESOURCE_ROOT}/NE_LSTM_AE_V8" else trim(modelFolder)</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Union" type="union">
+            <input port="1" stream="out:ReloadModel_1"/>
+            <input port="2" stream="out:LoadModel2_1"/>
+            <output port="1" stream="out:Union_1"/>
+            <param name="strict" value="false"/>
+        </box>
+        <box name="LoadModel" type="java">
+            <input port="1" stream="out:Union_1"/>
+            <output port="1" stream="out:LoadModel_1"/>
+            <error stream="ErrorOutputStream"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.python.PythonAdapter"/>
+            <param name="Asynchronous" value="false"/>
+            <param name="GlobalInstanceId" value=""/>
+            <param name="InstanceType" value="Local"/>
+            <param name="LocalInstanceId" value="nn_instance"/>
+            <param name="LogLevel" value="INFO"/>
+            <param name="OutputVarsSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema/&gt;&#13;&#10;"/>
+            <param name="Script" value="import tensorflow as tf&#13;&#10;&#13;&#10;COMMAND = command&#13;&#10;MODEL_PATH = modelFolder&#13;&#10;KERAS_MODEL = None&#13;&#10;&#13;&#10;if COMMAND.upper() == 'LOAD' or COMMAND.upper() == 'RELOAD':&#13;&#10;    imported_model = tf.keras.models.load_model(MODEL_PATH)&#13;&#10;    KERAS_MODEL = imported_model&#13;&#10;    # KERAS_MODEL.summary()&#13;&#10;"/>
+            <param name="ScriptFile" value=""/>
+            <param name="ScriptSource" value="Script text"/>
+            <param name="amsRequiredOnStartup" value="false"/>
+            <param name="artifactName" value=""/>
+            <param name="artifactVersion" value=""/>
+            <param name="enableControlPort" value="false"/>
+        </box>
+        <error-output-stream name="ErrorOutputStream"/>
+    </add>
+</modify>

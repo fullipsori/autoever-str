@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?><application-layout>
+    <component name="ControlFilterMessage">
+        <param name="gui:x" value="-1478"/>
+        <param name="gui:y" value="219"/>
+    </component>
+    <component name="FullControl">
+        <param name="gui:x" value="438"/>
+        <param name="gui:y" value="271"/>
+    </component>
+    <component name="KafkaConsumerControl">
+        <param name="gui:x" value="-1178"/>
+        <param name="gui:y" value="482"/>
+    </component>
+    <component name="ReloadMetaStream">
+        <param name="gui:x" value="-1347"/>
+        <param name="gui:y" value="766"/>
+    </component>
+    <component name="MGMTQueryTable">
+        <param name="gui:x" value="-334"/>
+        <param name="gui:y" value="460"/>
+        <param name="gui:width" value="80"/>
+        <param name="gui:height" value="56"/>
+    </component>
+    <component name="AddUrl">
+        <param name="gui:x" value="438"/>
+        <param name="gui:y" value="365"/>
+        <param name="gui:bends:1" value="425,480;436,392"/>
+    </component>
+    <component name="CheckCCP">
+        <param name="gui:x" value="-59"/>
+        <param name="gui:y" value="776"/>
+        <param name="gui:bends:1" value="-107,722;-87,806"/>
+    </component>
+    <component name="CheckCan">
+        <param name="gui:x" value="-59"/>
+        <param name="gui:y" value="682"/>
+    </component>
+    <component name="CheckMgmtNO">
+        <param name="gui:x" value="236"/>
+        <param name="gui:y" value="460"/>
+    </component>
+    <component name="CreateTime">
+        <param name="gui:x" value="-1066"/>
+        <param name="gui:y" value="482"/>
+    </component>
+    <component name="DefaultGroup">
+        <param name="gui:x" value="-855"/>
+        <param name="gui:y" value="524"/>
+        <param name="gui:bends:1" value="-890,552;-890,553"/>
+    </component>
+    <component name="DefaultValues">
+        <param name="gui:x" value="-1066"/>
+        <param name="gui:y" value="576"/>
+    </component>
+    <component name="Distribute">
+        <param name="gui:x" value="994"/>
+        <param name="gui:y" value="467"/>
+        <param name="gui:height" value="78"/>
+    </component>
+    <component name="DistributeMessageType">
+        <param name="gui:x" value="-218"/>
+        <param name="gui:y" value="550"/>
+    </component>
+    <component name="FilterMessage">
+        <param name="gui:x" value="-537"/>
+        <param name="gui:y" value="481"/>
+        <param name="gui:height" value="65"/>
+    </component>
+    <component name="InitDataField">
+        <param name="gui:x" value="767"/>
+        <param name="gui:y" value="271"/>
+        <param name="gui:bends:1" value="731,333;737,303"/>
+    </component>
+    <component name="InitializeData">
+        <param name="gui:x" value="-324"/>
+        <param name="gui:y" value="550"/>
+    </component>
+    <component name="InputAdapter">
+        <param name="gui:x" value="-752"/>
+        <param name="gui:y" value="524"/>
+    </component>
+    <component name="InsertMGMT">
+        <param name="gui:x" value="-767"/>
+        <param name="gui:y" value="350"/>
+    </component>
+    <component name="LoadHCP">
+        <param name="gui:x" value="640"/>
+        <param name="gui:y" value="313"/>
+    </component>
+    <component name="LoadMGMT">
+        <param name="gui:x" value="-880"/>
+        <param name="gui:y" value="350"/>
+    </component>
+    <component name="LoadMeta">
+        <param name="gui:x" value="-870"/>
+        <param name="gui:y" value="672"/>
+        <param name="gui:bends:1" value="-1277,592;-1258,702"/>
+    </component>
+    <component name="Map">
+        <param name="gui:x" value="605"/>
+        <param name="gui:y" value="554"/>
+        <param name="gui:bends:1" value="413,500;433,584"/>
+    </component>
+    <component name="MapForCCP">
+        <param name="gui:x" value="40"/>
+        <param name="gui:y" value="776"/>
+    </component>
+    <component name="MapForCan">
+        <param name="gui:x" value="40"/>
+        <param name="gui:y" value="682"/>
+    </component>
+    <component name="NotNull">
+        <param name="gui:x" value="-636"/>
+        <param name="gui:y" value="483"/>
+        <param name="gui:bends:1" value="-682,544;-676,514"/>
+    </component>
+    <component name="PolicyMap">
+        <param name="gui:x" value="-324"/>
+        <param name="gui:y" value="682"/>
+    </component>
+    <component name="Query2Mgmt">
+        <param name="gui:x" value="40"/>
+        <param name="gui:y" value="460"/>
+    </component>
+    <component name="QueryUnion">
+        <param name="gui:x" value="152"/>
+        <param name="gui:y" value="460"/>
+    </component>
+    <component name="ReloadMeta">
+        <param name="gui:x" value="-870"/>
+        <param name="gui:y" value="766"/>
+    </component>
+    <component name="RunMode">
+        <param name="gui:x" value="328"/>
+        <param name="gui:y" value="460"/>
+    </component>
+    <component name="SetMGMT">
+        <param name="gui:x" value="-977"/>
+        <param name="gui:y" value="350"/>
+        <param name="gui:bends:1" value="-1237,580;-1187,380"/>
+    </component>
+    <component name="Split">
+        <param name="gui:x" value="-218"/>
+        <param name="gui:y" value="682"/>
+    </component>
+    <component name="Start">
+        <param name="gui:x" value="-1478"/>
+        <param name="gui:y" value="563"/>
+    </component>
+    <component name="StartSplit">
+        <param name="gui:x" value="-1347"/>
+        <param name="gui:y" value="560"/>
+        <param name="gui:height" value="65"/>
+        <param name="gui:bends:1" value="-1389,593;-1389,592"/>
+    </component>
+    <component name="Union">
+        <param name="gui:x" value="543"/>
+        <param name="gui:y" value="313"/>
+        <param name="gui:bends:1" value="520,303;526,333"/>
+        <param name="gui:bends:2" value="510,392;515,352"/>
+    </component>
+    <component name="Union2">
+        <param name="gui:x" value="-954"/>
+        <param name="gui:y" value="521"/>
+        <param name="gui:height" value="65"/>
+        <param name="gui:bends:1" value="-994,513;-988,541"/>
+        <param name="gui:bends:2" value="-982,603;-974,565"/>
+    </component>
+    <component name="Union3">
+        <param name="gui:x" value="914"/>
+        <param name="gui:y" value="476"/>
+        <param name="gui:bends:1" value="822,303;848,496"/>
+        <param name="gui:bends:2" value="829,584;845,516"/>
+    </component>
+    <component name="Union4">
+        <param name="gui:x" value="-425"/>
+        <param name="gui:y" value="682"/>
+        <param name="gui:bends:2" value="-572,796;-554,722"/>
+    </component>
+    <component name="Union5">
+        <param name="gui:x" value="-59"/>
+        <param name="gui:y" value="460"/>
+        <param name="gui:bends:1" value="-108,570;-86,480"/>
+        <param name="gui:bends:2" value="-142,580;-120,490"/>
+        <param name="gui:bends:3" value="-95,590;-73,500"/>
+    </component>
+    <component name="UnionFilter">
+        <param name="gui:x" value="-425"/>
+        <param name="gui:y" value="548"/>
+        <param name="gui:height" value="65"/>
+        <param name="gui:bends:1" value="-496,503;-485,568"/>
+        <param name="gui:bends:2" value="-488,510;-472,576"/>
+        <param name="gui:bends:3" value="-475,518;-459,584"/>
+        <param name="gui:bends:4" value="-462,527;-446,593"/>
+    </component>
+    <component name="assignNewFilterMessage">
+        <param name="gui:x" value="-1347"/>
+        <param name="gui:y" value="219"/>
+    </component>
+    <component name="subscribeToKafka">
+        <param name="gui:x" value="-1178"/>
+        <param name="gui:y" value="576"/>
+        <param name="gui:bends:1" value="-1225,605;-1225,603"/>
+    </component>
+    <component name="CCPControlOutputStream">
+        <param name="gui:x" value="152"/>
+        <param name="gui:y" value="776"/>
+    </component>
+    <component name="CCPStream">
+        <param name="gui:x" value="1129"/>
+        <param name="gui:y" value="570"/>
+        <param name="gui:bends:1" value="1091,515;1111,600"/>
+    </component>
+    <component name="CanPolicyOutputStream">
+        <param name="gui:x" value="152"/>
+        <param name="gui:y" value="682"/>
+    </component>
+    <component name="DIAGStream">
+        <param name="gui:x" value="1129"/>
+        <param name="gui:y" value="382"/>
+        <param name="gui:bends:1" value="1104,496;1119,412"/>
+    </component>
+    <component name="GPSStream">
+        <param name="gui:x" value="1129"/>
+        <param name="gui:y" value="476"/>
+    </component>
+    <component name="KafkaStatus">
+        <param name="gui:x" value="-636"/>
+        <param name="gui:y" value="577"/>
+        <param name="gui:bends:1" value="-697,563;-687,604"/>
+    </component>
+    <component name="OtherStream">
+        <param name="gui:x" value="1129"/>
+        <param name="gui:y" value="664"/>
+        <param name="gui:bends:1" value="1067,525;1109,694"/>
+    </component>
+    <component name="OutputNewFilterMessage">
+        <param name="gui:x" value="-870"/>
+        <param name="gui:y" value="219"/>
+    </component>
+    <component name="OutputStream">
+        <param name="gui:x" value="1129"/>
+        <param name="gui:y" value="288"/>
+        <param name="gui:bends:1" value="1064,487;1096,318"/>
+    </component>
+    <component name="Status">
+        <param name="gui:x" value="767"/>
+        <param name="gui:y" value="365"/>
+        <param name="gui:bends:1" value="716,352;726,392"/>
+    </component>
+    <component name="UnsupportedMode">
+        <param name="gui:x" value="605"/>
+        <param name="gui:y" value="460"/>
+    </component>
+    <component name="UpdatePolicyOutputStream">
+        <param name="gui:x" value="-59"/>
+        <param name="gui:y" value="588"/>
+        <param name="gui:bends:1" value="-120,702;-100,618"/>
+    </component>
+    <component name="Group_Load_HCPMessage">
+        <param name="gui:x" value="437"/>
+        <param name="gui:y" value="251"/>
+        <param name="gui:width" value="395"/>
+        <param name="gui:height" value="194"/>
+    </component>
+    <component name="Group_Load_MGMT">
+        <param name="gui:x" value="-978"/>
+        <param name="gui:y" value="313"/>
+        <param name="gui:width" value="275"/>
+        <param name="gui:height" value="117"/>
+    </component>
+    <component name="Group__kafka">
+        <param name="gui:x" value="-1211"/>
+        <param name="gui:y" value="460"/>
+        <param name="gui:width" value="741"/>
+        <param name="gui:height" value="197"/>
+    </component>
+    <gui.group color="128,255,255" name="Group_Load_HCPMessage" visual-state="open">
+        <member name="AddUrl"/>
+        <member name="Union"/>
+        <member name="Status"/>
+        <member name="InitDataField"/>
+        <member name="FullControl"/>
+        <member name="LoadHCP"/>
+        <param name="gui:x" value="437"/>
+        <param name="gui:y" value="251"/>
+        <param name="gui:width" value="395"/>
+        <param name="gui:height" value="194"/>
+    </gui.group>
+    <gui.group color="180,204,205" name="Group_Load_MGMT" visual-state="open">
+        <member name="InsertMGMT"/>
+        <member name="SetMGMT"/>
+        <member name="LoadMGMT"/>
+        <param name="gui:x" value="-978"/>
+        <param name="gui:y" value="313"/>
+        <param name="gui:width" value="275"/>
+        <param name="gui:height" value="117"/>
+    </gui.group>
+    <gui.group color="220,239,236" name="Group__kafka" visual-state="open">
+        <member name="DefaultGroup"/>
+        <member name="DefaultValues"/>
+        <member name="KafkaStatus"/>
+        <member name="InputAdapter"/>
+        <member name="KafkaConsumerControl"/>
+        <member name="CreateTime"/>
+        <member name="NotNull"/>
+        <member name="Union2"/>
+        <member name="subscribeToKafka"/>
+        <member name="FilterMessage"/>
+        <param name="gui:x" value="-1211"/>
+        <param name="gui:y" value="460"/>
+        <param name="gui:width" value="741"/>
+        <param name="gui:height" value="197"/>
+    </gui.group>
+</application-layout>

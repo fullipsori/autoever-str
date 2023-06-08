@@ -1,13 +1,11 @@
 package com.autoever.poc.parser.can;
 
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 
 import org.w3c.dom.Element;
@@ -15,11 +13,12 @@ import org.w3c.dom.NodeList;
 
 import com.autoever.poc.common.StringUtils;
 import com.autoever.poc.parser.Parseable;
+import com.streambase.sb.Tuple;
+import com.streambase.sb.util.Base64;
 
 public class TriggerParser {
 
-	public boolean status = false;
-	public BiFunction<TriggerParser,List<String>, Object> callback = null;
+	public Evaluable callback = null;
 	public List<Object> returnVal = new ArrayList<>();
 
 	public Integer ch;
@@ -40,18 +39,35 @@ public class TriggerParser {
 	public double conditionvalue;
 	public double conditionduration;
 
-	/* parse */
-	public long time;
+	public EventCallback eventCallback;
+	public boolean dmFlag = false;
+	public int tpdtID = 0;
+	public String lamp = "";
+
+	public Element mNode;
+	
+	/* following variable can be changed at runtime */
+	public boolean status = false;
+	public double time;
 	public int lastLength = 0;
 
-	public EventCallback eventCallback;
+	// [DataChannel, DeltaTime, MSGInfo, DataID, DLC, data[10:10 + dlc_Size[DLC]], temp, self.BaseTime, self.VehicleKey]
+	// temp = dlcsize + data[10:10+dlcSize[DLC]]
 
-	private Element mNode;
-	
+	public Double lastvalue = null;
+	public double conditionTime = 0.0;
 
-	public TriggerParser(Element node, EventCallback cb) {
+	// [DataChannel, DeltaTime, MSGInfo, DataID, DLC, data[10:10 + dlc_Size[DLC]], temp, self.BaseTime, self.VehicleKey]
+	// temp = dlcsize + data[10:10+dlcSize[DLC]]
+
+	public int lastDmSize = 0;
+	public int nowDmSize = 0;
+	public byte[] dm1Data;
+	public byte[] lastDm1=null;
+
+	public TriggerParser(Element node, EventCallback parent) {
 		this.mNode = node;
-		this.eventCallback = cb;
+		this.eventCallback = parent;
 		
 		status = false;
 		callback = null;
@@ -61,15 +77,14 @@ public class TriggerParser {
 		Optional<Element> msgxml = Parseable.GetElement.apply(nodeList, "Message");
 		msgxml.ifPresent(e -> {
 			ch = Integer.parseInt(e.getAttribute("Channel"));
-			id = Integer.parseInt(e.getAttribute("ID").substring(2/*0x*/), 16);
 			msgType = e.getAttribute("type");
+			if(msgType.equals("E")) {
+				id = (int)Long.parseLong(e.getAttribute("ID").substring(2/*0x*/), 16) & 0x00FFFFFF;
+			}else {
+				id = (int)Long.parseLong(e.getAttribute("ID").substring(2/*0x*/), 16) & 0x7FF;
+			}
 		});
 		
-		if(msgType.equals("E")) {
-			id &= 0x00FFFFFF;
-		}else {
-			id &= 0x7FF;
-		}
 		type = mNode.getAttribute("type");
 		
 		if(type.equals("CAN")) {
@@ -90,14 +105,14 @@ public class TriggerParser {
 				conditionduration = Double.parseDouble(e.getAttribute("duration"));
 			});
 			
-			callback = canParseable;
+			callback = new CanEvaluable(this);
 			returnVal = Arrays.asList(ch,id,callback);
 		}else if(type.equals("UDS")) {
-			callback = udsParseable;
+			callback = new UdsEvaluable(this);
 			lastLength = 0;
 			returnVal = Arrays.asList(ch,id,callback);
 		}else if(type.equals("DM1")) {
-			callback = dmParseable;
+			callback = new Dm1Evaluable(this);
 			lastDmSize = 0;
 			nowDmSize = 0;
 			lastDm1 = null;
@@ -106,11 +121,10 @@ public class TriggerParser {
 			
 			Optional<Element> msgxml2 = Parseable.GetElement.apply(mNode.getChildNodes(), "TPDT");
 			msgxml2.ifPresent(e -> {
-				tpdtID = Integer.parseInt(e.getAttribute("ID").substring(2/*0x*/), 16);
 				if("E".equals(msgType)) {
-					tpdtID &= 0x00FFFFFF;
+					tpdtID = (int)Long.parseLong(e.getAttribute("ID").substring(2/*0x*/), 16) & 0x00FFFFFF;
 				}else {
-					tpdtID &= 0x7FF;
+					tpdtID = (int)Long.parseLong(e.getAttribute("ID").substring(2/*0x*/), 16) & 0x7FF;
 				}
 				lamp = e.getAttribute("Lamp");
 			});
@@ -118,362 +132,42 @@ public class TriggerParser {
 		}
 	}
 
-	// [DataChannel, DeltaTime, MSGInfo, DataID, DLC, data[10:10 + dlc_Size[DLC]], temp, self.BaseTime, self.VehicleKey]
-	// temp = dlcsize + data[10:10+dlcSize[DLC]]
-
-	public Double lastvalue = null;
-	public double conditionTime = 0.0;
-
-	// [DataChannel, DeltaTime, MSGInfo, DataID, DLC, data[10:10 + dlc_Size[DLC]], temp, self.BaseTime, self.VehicleKey]
-	// temp = dlcsize + data[10:10+dlcSize[DLC]]
-
-	public int lastDmSize = 0;
-	public int nowDmSize;
-	public byte[] dm1Data;
-	public boolean dmFlag = false;
-	public int tpdtID = 0;
-	public byte[] lastDm1=null;
-	public String lamp = "";
-
-
-	public static BiFunction<TriggerParser, List<String>, Object> canParseable = (trigger, canmsg) -> {
-		byte[] rawdata = canmsg.get(5).getBytes();
-		
-		trigger.time = Long.parseLong(canmsg.get(1));
-		long baseTime = Long.parseLong(canmsg.get(7));
-		int rawvalue = 0;
-		int startbyte = trigger.sigstartbit >> 3;
-		int lastbyte = (trigger.sigstartbit + trigger.siglength -1) >> 3;
-		
-		ByteBuffer byteBuffer;
-
-		/** fullipsori: java 에서 동작하는지 확인 필요함 **/
-		if("Little".equals(trigger.sigendian)) {
-			
-			for(int i=lastbyte; i > startbyte-1; i--) {
-				rawvalue = rawvalue*256 + rawdata[i];
-			}
-			rawvalue = rawvalue >> (trigger.sigstartbit % 8);
-			/**
-			byteBuffer = ByteBuffer.wrap(rawdata, startbyte, lastbyte-startbyte+1).order(ByteOrder.LITTLE_ENDIAN);
-			rawvalue = byteBuffer.getInt();
-			rawvalue = rawvalue>> (trigger.sigstartbit % 8);
-			**/
-		}else {
-			
-			for(int i=startbyte; i<lastbyte+1; i++) {
-				rawvalue = rawvalue * 256 + rawdata[i];
-			}
-			rawvalue = rawvalue >> ((8000 - trigger.sigstartbit - trigger.siglength) % 8);
-			/**
-			byteBuffer = ByteBuffer.wrap(rawdata, startbyte, lastbyte-startbyte+1).order(ByteOrder.BIG_ENDIAN);
-			rawvalue = byteBuffer.getInt();
-			rawvalue = rawvalue>> ((8000 - trigger.sigstartbit - trigger.siglength) % 8);
-			**/
-		}
-		/*
-		rawvalue = rawvalue & ((int)Math.pow(2,trigger.siglength) -1);
-		if("signed".equals(trigger.sigtype)) {
-			if((rawvalue & (1<<(trigger.siglength-1))) != 0) {
-				rawvalue = (-(((~rawvalue) & ((int)Math.pow(2, trigger.siglength) -1)) + 1));
-			}
-		}
-		*/
-		rawvalue = rawvalue & (((int)1<< trigger.siglength) - 1);
-		if("signed".equals(trigger.sigtype)) {
-			if((rawvalue & (((int)1)<<(trigger.siglength - 1))) != 0)
-				rawvalue = (-(((~rawvalue) & ((((int)1)<<trigger.siglength) - 1)) + 1));
-		}
-
-		double value = rawvalue * trigger.sigfactor + trigger.sigoffset;
-
-		boolean rvalue = false;
-		switch(trigger.conditionformula) {
-			case "GE": {
-				if(value >= trigger.conditionvalue)
-					rvalue = true;
-				break;
-			}
-			case "GT": {
-				if(value > trigger.conditionvalue)
-					rvalue = true;
-				break;
-			}
-			case "LE": {
-				if(value <= trigger.conditionvalue)
-					rvalue = true;
-				break;
-			}
-			case "LT": {
-				if(value < trigger.conditionvalue)
-					rvalue = true;
-				break;
-			}
-			case "EQ": {
-				if(value == trigger.conditionvalue)
-					rvalue = true;
-				break;
-			}
-			case "NEQ": {
-				if(value != trigger.conditionvalue)
-					rvalue = true;
-				break;
-			}
-			case "DIFF": {
-				if(trigger.lastvalue == null) {
-					trigger.lastvalue = value;
-				}else if(value != trigger.lastvalue) {
-					trigger.status = true;
-					trigger.lastvalue = value;
-					return trigger.eventCallback.OnCalled(trigger.time, true);
-				}
-				return null;
-			}
-		}
-		
-		if(trigger.status != rvalue) {
-			if(trigger.conditionTime + trigger.conditionduration <= trigger.time + baseTime) {
-				trigger.status = rvalue;
-				trigger.conditionTime = trigger.time + baseTime;
-				if(!"DIFF".equals(trigger.conditionformula)) {
-					//fullipsori check second parm (trigger.time)
-					return trigger.eventCallback.OnCalled(trigger.time, false);
-				}
-			}
-		}else {
-			trigger.status = rvalue;
-			if(trigger.conditionTime == 0) {
-				trigger.conditionTime = trigger.time + baseTime;
-				if(!"DIFF".equals(trigger.conditionformula)) {
-					return trigger.eventCallback.OnCalled(trigger.time, false);
-				}
-			}
-		}
-
+	public EventParser getEventParser() {
+		if((eventCallback) != null && eventCallback instanceof EventParser)
+			return (EventParser)eventCallback;
 		return null;
-	};
-	
-	public static BiFunction<TriggerParser, List<String>, Object> dmParseable = (trigger, dm1msg) -> {
-		byte[] rawdata = dm1msg.get(5).getBytes(); //fullipsori "ISO8859-1"
-		trigger.time = Long.parseLong(dm1msg.get(1));
-
-		if(trigger.id == (Integer.parseInt(dm1msg.get(3)) & 0x00FFFFFF)) {
-			if(rawdata[5] == 0xCA && rawdata[6] == 0xFE) {
-				trigger.nowDmSize = (rawdata[2] & 0xF) * 256 + rawdata[1];
-				trigger.dm1Data = rawdata;
-			}else {
-				trigger.dm1Data = null;
-			}
-		}else if(trigger.tpdtID == (Integer.parseInt(dm1msg.get(3)) & 0x00FFFFFF) && trigger.lamp.equals("False")) {
-			if(trigger.dm1Data != null && rawdata[0] == 1) {
-				if(trigger.lastDmSize == 0) {
-					trigger.lastDmSize = trigger.nowDmSize;
-				}else {
-					if(trigger.nowDmSize != trigger.lastDmSize) {
-						trigger.status = true;
-						trigger.lastDmSize = trigger.nowDmSize;
-						trigger.lastDm1 = StringUtils.mergeByteArray(Arrays.copyOfRange(rawdata, 3, 6), Arrays.copyOfRange(rawdata, 7, rawdata.length));
-						trigger.dm1Data = null;
-						return trigger.eventCallback.OnCalled(trigger.time, true);
-					}
-				}
-				
-				if(trigger.lastDm1 == null) {
-					trigger.status = true;
-					trigger.lastDm1 = StringUtils.mergeByteArray(Arrays.copyOfRange(rawdata, 3, 6), Arrays.copyOfRange(rawdata, 7, rawdata.length));
-					trigger.dm1Data = null;
-					return trigger.eventCallback.OnCalled(trigger.time, true);
-				}else {
-					if(Arrays.equals(trigger.lastDm1, StringUtils.mergeByteArray(Arrays.copyOfRange(rawdata, 3, 6), Arrays.copyOfRange(rawdata, 7, rawdata.length)))) {
-						trigger.status = true;
-						trigger.lastDm1 = StringUtils.mergeByteArray(Arrays.copyOfRange(rawdata, 3, 6), Arrays.copyOfRange(rawdata, 7, rawdata.length));
-						trigger.dm1Data = null;
-						return trigger.eventCallback.OnCalled(trigger.time, true);
-					}
-				}
-			}
-		}else if(trigger.tpdtID == (Integer.parseInt(dm1msg.get(3)) & 0x00FFFFFF) && "AWL".equals(trigger.lamp)) {
-			if(trigger.dm1Data != null && rawdata[0] == 1) {
-				boolean rvalue = false;
-				//fullipsori bit 확인
-				int awlStatus = (rawdata[1] & 0B00001100) >> 2;
-				if(awlStatus == 1) {
-					rvalue = true;
-				}
-				trigger.status = rvalue;
-				return trigger.eventCallback.OnCalled(trigger.time, false);
-			}
-		}else if(trigger.tpdtID == (Integer.parseInt(dm1msg.get(3)) & 0x00FFFFFF) && "RSL".equals(trigger.lamp)) {
-			if(trigger.dm1Data != null && rawdata[0] == 1) {
-				boolean rvalue = false;
-				int awlStatus = (rawdata[1] & 0B00110000) >> 4;
-				if(awlStatus == 1) {
-					rvalue = true;
-				}
-				trigger.status = rvalue;
-				return trigger.eventCallback.OnCalled(trigger.time, false);
-			}
-		}
-		return null;
-	};
-
-	public static BiFunction<TriggerParser, List<String>, Object> udsParseable = (trigger, udsmsg) -> {
-		byte[] rawdata = udsmsg.get(5).getBytes(); //fullipsori "ISO8859-1"
-		
-		trigger.time = Long.parseLong(udsmsg.get(1));
-		int frameType = ((int)rawdata[0]) >> 4;;
-		int length;
-		
-		if(frameType == 0) {
-			length = rawdata[0] & 0xF;
-			if(rawdata[1] == 0x59 || rawdata[1] == 0x58) {
-				if(trigger.lastLength == 0) {
-					trigger.lastLength = length;
-					if(length > 3) {
-						trigger.status = true;
-						return trigger.eventCallback.OnCalled(trigger.time, true);
-					}
-				}else {
-					if(trigger.lastLength != length && length > 3) {
-						trigger.status = true;
-						trigger.lastLength = length;
-						return trigger.eventCallback.OnCalled(trigger.time, true);
-					}else if(trigger.lastLength != length && length <= 3) {
-						trigger.status = false;
-						trigger.lastLength = length;
-						return trigger.eventCallback.OnCalled(trigger.time, true);
-					}
-				}
-			}
-		}else if(frameType == 1) {
-			length = (rawdata[0] & 0xF) * 256 + rawdata[1];
-			if(rawdata[2] == 0x59 || rawdata[2] == 0x58) {
-				if(trigger.lastLength != length) {
-					trigger.status = true;
-					trigger.lastLength = length;
-					return trigger.eventCallback.OnCalled(trigger.time, true);
-				}
-			}
-		}
-
-		return null; //check null or False
-	};
-	
-	public static void  endian(String sigendian, byte[] rawdata, String sigtype, int sigstartbit, int siglength) {
-
-		int startbyte = sigstartbit >> 3;
-		int lastbyte = (sigstartbit + siglength -1) >> 3;
-		int lengthbyte = lastbyte - startbyte + 1;
-		int sigendbit = (sigstartbit+siglength)%8;
-		int finallength = siglength / 8 + ((siglength % 8) == 0? 0 : 1);
-		
-		BigInteger bigInt = new BigInteger(Arrays.copyOfRange(rawdata, startbyte, lastbyte+1));
-		byte[] shifted_1 = bigInt.shiftRight( (8 - sigendbit)%8 ).shiftLeft((8 - sigendbit)%8).toByteArray();
-		IntStream.range(0, shifted_1.length).forEach(i -> System.out.printf("0x%x ", shifted_1[i]));
-		System.out.println("\n");
-
-		byte[] shifted = bigInt.shiftLeft( sigstartbit%8 ).toByteArray();
-		IntStream.range(0, shifted.length).forEach(i -> System.out.printf("0x%x ", shifted[i]));
-		System.out.println("\n");
-		
-		ByteBuffer byteBuffer = ByteBuffer.allocate(4).clear();
-		int x_startbyte = ("Little".equals(sigendian))? 0 : 4-finallength;
-		IntStream.range(0, finallength).forEach(i-> byteBuffer.put(x_startbyte+i, shifted[i]));
-		byteBuffer.rewind();
-		
-		System.out.println("");
-		int rawvalue = 0;
-		if("Little".equals(sigendian)) {
-			rawvalue = byteBuffer.order(ByteOrder.LITTLE_ENDIAN).getInt();
-			System.out.printf("0x%x", rawvalue);
-		}else {
-			rawvalue = byteBuffer.order(ByteOrder.BIG_ENDIAN).getInt();
-			System.out.printf("0x%x", rawvalue);
-		}
-	
-		if("signed".equals(sigtype)) {
-			if((rawvalue & (((int)1)<<(siglength - 1))) != 0)
-				rawvalue = (-(((~rawvalue) & ((((int)1)<<siglength) - 1)) + 1));
-		}
-		
-		System.out.printf("\nendian: %s==>%d, 0x%x", sigendian, rawvalue, rawvalue);
 	}
 
-	//fullipsori
-	public static void  endian2(String sigendian, byte[] rawdata, String sigtype, int sigstartbit, int siglength) {
+	public void initData() {
+		status = false;
 
-		int startbyte = sigstartbit >> 3;
-		int lastbyte = (sigstartbit + siglength -1) >> 3;
-		int lengthbyte = lastbyte - startbyte + 1;
-		
-		int sigendbit = (sigstartbit+siglength)%8;
-		int finallength = siglength / 8 + ((siglength % 8) == 0? 0 : 1);
-		
-		/** second **/
-		long rawvalue = 0;
-		for(int i=startbyte; i<=lastbyte; i++) {
-			if(i==startbyte) {
-				rawvalue += (0xFFFFFFFF & ((rawdata[i] << (sigstartbit%8))>>(sigstartbit%8))) << 8*(lastbyte-i);
-			}
-			if(i==lastbyte) {
-				rawvalue += (0xFFFFFFFF & (rawdata[i] >> sigendbit)) << sigendbit;
-			}
-			if(i != startbyte && i != lastbyte)
-			{
-				rawvalue += (0xFFFFFFFF & rawdata[i]) << 8*(lastbyte-i);
-			}
-		}
-		
-		rawvalue <<= (sigstartbit%8);
-		int shiftright = lengthbyte - finallength;
-		rawvalue >>= shiftright*8;
+		time = 0;
+		lastLength = 0;
+		lastvalue = null;
+		conditionTime = 0.0;
 
-		System.out.printf("rawvalue:0x%x, %d,%d\n", rawvalue, startbyte, lastbyte);
-		
-		ByteBuffer byteBuffer = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt((int)rawvalue).rewind();
-		byte[] shifted = byteBuffer.array();
-		IntStream.range(0, shifted.length).forEach(i -> System.out.printf("0x%x ", shifted[i]));
+		lastDmSize = 0;
+		nowDmSize = 0;
+		dm1Data = null;
+		lastDm1=null;
 
-		ByteBuffer endianBuffer = ByteBuffer.allocate(4).clear().order(ByteOrder.BIG_ENDIAN);
-		int x_startbyte = ("Little".equals(sigendian))? 0 : 4-finallength;
-		IntStream.range(0, finallength).forEach(i-> {
-			System.out.println("\ninsert:" + i  + " " +  (byte)shifted[4-finallength+i]);
-			endianBuffer.put(x_startbyte+i, (byte)shifted[4-finallength+i]);
-		});
-		
-		System.out.println("");
-		int realvalue = 0;
-		if("Little".equals(sigendian)) {
-			realvalue = endianBuffer.order(ByteOrder.LITTLE_ENDIAN).getInt();
-			System.out.printf("0x%x", realvalue);
-		}else {
-			realvalue = endianBuffer.order(ByteOrder.BIG_ENDIAN).getInt();
-			System.out.printf("0x%x", realvalue);
-		}
-		
-		if("signed".equals(sigtype)) {
-			if((realvalue & (((int)1)<<(siglength - 1))) != 0)
-				realvalue = (-(((~realvalue) & ((((int)1)<<siglength) - 1)) + 1));
-		}
-
-		System.out.printf("\nfinal:%d, 0x%x", realvalue, realvalue);
-
+		// initialize Event Node
+		Optional.ofNullable(getEventParser()).ifPresent(EventParser::initData);
 	}
 
-	public static long endian_org(String sigendian, byte[] rawdata, String sigtype, int sigstartbit, int siglength) {
-
+	public static long GetRawValue(String sigendian, byte[] rawdata, String sigtype, int sigstartbit, int siglength) {
 		long rawvalue = 0;
 		int startbyte = sigstartbit >> 3;
 		int lastbyte = (sigstartbit + siglength -1) >> 3;
 		
-		/** fullipsori: java 에서 동작하는지 확인 필요함 **/
-		if("Little".equals(sigendian)) {
+		if("Little".equalsIgnoreCase(sigendian)) {
+			
 			for(int i=lastbyte; i > startbyte-1; i--) {
 				rawvalue = rawvalue*256 + (rawdata[i]&0xff);
 			}
 			rawvalue = rawvalue >> (sigstartbit % 8);
+
 		}else {
-			
 			for(int i=startbyte; i<lastbyte+1; i++) {
 				rawvalue = rawvalue * 256 + (rawdata[i]&0xff);
 			}
@@ -483,13 +177,13 @@ public class TriggerParser {
 		rawvalue = rawvalue & (((long)1<< siglength) - 1);
 		if("signed".equals(sigtype)) {
 			if((rawvalue & (((long)1)<<(siglength - 1))) != 0)
-				rawvalue = (-(((~rawvalue) & ((((long)1)<<siglength) - 1)) + 1));
+				rawvalue = (-(((~rawvalue) & (((long)1)<<siglength - 1)) + 1));
 		}
-		System.out.printf("endian_org:%s,%s(%d=0x%x)" , sigendian, sigtype, rawvalue, rawvalue);
+
 		return rawvalue;
 	}
 
-	public static void  endian3(String sigendian, byte[] rawdata, String sigtype, int sigstartbit, int siglength) {
+	public static int GetValue(String sigendian, byte[] rawdata, String sigtype, int sigstartbit, int siglength) {
 
 		int realLength = siglength / 8 + ((siglength % 8) == 0? 0 : 1);
 		int rawvalue = 0;
@@ -501,7 +195,6 @@ public class TriggerParser {
 			rawvalue |= ((((byte)((0x1 << bitshift) & rawdata[byteIndex]) & (byte)0xff) == 0x00)? 0x00 : 0x01) << i;
 		}
 
-		System.out.printf("0x%x\n", rawvalue);
 		ByteBuffer byteBuffer = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt((int)rawvalue).rewind();
 		byte[] rawbytes = byteBuffer.array();
 
@@ -523,15 +216,228 @@ public class TriggerParser {
 				realvalue = (-(((~realvalue) & ((((int)1)<<siglength) - 1)) + 1));
 		}
 
-		System.out.printf("endian3=>%s,%s(%d=0x%x)" , sigendian, sigtype, realvalue, realvalue);
-
+//		System.out.printf("\nfinal:sigendian(%s), rawdata[%s],sigtype(%s), start(%d), length(%d),  %d, 0x%x", 
+//				sigendian, StringUtils.convertbytesToHex(rawdata, 0, rawdata.length), sigtype, sigstartbit, siglength, realvalue, realvalue);
+		return realvalue;
 	}
+
+				
+	@SuppressWarnings("unused")
+	public static Object EvalCAN(TriggerParser trigger, Tuple canmsg) {
+		try {
+			byte[] rawdata = Base64.decode(canmsg.getString("DATA"));
+			long baseTime = canmsg.getLong("BaseTime");
+			long rawvalue = 0;
+			int startbyte = trigger.sigstartbit >> 3;
+			int lastbyte = (trigger.sigstartbit + trigger.siglength -1) >> 3;
+			
+			trigger.time = canmsg.getDouble("DeltaTime");
+
+			rawvalue = GetRawValue(trigger.sigendian, rawdata, trigger.sigtype, trigger.sigstartbit, trigger.siglength); 
+
+			/**
+			int rawvalue2 = GetValue(trigger.sigendian, rawdata, trigger.sigtype, trigger.sigstartbit, trigger.siglength);
+			System.out.printf("\nfinal:rawvalue(%d)!=rawvalue(%d)    sigendian(%s), rawdata[%s],sigtype(%s), start(%d), length(%d)", rawvalue, rawvalue2,
+				trigger.sigendian, StringUtils.convertbytesToHex(rawdata, 0, rawdata.length), trigger.sigtype, trigger.sigstartbit, trigger.siglength);
+			 * 
+			 */
+
+			double value = rawvalue * trigger.sigfactor + trigger.sigoffset;
+			boolean rvalue = false;
+
+			switch(trigger.conditionformula) {
+				case "GE": {
+					if(value >= trigger.conditionvalue)
+						rvalue = true;
+					break;
+				}
+				case "GT": {
+					if(value > trigger.conditionvalue)
+						rvalue = true;
+					break;
+				}
+				case "LE": {
+					if(value <= trigger.conditionvalue)
+						rvalue = true;
+					break;
+				}
+				case "LT": {
+					if(value < trigger.conditionvalue)
+						rvalue = true;
+					break;
+				}
+				case "EQ": {
+					if(value == trigger.conditionvalue) 
+						rvalue = true;
+					break;
+				}
+				case "NEQ": {
+					if(value != trigger.conditionvalue)
+						rvalue = true;
+					break;
+				}
+				case "DIFF": {
+					if(trigger.lastvalue == null) {
+						trigger.lastvalue = value;
+					}else if(value != trigger.lastvalue) {
+						trigger.status = true;
+						trigger.lastvalue = value;
+						return trigger.eventCallback.OnCalled(trigger.time, true, String.valueOf(value));
+					}
+					return trigger.eventCallback.OnCalled(trigger.time, null, String.valueOf(value));
+				}
+			}
+			
+			if(trigger.status != rvalue) {
+				if(trigger.conditionTime + trigger.conditionduration <= trigger.time + baseTime) {
+					trigger.status = rvalue;
+					trigger.conditionTime = trigger.time + baseTime;
+					if(!"DIFF".equals(trigger.conditionformula)) {
+						//fullipsori check second parm (trigger.time)
+						return trigger.eventCallback.OnCalled(trigger.time, false, String.valueOf(value));
+					}
+				}
+			}else {
+				trigger.status = rvalue;
+				if(trigger.conditionTime == 0) {
+					trigger.conditionTime = trigger.time + baseTime;
+					if(!"DIFF".equals(trigger.conditionformula)) {
+						return trigger.eventCallback.OnCalled(trigger.time, false, String.valueOf(value));
+					}
+				}
+			}
+			return trigger.eventCallback.OnCalled(trigger.time, null, String.valueOf(value));
+
+		} catch (Exception e) {
+			System.out.println("Exception:" + e.getMessage());
+			return null;
+		}
+	}
+	
+	public static Object EvalDM1(TriggerParser trigger, Tuple dm1msg) {
+		try {
+			byte[] rawdata = Base64.decode(dm1msg.getString("DATA"));
+			int dataID= dm1msg.getInt("DataID");
+			trigger.time = dm1msg.getDouble("DeltaTime");
+			
+			if(trigger.id == (dataID & 0x00FFFFFF)) {
+				if(rawdata[5] == (byte)0xCA && rawdata[6] == (byte)0xFE) {
+					trigger.nowDmSize = (rawdata[2] & (byte)0xF) * 256 + (rawdata[1]&0xff);
+					trigger.dm1Data = rawdata;
+				}else {
+					trigger.dm1Data = null;
+				}
+			}else if(trigger.tpdtID == (dataID & 0x00FFFFFF) && trigger.lamp.equals("False")) {
+				if(trigger.dm1Data != null && rawdata[0] == 1) {
+					if(trigger.lastDmSize == 0) {
+						trigger.lastDmSize = trigger.nowDmSize;
+					}else {
+						if(trigger.nowDmSize != trigger.lastDmSize) {
+							trigger.status = true;
+							trigger.lastDmSize = trigger.nowDmSize;
+							trigger.lastDm1 = StringUtils.mergeByteArray(Arrays.copyOfRange(rawdata, 3, 6), Arrays.copyOfRange(rawdata, 7, rawdata.length));
+							trigger.dm1Data = null;
+							return trigger.eventCallback.OnCalled(trigger.time, true, null); 
+						}
+					}
+					
+					if(trigger.lastDm1 == null) {
+						trigger.status = true;
+						trigger.lastDm1 = StringUtils.mergeByteArray(Arrays.copyOfRange(rawdata, 3, 6), Arrays.copyOfRange(rawdata, 7, rawdata.length));
+						trigger.dm1Data = null;
+						return trigger.eventCallback.OnCalled(trigger.time, true, null);
+					}else {
+						if(!Arrays.equals(trigger.lastDm1, StringUtils.mergeByteArray(Arrays.copyOfRange(rawdata, 3, 6), Arrays.copyOfRange(rawdata, 7, rawdata.length)))) {
+							trigger.status = true;
+							trigger.lastDm1 = StringUtils.mergeByteArray(Arrays.copyOfRange(rawdata, 3, 6), Arrays.copyOfRange(rawdata, 7, rawdata.length));
+							trigger.dm1Data = null;
+							return trigger.eventCallback.OnCalled(trigger.time, true, null);
+						}
+					}
+				}
+			}else if(trigger.tpdtID == (dataID & 0x00FFFFFF) && "AWL".equals(trigger.lamp)) {
+				if(trigger.dm1Data != null && rawdata[0] == 1) {
+					boolean rvalue = false;
+					int awlStatus = (rawdata[1] & (byte)0B00001100) >> 2;
+					if(awlStatus == 1) {
+						rvalue = true;
+					}
+					trigger.status = rvalue;
+					return trigger.eventCallback.OnCalled(trigger.time, false, null);
+				}
+			}else if(trigger.tpdtID == (dataID & 0x00FFFFFF) && "RSL".equals(trigger.lamp)) {
+				if(trigger.dm1Data != null && (rawdata[0]&0xff) == 1) {
+					boolean rvalue = false;
+					int awlStatus = (rawdata[1] & 0B00110000) >> 4;
+					if(awlStatus == 1) {
+						rvalue = true;
+					}
+					trigger.status = rvalue;
+					return trigger.eventCallback.OnCalled(trigger.time, false, null);
+				}
+			}
+			return trigger.eventCallback.OnCalled(trigger.time, null, null);
+
+		}catch(Exception e) {
+			System.out.println("Exception:" + e.getMessage());
+			return null;
+		}
+	}
+
+	public static Object EvalUDS(TriggerParser trigger, Tuple udsmsg) {
+		try {
+			byte[] rawdata = Base64.decode(udsmsg.getString("DATA"));
+			int frameType = (rawdata[0] & 0xff) >> 4;;
+			int length;
+
+			trigger.time = udsmsg.getDouble("DeltaTime");
+			
+			if(frameType == 0) {
+				length = rawdata[0] & (byte)0xF;
+				if(rawdata[1] == (byte)0x59 || rawdata[1] == (byte)0x58) {
+					if(trigger.lastLength == 0) {
+						trigger.lastLength = length;
+						if(length > 3) {
+							trigger.status = true;
+							return trigger.eventCallback.OnCalled(trigger.time, true, null);
+						}
+					}else {
+						if(trigger.lastLength != length && length > 3) {
+							trigger.status = true;
+							trigger.lastLength = length;
+							return trigger.eventCallback.OnCalled(trigger.time, true, null);
+						}else if(trigger.lastLength != length && length <= 3) {
+							trigger.status = false;
+							trigger.lastLength = length;
+							return trigger.eventCallback.OnCalled(trigger.time, true, null);
+						}
+					}
+				}
+			}else if(frameType == 1) {
+				length = (rawdata[0] & (byte)0xF) * 256 + (rawdata[1] & 0xFF);
+				if(rawdata[2] == (byte)0x59 || rawdata[2] == (byte)0x58) {
+					if(trigger.lastLength != length) {
+						trigger.status = true;
+						trigger.lastLength = length;
+						return trigger.eventCallback.OnCalled(trigger.time, true, null);
+					}
+				}
+			}
+
+			return trigger.eventCallback.OnCalled(trigger.time, null, null);
+
+		}catch(Exception e) {
+			System.out.println("Exception:" + e.getMessage());
+			return null;
+		}
+	}
+	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-
-		byte[] x = {(byte)0xf1, 0x02, 0x04,0x08, 0x10};
-		TriggerParser.endian_org("Little", x, "unsigned", 3, 32);
-		TriggerParser.endian_org("Big", x, "unsigned", 3, 32);
-		System.out.println("\n\n");
+//00ffde6cf9ffffff
+//		byte[] x = {(byte)0xf7,0x00,0x00,0x43,0x53,(byte)0xff,(byte)0xff,(byte)0xfa};
+		byte[] x = {(byte)0x00,(byte)0xff,(byte)0xde,(byte)0x6c,(byte)0xf9,(byte)0xff,(byte)0xff,(byte)0xff};
+		long rawvalue = TriggerParser.GetRawValue("Little", x, "unsigned", 16, 24);
+		System.out.println("rawvalue:" + rawvalue);
 	}
 }

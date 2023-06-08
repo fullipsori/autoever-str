@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><application-layout>
+    <component name="InputStream">
+        <param name="gui:x" value="-490"/>
+        <param name="gui:y" value="82"/>
+    </component>
+    <component name="InputStream2">
+        <param name="gui:x" value="-218"/>
+        <param name="gui:y" value="176"/>
+    </component>
+    <component name="InputStream3">
+        <param name="gui:x" value="-490"/>
+        <param name="gui:y" value="176"/>
+    </component>
+    <component name="InputStream4">
+        <param name="gui:x" value="-490"/>
+        <param name="gui:y" value="270"/>
+    </component>
+    <component name="Aggregate">
+        <param name="gui:x" value="-379"/>
+        <param name="gui:y" value="82"/>
+    </component>
+    <component name="Iterate">
+        <param name="gui:x" value="-298"/>
+        <param name="gui:y" value="82"/>
+    </component>
+    <component name="Join">
+        <param name="gui:x" value="-107"/>
+        <param name="gui:y" value="129"/>
+        <param name="gui:bends:1" value="-148,112;-141,149"/>
+        <param name="gui:bends:2" value="-136,206;-128,169"/>
+    </component>
+    <component name="Map">
+        <param name="gui:x" value="-218"/>
+        <param name="gui:y" value="82"/>
+    </component>
+    <component name="Merge">
+        <param name="gui:x" value="-379"/>
+        <param name="gui:y" value="223"/>
+        <param name="gui:bends:1" value="-420,206;-413,243"/>
+        <param name="gui:bends:2" value="-408,300;-400,263"/>
+    </component>
+    <component name="OutputStream">
+        <param name="gui:x" value="-29"/>
+        <param name="gui:y" value="129"/>
+    </component>
+    <component name="OutputStream2">
+        <param name="gui:x" value="-298"/>
+        <param name="gui:y" value="223"/>
+    </component>
+</application-layout>

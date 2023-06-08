@@ -1,6 +1,8 @@
 package com.autoever.poc.parser.can;
 
+import java.util.List;
+
 @FunctionalInterface
 public interface EventCallback {
-	public Object OnCalled(long time, boolean status);
+	public List<String> OnCalled(double time, Boolean status, String value);
 }

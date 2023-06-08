@@ -12,8 +12,7 @@ import org.w3c.dom.NodeList;
 
 @FunctionalInterface
 public interface Parseable {
-	public void parse();
-
+	void parse();
 	public static BiFunction<NodeList, String, Optional<Element>> GetElement = (nodelist, name) -> IntStream.range(0, nodelist.getLength())
 			.mapToObj(nodelist::item)
 			.filter(n-> n.getNodeType() == Node.ELEMENT_NODE && n.getNodeName().equals(name))
@@ -25,5 +24,4 @@ public interface Parseable {
 			.filter(n-> n.getNodeType() == Node.ELEMENT_NODE && n.getNodeName().equals(name))
 			.map(n -> (Element)n)
 			.collect(Collectors.toList());
-
 }

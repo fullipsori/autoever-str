@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?><application-layout>
+    <component name="ControlStream">
+        <param name="gui:x" value="-362"/>
+        <param name="gui:y" value="-181"/>
+    </component>
+    <component name="InputStream">
+        <param name="gui:x" value="-362"/>
+        <param name="gui:y" value="-275"/>
+    </component>
+    <component name="AggregateData">
+        <param name="gui:x" value="13"/>
+        <param name="gui:y" value="-275"/>
+    </component>
+    <component name="FilterUnused">
+        <param name="gui:x" value="-70"/>
+        <param name="gui:y" value="-275"/>
+    </component>
+    <component name="Organize">
+        <param name="gui:x" value="-147"/>
+        <param name="gui:y" value="-275"/>
+        <param name="gui:bends:1" value="-186,-255;-184,-245"/>
+    </component>
+    <component name="PublishCCP">
+        <param name="gui:x" value="200"/>
+        <param name="gui:y" value="-275"/>
+    </component>
+    <component name="ReduceFilter">
+        <param name="gui:x" value="101"/>
+        <param name="gui:y" value="-275"/>
+    </component>
+    <component name="VDMSRawCCP">
+        <param name="gui:x" value="-262"/>
+        <param name="gui:y" value="-275"/>
+    </component>
+    <component name="StatusOutput">
+        <param name="gui:x" value="-147"/>
+        <param name="gui:y" value="-181"/>
+        <param name="gui:bends:1" value="-182,-235;-162,-151"/>
+    </component>
+    <component name="ccpOutputStream">
+        <param name="gui:x" value="308"/>
+        <param name="gui:y" value="-275"/>
+    </component>
+</application-layout>

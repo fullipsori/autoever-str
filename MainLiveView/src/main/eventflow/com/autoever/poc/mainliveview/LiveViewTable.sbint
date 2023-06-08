@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<application version="11.0.1_9ac66cf38631f8473e37c39091c4b798f01bbf41">
+    <annotations>
+        <annotation name="hygienic"/>
+    </annotations>
+    <type-metadata>
+        <param name="type" value="interface"/>
+        <param name="fully-qualified-name" value="com.autoever.poc.mainliveview.LiveViewTable"/>
+    </type-metadata>
+    <memory-model-settings/>
+    <named-schemas>
+        <schema name="CCPDataTableSchema">
+            <field description="sb 에서 생성한 메세지 ID (vehicleKeyID + timestamp + seq_num)" name="messageID" type="string"/>
+            <field description="단말기 ID (KafkaMessage)" name="terminalID" type="string"/>
+            <field description="차량번호 (KafkaMessage)" name="vehicleKeyID" type="long"/>
+            <field description="차량 관리번호 (연구소 제공 자료)" name="mgmtNO" type="string"/>
+            <field name="recordCount" type="long"/>
+            <field description="주행번호 (KafkaMessage)" name="rootCount" type="int"/>
+            <field description="운행 baseTime (KafkaMessage)" name="baseTime" type="long"/>
+        </schema>
+        <schema name="CanDataTableSchema">
+            <field name="messageID" type="string"/>
+            <field name="terminalID" type="string"/>
+            <field name="vehicleKeyID" type="long"/>
+            <field name="mgmtNO" type="string"/>
+            <field name="rootCount" type="int"/>
+            <field name="baseTime" type="long"/>
+            <field name="realTime" type="long"/>
+            <field name="preTime" type="double"/>
+            <field name="postTime" type="double"/>
+            <field name="deltaTime" type="double"/>
+            <field name="eventName" type="string"/>
+            <field name="value" type="string"/>
+            <field name="category" type="string"/>
+            <field name="status" type="string"/>
+        </schema>
+        <schema name="DiagDTCOutputSchema">
+            <field name="messageID" type="string"/>
+            <field name="terminalID" type="string"/>
+            <field name="vehicleKeyID" type="long"/>
+            <field name="mgmtNO" type="string"/>
+            <field name="rootCount" type="int"/>
+            <field name="baseTime" type="long"/>
+            <field name="realTime" type="long"/>
+            <field name="timestamp" type="double"/>
+            <field name="can_id" type="string"/>
+            <field name="ecu_name" type="string"/>
+            <field name="dtc_code" type="string"/>
+            <field name="dtc_time" type="string"/>
+            <field name="description" type="string"/>
+        </schema>
+        <schema name="DiagDataOutputSchema">
+            <field name="messageID" type="string"/>
+            <field name="terminalID" type="string"/>
+            <field name="vehicleKeyID" type="long"/>
+            <field name="mgmtNO" type="string"/>
+            <field name="rootCount" type="int"/>
+            <field name="baseTime" type="long"/>
+            <field name="realTime" type="long"/>
+            <field name="timestamp" type="double"/>
+            <field name="channel" type="int"/>
+            <field name="can_id" type="string"/>
+            <field name="ecu_name" type="string"/>
+            <field name="Tx_Rx" type="string"/>
+            <field name="data0" type="string"/>
+            <field name="data1" type="string"/>
+            <field name="data2" type="string"/>
+            <field name="data3" type="string"/>
+            <field name="data4" type="string"/>
+            <field name="data5" type="string"/>
+            <field name="data6" type="string"/>
+            <field name="data7" type="string"/>
+            <field name="raw" type="string"/>
+            <field name="dtc_type" type="string"/>
+        </schema>
+        <schema name="GPSDataTableSchema">
+            <field name="messageID" type="string"/>
+            <field name="terminalID" type="string"/>
+            <field name="vehicleKeyID" type="long"/>
+            <field name="mgmtNO" type="string"/>
+            <field name="rootCount" type="int"/>
+            <field name="baseTime" type="long"/>
+            <field name="realTime" type="long"/>
+            <field name="Latitude" type="double"/>
+            <field name="Longitude" type="double"/>
+            <field name="Altitude" type="double"/>
+            <field name="Velocity" type="double"/>
+            <field name="NS" type="string"/>
+            <field name="EW" type="string"/>
+        </schema>
+        <schema name="PerfDataSchema">
+            <field name="kafka_msg_id" type="string"/>
+            <field name="start_time" type="long"/>
+            <field name="t1_time" type="long"/>
+            <field name="t2_time" type="long"/>
+            <field name="t3_time" type="long"/>
+            <field name="t4_time" type="long"/>
+            <field name="t5_time" type="long"/>
+            <field name="end_time" type="long"/>
+            <field name="elapsed" type="long"/>
+            <field name="data_count" type="int"/>
+            <field name="msg_count" type="long"/>
+        </schema>
+    </named-schemas>
+    <dynamic-variables/>
+</application>

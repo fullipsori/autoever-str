@@ -12,6 +12,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.autoever.poc.parser.Parseable;
+import com.streambase.sb.functions.IsEmpty;
 
 public class EventParser implements EventCallback {
 
@@ -24,6 +25,7 @@ public class EventParser implements EventCallback {
 
 	public List<TriggerParser> triggers;
 	public List<Object> msgTable = new ArrayList<Object>();
+
 	public Boolean preTriggerCondition = null;
 
 
@@ -41,12 +43,24 @@ public class EventParser implements EventCallback {
 			.collect(Collectors.toList());
 	}
 
+	public void initData() {
+		preTriggerCondition = null;
+	}
 
 	@Override
-	public Object OnCalled(long time, boolean status) {
+	public List<String> OnCalled(double time, Boolean status, String value) {
 		// TODO Auto-generated method stub
 		boolean rvalue = false;
 		
+		// Boolean == null : only 
+		if(value == null) {
+			value = "";
+		}
+
+		if(status == null) {
+			return Arrays.asList(name, String.valueOf(preTime), String.valueOf(postTime), category, "NOMATCH", value);
+		}
+
 		if(bitwise.equals("OR")) {
 			rvalue = false;
 			if(triggers.stream().anyMatch(t -> t.status)) {
@@ -64,12 +78,12 @@ public class EventParser implements EventCallback {
 				if(rvalue) {
 					preTriggerCondition = rvalue;
 					return Arrays.asList(
-						name, String.valueOf(preTime), String.valueOf(postTime), category, "OnTrue"
+						name, String.valueOf(preTime), String.valueOf(postTime), category, "OnTrue", value
 					);
 				}else {
 					preTriggerCondition = rvalue;
 					return Arrays.asList(
-						name, String.valueOf(preTime), String.valueOf(postTime), category, "OnFalse"
+						name, String.valueOf(preTime), String.valueOf(postTime), category, "OnFalse", value
 					);
 				}
 			}
@@ -77,16 +91,16 @@ public class EventParser implements EventCallback {
 		
 		if(status&& rvalue) {
 			return Arrays.asList(
-				name, String.valueOf(preTime), String.valueOf(postTime), category, "OnChange"
+				name, String.valueOf(preTime), String.valueOf(postTime), category, "OnChange", value
 			);
 		}else if(status&& !rvalue) {
 			return Arrays.asList(
-				name, String.valueOf(preTime), String.valueOf(postTime), category, "OnFalse"
+				name, String.valueOf(preTime), String.valueOf(postTime), category, "OnFalse", value
 			);
 		}
 		
 		preTriggerCondition = rvalue;
-		return null;
+		return Arrays.asList(name, String.valueOf(preTime), String.valueOf(postTime), category, "RET", value);
 	}
 
 	public static void main(String[] args) {

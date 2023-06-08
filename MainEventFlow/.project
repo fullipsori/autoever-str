@@ -16,12 +16,12 @@
 			</arguments>
 		</buildCommand>
 		<buildCommand>
-			<name>com.streambase.sb.ide.core.sbappProjectBuilder2</name>
+			<name>org.eclipse.m2e.core.maven2Builder</name>
 			<arguments>
 			</arguments>
 		</buildCommand>
 		<buildCommand>
-			<name>org.eclipse.m2e.core.maven2Builder</name>
+			<name>com.streambase.sb.ide.core.sbappProjectBuilder2</name>
 			<arguments>
 			</arguments>
 		</buildCommand>
@@ -32,15 +32,4 @@
 		<nature>org.eclipse.m2e.core.maven2Nature</nature>
 		<nature>org.python.pydev.pythonNature</nature>
 	</natures>
-	<filteredResources>
-		<filter>
-			<id>1685264845747</id>
-			<name></name>
-			<type>30</type>
-			<matcher>
-				<id>org.eclipse.core.resources.regexFilterMatcher</id>
-				<arguments>node_modules|\.git|__CREATED_BY_JAVA_LANGUAGE_SERVER__</arguments>
-			</matcher>
-		</filter>
-	</filteredResources>
 </projectDescription>

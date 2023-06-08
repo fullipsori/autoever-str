@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<modify version="11.0.1_9ac66cf38631f8473e37c39091c4b798f01bbf41">
+    <add>
+        <annotations>
+            <annotation name="hygienic"/>
+        </annotations>
+        <type-metadata>
+            <param name="type" value="module"/>
+            <param name="fully-qualified-name" value="com.autoever.poc.maineventflow.CANFlow_v2"/>
+        </type-metadata>
+        <memory-model-settings/>
+        <implements module-reference="com.autoever.poc.maineventflow.LiveViewTable"/>
+        <implements module-reference="com.autoever.poc.maineventflow.kafkaSchemas"/>
+        <import alias="MainOutputSchema" from="com.autoever.poc.maineventflow.AutoVDMSFlow_v2" item="MainOutputSchema"/>
+        <import from="com.autoever.poc.maineventflow.LiveViewTable"/>
+        <import alias="ControlCANSchema" from="com.autoever.poc.parser.CANParser" item="ControlCANSchema"/>
+        <parameter-definitions>
+            <parameter default="D:/projects/vdms_env/Scripts/python.exe" name="PYTHON_EXECUTABLE"/>
+            <parameter default="d:/projects/vdms/resources" name="RESOURCE_ROOT"/>
+            <parameter default="lv://localhost:11080" name="LV_SERVER_URI"/>
+        </parameter-definitions>
+        <dynamic-variables/>
+        <table-schemas>
+            <table-schema name="EventStatus">
+                <schema>
+                    <field name="terminalID" type="string"/>
+                    <field name="eventName" type="string"/>
+                    <field name="eventValue" type="string"/>
+                </schema>
+                <primary-index type="btree">
+                    <field name="terminalID"/>
+                </primary-index>
+            </table-schema>
+        </table-schemas>
+        <data name="EventStatusMon" shared="false" source="concrete" type="querytable">
+            <param name="storage-method" value="heap"/>
+            <param name="replicated" value="false"/>
+            <param name="table-schema" value="EventStatus"/>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+        </data>
+        <stream name="InputStream" schema="MainOutputSchema"/>
+        <stream name="LoadPolicyStream" schema="ControlCANSchema"/>
+        <box name="Initialize" type="inputadapter">
+            <output port="1" stream="out:Initialize_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.once.Once"/>
+            <param name="OutputField" value="time"/>
+        </box>
+        <box name="LoadPolicy" type="map">
+            <input port="1" stream="out:Initialize_1"/>
+            <output port="1" stream="out:LoadPolicy_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="command">'Load'</include>
+                    <include field="policyFolder">"${RESOURCE_ROOT}/policy"</include>
+                    <include field="newNameFilter">'DM1_CM_SINGLE_FRAME'</include>
+                    <include field="newBaseValue">string(null)</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="ReloadPolicy" type="map">
+            <input port="1" stream="LoadPolicyStream"/>
+            <output port="1" stream="out:ReloadPolicy_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <replace field="command">coalesce(command, 'Reload')</replace>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Union" type="union">
+            <input port="1" stream="out:ReloadPolicy_1"/>
+            <input port="2" stream="out:LoadPolicy_1"/>
+            <output port="1" stream="out:Union_1"/>
+            <param name="strict" value="false"/>
+        </box>
+        <box name="Split" type="split">
+            <input port="1" stream="out:Union_1"/>
+            <output port="1" stream="out:Split_1"/>
+            <output port="2" stream="out:Split_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <module-reference name="CANParser_v3">
+            <input dispatch="broadcast" name="ParamInputStream" port="1" stream="out:Split_2"/>
+            <input dispatch="numerical" key="int(kafkaMessage.VehicleKeyID)" name="InputStream" port="2" stream="InputStream"/>
+            <output name="CanOutputStream" port="1" stream="ParserOutputStream"/>
+            <output name="StatusOutputStream" port="2" stream="StatusOutputStream"/>
+            <output name="UpdateEventStatus" port="3" stream="UpdateStatusOutputStream"/>
+            <param name="parallel" value="true"/>
+            <param name="parallel-region-queue-max-processing-batch-size" value="5"/>
+            <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
+            <multiplicity number="2" type="concrete"/>
+            <param name="file" value="com.autoever.poc.parser.CANParser_v3"/>
+            <input-dataref name="EventStatusMon" table="EventStatusMon"/>
+            <parameter-bindings>
+                <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
+                <binding name="RESOURCE_ROOT" value="${RESOURCE_ROOT}"/>
+            </parameter-bindings>
+        </module-reference>
+        <box name="InitPolicy" type="map">
+            <input port="1" stream="out:Split_1"/>
+            <output port="1" stream="PolicyOutputStream"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="policyResult">if(!isempty(policyFolder)) then InitPolicyRepository(policyFolder) else false</include>
+                </expressions>
+            </target-list>
+        </box>
+        <output-stream name="ParserOutputStream"/>
+        <output-stream name="PolicyOutputStream"/>
+        <output-stream name="StatusOutputStream"/>
+        <output-stream name="UpdateStatusOutputStream"/>
+    </add>
+</modify>

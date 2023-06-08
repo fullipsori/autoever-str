@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><application-layout>
+    <component name="ControlStream">
+        <param name="gui:x" value="-225"/>
+        <param name="gui:y" value="-72"/>
+    </component>
+    <component name="InputStream">
+        <param name="gui:x" value="-38"/>
+        <param name="gui:y" value="62"/>
+    </component>
+    <component name="CCPParserModule">
+        <param name="gui:x" value="106"/>
+        <param name="gui:y" value="39"/>
+        <param name="gui:bends:1" value="51,-22;71,59"/>
+        <param name="gui:bends:2" value="60,92;62,79"/>
+    </component>
+    <component name="InitMeta">
+        <param name="gui:x" value="-225"/>
+        <param name="gui:y" value="22"/>
+    </component>
+    <component name="Initialize">
+        <param name="gui:x" value="-330"/>
+        <param name="gui:y" value="22"/>
+    </component>
+    <component name="LoadEVT">
+        <param name="gui:x" value="106"/>
+        <param name="gui:y" value="-72"/>
+    </component>
+    <component name="Split">
+        <param name="gui:x" value="-38"/>
+        <param name="gui:y" value="-62"/>
+    </component>
+    <component name="Union">
+        <param name="gui:x" value="-118"/>
+        <param name="gui:y" value="-62"/>
+        <param name="gui:bends:2" value="-155,52;-140,-22"/>
+    </component>
+    <component name="EVTLoadOutputStream">
+        <param name="gui:x" value="258"/>
+        <param name="gui:y" value="-72"/>
+    </component>
+    <component name="StatusStream">
+        <param name="gui:x" value="258"/>
+        <param name="gui:y" value="116"/>
+        <param name="gui:bends:1" value="190,79;206,146"/>
+    </component>
+    <component name="ccpOutputStream">
+        <param name="gui:x" value="258"/>
+        <param name="gui:y" value="22"/>
+        <param name="gui:bends:1" value="211,59;211,52"/>
+    </component>
+</application-layout>
