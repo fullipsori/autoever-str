@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ASCII"?>
 <liveview-configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.streambase.com/schemas/lvconf/">
-  <data-table id="AutoCCPDataTable">
+  <data-table id="AutoCCPDataTable" snapshot-parallelism="2" snapshot-concurrency="1">
     <fields>
       <field name="EventArrivalTS" type="timestamp"/>
     </fields>
