@@ -40,50 +40,92 @@
             <preload format="csv" mode="empty"/>
         </data>
         <stream name="InputStream" schema="MainOutputSchema"/>
-        <stream name="LoadPolicyStream" schema="ControlCANSchema"/>
+        <stream name="LoadPolicyStream">
+            <schema>
+                <field name="command" type="string"/>
+                <field name="policyFolder" type="string"/>
+            </schema>
+        </stream>
+        <stream name="UpdateParamStream">
+            <schema>
+                <field name="nameFilter" type="string"/>
+                <field name="baseValue" type="string"/>
+            </schema>
+        </stream>
         <box name="Initialize" type="inputadapter">
             <output port="1" stream="out:Initialize_1"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.streambase.sb.adapter.once.Once"/>
             <param name="OutputField" value="time"/>
         </box>
-        <box name="LoadPolicy" type="map">
+        <box name="Filter_command" type="filter">
+            <input port="1" stream="LoadPolicyStream"/>
+            <output port="1" stream="out:Filter_command_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="!isempty(command)"/>
+        </box>
+        <box name="LoadMeta" type="map">
             <input port="1" stream="out:Initialize_1"/>
-            <output port="1" stream="out:LoadPolicy_1"/>
+            <output port="1" stream="out:LoadMeta_1"/>
             <target-list>
                 <item name="input" selection="none"/>
                 <expressions>
                     <include field="command">'Load'</include>
                     <include field="policyFolder">"${RESOURCE_ROOT}/policy"</include>
-                    <include field="newNameFilter">'DM1_CM_SINGLE_FRAME'</include>
-                    <include field="newBaseValue">string(null)</include>
+                    <include field="nameFilter">'DM1_CM_SINGLE_FRAME'</include>
+                    <include field="baseValue">string(null)</include>
                 </expressions>
             </target-list>
         </box>
-        <box name="ReloadPolicy" type="map">
-            <input port="1" stream="LoadPolicyStream"/>
-            <output port="1" stream="out:ReloadPolicy_1"/>
+        <box name="Map" type="map">
+            <input port="1" stream="UpdateParamStream"/>
+            <output port="1" stream="out:Map_1"/>
             <target-list>
                 <item name="input" selection="all"/>
                 <expressions>
-                    <replace field="command">coalesce(command, 'Reload')</replace>
+                    <include field="command">'FILTER'</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Union2" type="union">
+            <input port="1" stream="out:Filter_command_1"/>
+            <input port="2" stream="out:Map_1"/>
+            <output port="1" stream="out:Union2_1"/>
+            <param name="strict" value="false"/>
+        </box>
+        <box name="Filter2" type="filter">
+            <input port="1" stream="out:Union2_1"/>
+            <output port="1" stream="out:Filter2_1"/>
+            <output port="2" stream="out:Filter2_2"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="contains(upper(command), &quot;POLICY&quot;)"/>
+            <param name="expression.1" value="contains(upper(command), &quot;FILTER&quot;)"/>
+        </box>
+        <box name="InitPolicy" type="map">
+            <input port="1" stream="out:Filter2_1"/>
+            <output port="1" stream="PolicyOutputStream"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="policyResult">if(!isempty(policyFolder)) then InitPolicyRepository(policyFolder) else InitPolicyRepository("${RESOURCE_ROOT}/policy")</include>
                 </expressions>
             </target-list>
         </box>
         <box name="Union" type="union">
-            <input port="1" stream="out:ReloadPolicy_1"/>
-            <input port="2" stream="out:LoadPolicy_1"/>
+            <input port="1" stream="out:Filter2_2"/>
+            <input port="2" stream="out:LoadMeta_1"/>
             <output port="1" stream="out:Union_1"/>
             <param name="strict" value="false"/>
         </box>
-        <box name="Split" type="split">
+        <output-stream name="PolicyOutputStream"/>
+        <box name="Filter" type="filter">
             <input port="1" stream="out:Union_1"/>
-            <output port="1" stream="out:Split_1"/>
-            <output port="2" stream="out:Split_2"/>
-            <param name="output-count" value="2"/>
+            <output port="1" stream="out:Filter_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="!isempty(nameFilter)"/>
         </box>
         <module-reference name="CANParser_v3">
-            <input dispatch="broadcast" name="ParamInputStream" port="1" stream="out:Split_2"/>
+            <input dispatch="broadcast" name="ParamInputStream" port="1" stream="out:Filter_1"/>
             <input dispatch="numerical" key="int(kafkaMessage.VehicleKeyID)" name="InputStream" port="2" stream="InputStream"/>
             <output name="CanOutputStream" port="1" stream="ParserOutputStream"/>
             <output name="StatusOutputStream" port="2" stream="StatusOutputStream"/>
@@ -99,18 +141,7 @@
                 <binding name="RESOURCE_ROOT" value="${RESOURCE_ROOT}"/>
             </parameter-bindings>
         </module-reference>
-        <box name="InitPolicy" type="map">
-            <input port="1" stream="out:Split_1"/>
-            <output port="1" stream="PolicyOutputStream"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="policyResult">if(!isempty(policyFolder)) then InitPolicyRepository(policyFolder) else false</include>
-                </expressions>
-            </target-list>
-        </box>
         <output-stream name="ParserOutputStream"/>
-        <output-stream name="PolicyOutputStream"/>
         <output-stream name="StatusOutputStream"/>
         <output-stream name="UpdateStatusOutputStream"/>
     </add>

@@ -21,20 +21,22 @@
             </schema>
         </stream>
         <stream name="InputStream" schema="MainOutputSchema"/>
-        <module-reference name="GPSParserModule">
+        <module-reference name="GPSParser">
             <input dispatch="round_robin" name="InputStream" port="1" stream="InputStream"/>
-            <input name="ControlStream" port="2" stream="ConstrolStream"/>
+            <input dispatch="broadcast" name="ControlStream" port="2" stream="ConstrolStream"/>
             <output name="ToMainStream" port="1" stream="ParserOutputStream"/>
+            <output name="StatusOutputStream" port="2" stream="StatusOutputStream"/>
             <param name="parallel" value="true"/>
-            <param name="parallel-region-queue-max-outstanding-tuples" value="2"/>
+            <param name="parallel-region-queue-max-processing-batch-size" value="2"/>
             <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
             <multiplicity number="10" type="concrete"/>
-            <param name="file" value="com.autoever.poc.parser.GPSParser"/>
+            <param name="file" value="com.autoever.poc.parser.GPSParser_v2"/>
             <parameter-bindings>
                 <binding name="RESOURCE_ROOT" value="${RESOURCE_ROOT}"/>
                 <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
             </parameter-bindings>
         </module-reference>
         <output-stream name="ParserOutputStream"/>
+        <output-stream name="StatusOutputStream"/>
     </add>
 </modify>

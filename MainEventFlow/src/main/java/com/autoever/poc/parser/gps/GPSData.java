@@ -51,6 +51,7 @@ public class GPSData implements Parseable {
 		DataChannel.checkType(CompleteDataType.forInt());
 		DataID = this.dataSchema.getField("DataID");
 		DataID.checkType(CompleteDataType.forInt());
+
 		Latitude = this.dataSchema.getField("Latitude");
 		Latitude.checkType(CompleteDataType.forDouble());
 		Longitude = this.dataSchema.getField("Longitude");

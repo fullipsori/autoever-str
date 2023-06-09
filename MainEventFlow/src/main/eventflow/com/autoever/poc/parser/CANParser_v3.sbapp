@@ -17,6 +17,8 @@
             <schema name="ControlCANSchema">
                 <field name="command" type="string"/>
                 <field name="policyFolder" type="string"/>
+                <field name="nameFilter" type="string"/>
+                <field name="baseValue" type="string"/>
             </schema>
             <schema name="TRIGDATA">
                 <field name="preTime" type="double"/>
@@ -36,7 +38,6 @@
             <dynamic-variable initial-expression="string(null)" name="compEvent" setter-expression="if !isempty(input.eventName) then input.eventName else compEvent" setter-stream="UpdateEventStatus"/>
             <dynamic-variable initial-expression="string(null)" name="compTerminalID" setter-expression="if !isempty(input.terminalID) then input.terminalID else compTerminalID" setter-stream="UpdateEventStatus"/>
             <dynamic-variable initial-expression="string(null)" name="compValue" setter-expression="input.eventValue" setter-stream="UpdateEventStatus"/>
-            <dynamic-variable initial-expression="0" name="tupleCount" setter-expression="GenCount" setter-stream="StatusOutputStream"/>
         </dynamic-variables>
         <table-schemas>
             <table-schema name="EventStatus">
@@ -58,22 +59,15 @@
             <preload format="csv" mode="empty"/>
         </data>
         <stream name="InputStream" schema="MainOutputSchema"/>
-        <stream name="ParamInputStream">
-            <schema>
-                <field name="command" type="string"/>
-                <field name="policyFolder" type="string"/>
-                <field name="newNameFilter" type="string"/>
-                <field name="newBaseValue" type="string"/>
-            </schema>
-        </stream>
+        <stream name="ParamInputStream" schema="ControlCANSchema"/>
         <box name="MapInputParam" type="map">
             <input port="1" stream="ParamInputStream"/>
             <output port="1" stream="out:MapInputParam_1"/>
             <target-list>
                 <item name="input" selection="all"/>
                 <expressions>
-                    <include field="eventName">input.newNameFilter</include>
-                    <include field="eventValue">input.newBaseValue</include>
+                    <include field="eventName">nameFilter</include>
+                    <include field="eventValue">baseValue</include>
                 </expressions>
             </target-list>
         </box>

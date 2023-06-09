@@ -13,6 +13,7 @@ import com.autoever.poc.common.RawDataField;
 import com.autoever.poc.parser.PreProcessable;
 import com.autoever.poc.parser.can.CanPreProcessor;
 import com.autoever.poc.parser.ccp.CCPPreProcessor;
+import com.autoever.poc.parser.gps.GPSPreProcessor;
 import com.streambase.sb.*;
 import com.streambase.sb.operator.*;
 import com.streambase.sb.util.Base64;
@@ -38,7 +39,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 
 	// Enum definition for property parserType 
 	public static enum parserTypeEnum {
-		CAN("can"), CCP("ccp"), GPS("gps");
+		CAN("CAN"), CCP("CCP"), GPS("GPS");
 
 		private final String rep;
 
@@ -94,7 +95,6 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 
 		try {
 			Schema kafkaSchema = getNamedSchema("KafkaVDMSDataSchema");
-
 			Schema inputSchema = getInputSchema(0);
 			inputSchema.getField("kafkaMessage").checkType(CompleteDataType.forTuple(kafkaSchema));
 			inputSchema.getField("binaryData").checkType(CompleteDataType.forBlob());
@@ -106,13 +106,14 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 				outputSchemaField = CanPreProcessor.getSchemaFields(rawOutputSchema);
 			}else if(getParserType() == parserTypeEnum.CCP) {
 				outputSchemaField = CCPPreProcessor.getSchemaFields(rawOutputSchema);
+			}else if(getParserType() == parserTypeEnum.GPS) {
+				outputSchemaField = GPSPreProcessor.getSchemaFields(rawOutputSchema);
 			}else {
 				outputSchemaField = new ArrayList<>(rawOutputSchema.fields());
 			}
 			outputSchemaField.add(new Schema.Field("PassThroughs", CompleteDataType.forTuple(inputSchema)));
 				
 			Schema outputSchema = new Schema(null, outputSchemaField);
-
 
 			List<Schema.Field> fields = List.of(
 				new Schema.Field("TerminalID", CompleteDataType.forString()),
@@ -288,6 +289,8 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 			preprocessor = new CanPreProcessor();
 		}else if(parserType == parserTypeEnum.CCP){
 			preprocessor = new CCPPreProcessor();
+		}else if(parserType == parserTypeEnum.GPS){
+			preprocessor = new GPSPreProcessor();
 		}else {
 			preprocessor = null;
 		}

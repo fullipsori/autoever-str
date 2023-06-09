@@ -304,3 +304,12 @@ CREATE TABLE Alerts (GUID VARCHAR(256) PRIMARY KEY, Id BIGINT, User VARCHAR(256)
 06-05 15:14:31 jdbc[2]: exception
 org.h2.jdbc.JdbcSQLException: Table "WORKSPACE" already exists; SQL statement:
 CREATE TABLE Workspace (GUID VARCHAR(256) PRIMARY KEY,Id BIGINT, User VARCHAR(256), Metadata CLOB, Workspace BLOB) [42101-166]
+06-09 15:57:19 jdbc[2]: exception
+org.h2.jdbc.JdbcSQLException: Table "SYSTEMINFO" already exists; SQL statement:
+CREATE TABLE SystemInfo (Key VARCHAR(256) PRIMARY KEY, Value VARCHAR(1000)) [42101-166]
+06-09 15:57:19 jdbc[2]: exception
+org.h2.jdbc.JdbcSQLException: Table "ALERTS" already exists; SQL statement:
+CREATE TABLE Alerts (GUID VARCHAR(256) PRIMARY KEY, Id BIGINT, User VARCHAR(256), Alert CLOB) [42101-166]
+06-09 15:57:19 jdbc[2]: exception
+org.h2.jdbc.JdbcSQLException: Table "WORKSPACE" already exists; SQL statement:
+CREATE TABLE Workspace (GUID VARCHAR(256) PRIMARY KEY,Id BIGINT, User VARCHAR(256), Metadata CLOB, Workspace BLOB) [42101-166]

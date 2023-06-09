@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<application version="11.0.0_248f263d973a774f84731121e9d4527c932d77fd">
+<application version="11.0.1_9ac66cf38631f8473e37c39091c4b798f01bbf41">
     <annotations>
         <annotation name="hygienic"/>
     </annotations>
@@ -22,6 +22,8 @@
             <field name="Altitude" type="double"/>
             <field name="NS" type="string"/>
             <field name="EW" type="string"/>
+            <field name="IsStarted" type="bool"/>
+            <field name="IsEnded" type="bool"/>
         </schema>
         <schema name="GPSParserSchema">
             <field name="messageID" type="string"/>

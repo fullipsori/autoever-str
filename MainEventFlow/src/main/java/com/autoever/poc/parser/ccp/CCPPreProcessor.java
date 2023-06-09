@@ -23,18 +23,6 @@ public class CCPPreProcessor implements PreProcessable {
 
 	int prevCmd = 0;
 	
-	public static List<Schema.Field> CCPSchemaField = List.of(
-			new Schema.Field("DataChannel", CompleteDataType.forInt()),
-			new Schema.Field("DeltaTime", CompleteDataType.forDouble()),
-			new Schema.Field("MSGInfo", CompleteDataType.forInt()),
-			new Schema.Field("DataID", CompleteDataType.forInt()),
-			new Schema.Field("DLC", CompleteDataType.forInt()),
-			new Schema.Field("DATA", CompleteDataType.forString()),
-			new Schema.Field("BaseTime", CompleteDataType.forLong()),
-			new Schema.Field("ODTField", CompleteDataType.forString()),
-			new Schema.Field("ODTValue", CompleteDataType.forLong())
-	);
-
 	public static ArrayList<Schema.Field> getSchemaFields(Schema baseSchema) {
 		ArrayList<Schema.Field> outputSchemaField = new ArrayList<>(baseSchema.fields());
 		outputSchemaField.add(new Schema.Field("ODTField", CompleteDataType.forString()));

@@ -75,7 +75,7 @@
         </parameter-definitions>
         <dynamic-variables>
             <dynamic-variable initial-expression="list('')" name="CCPVIDs" setter-expression="newCCPVIDs" setter-stream="UpdatePolicyOutputStream"/>
-            <dynamic-variable initial-expression="tuple(true AS allowCan, false AS allowDiag, false AS allowGps, false AS allowCcp)" name="filterMessage" setter-expression="newFilterMessage" setter-stream="OutputNewFilterMessage"/>
+            <dynamic-variable initial-expression="tuple(false AS allowCan, false AS allowDiag, true AS allowGps, false AS allowCcp)" name="filterMessage" setter-expression="newFilterMessage" setter-stream="OutputNewFilterMessage"/>
             <dynamic-variable initial-expression="list('')" name="policyFiles" setter-expression="newPolicyFiles" setter-stream="UpdatePolicyOutputStream"/>
         </dynamic-variables>
         <data name="MGMTQueryTable" shared="false" source="concrete" type="querytable">

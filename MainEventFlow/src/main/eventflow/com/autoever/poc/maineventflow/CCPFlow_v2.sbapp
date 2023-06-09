@@ -55,10 +55,14 @@
             <param name="output-count" value="2"/>
         </box>
         <module-reference name="CCPParserModule">
-            <input name="ControlStream" port="1" stream="out:Split_2"/>
-            <input name="InputStream" port="2" stream="InputStream"/>
+            <input dispatch="broadcast" name="ControlStream" port="1" stream="out:Split_2"/>
+            <input dispatch="numerical" key="int(kafkaMessage.VehicleKeyID)" name="InputStream" port="2" stream="InputStream"/>
             <output name="ccpOutputStream" port="1" stream="ccpOutputStream"/>
             <output name="StatusOutput" port="2" stream="StatusStream"/>
+            <param name="parallel" value="true"/>
+            <param name="parallel-region-queue-max-processing-batch-size" value="5"/>
+            <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
+            <multiplicity number="5" type="concrete"/>
             <param name="file" value="com.autoever.poc.parser.CCPParser_v2"/>
             <parameter-bindings>
                 <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
@@ -71,7 +75,7 @@
             <target-list>
                 <item name="input" selection="all"/>
                 <expressions>
-                    <include field="evtResult">if(!isempty(evtFolder)) then InitODTRepository(evtFolder) else false</include>
+                    <include field="evtResult">if(!isempty(evtFolder)) then InitODTRepository(evtFolder) else InitODTRepository("${RESOURCE_ROOT}/evt")</include>
                 </expressions>
             </target-list>
         </box>
