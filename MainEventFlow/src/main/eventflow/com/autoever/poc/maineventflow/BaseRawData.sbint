@@ -19,6 +19,7 @@
             <field name="BaseTime" type="long"/>
             <field name="IsStarted" type="bool"/>
             <field name="IsEnded" type="bool"/>
+            <field name="MSGIdx" type="int"/>
         </schema>
     </named-schemas>
     <dynamic-variables/>

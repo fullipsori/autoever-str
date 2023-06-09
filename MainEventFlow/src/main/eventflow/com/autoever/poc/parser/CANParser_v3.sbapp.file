@@ -66,9 +66,9 @@
                 <field name="newBaseValue" type="string"/>
             </schema>
         </stream>
-        <box name="MapInputParam" type="map">
+        <box name="Map3" type="map">
             <input port="1" stream="ParamInputStream"/>
-            <output port="1" stream="out:MapInputParam_1"/>
+            <output port="1" stream="out:Map3_1"/>
             <target-list>
                 <item name="input" selection="all"/>
                 <expressions>
@@ -208,70 +208,14 @@
             <param name="autogen-nomatch-port" value="false"/>
             <param name="expression.0" value="IsStarted || IsEnded || GetKeyFlag(kafkaMessage.TerminalID, input1)"/>
         </box>
-        <box name="FilterMarker" type="filter">
+        <box name="Split3" type="split">
             <input port="1" stream="out:KeyFlag_1"/>
-            <output port="1" stream="out:FilterMarker_1"/>
-            <output port="2" stream="out:FilterMarker_2"/>
-            <output port="3" stream="out:FilterMarker_3"/>
-            <param name="autogen-nomatch-port" value="true"/>
-            <param name="expression.0" value="IsStarted"/>
-            <param name="expression.1" value="IsEnded"/>
-            <param name="expression.2" value="true"/>
-        </box>
-        <box name="GetTrigData" type="map">
-            <input port="1" stream="out:FilterMarker_3"/>
-            <output port="1" stream="out:GetTrigData_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="trigDataList">GetTrigData(kafkaMessage.TerminalID,input1)</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="MarkerEnded" type="map">
-            <input port="1" stream="out:FilterMarker_2"/>
-            <output port="1" stream="out:MarkerEnded_1"/>
-            <target-list>
-                <item name="input" selection="none">
-                    <include field="perfData"/>
-                    <include field="IsEnded"/>
-                    <include field="IsStarted"/>
-                    <include field="MSGIdx"/>
-                </item>
-                <expressions>
-                    <replace field="perfData.t3_time">to_milliseconds(now())</replace>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="MarkerStarted" type="map">
-            <input port="1" stream="out:FilterMarker_1"/>
-            <output port="1" stream="out:MarkerStarted_1"/>
-            <target-list>
-                <item name="input" selection="none">
-                    <include field="perfData"/>
-                    <include field="IsEnded"/>
-                    <include field="IsStarted"/>
-                    <include field="MSGIdx"/>
-                </item>
-                <expressions>
-                    <replace field="perfData.t2_time">to_milliseconds(now())</replace>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="FilterTrigData" type="filter">
-            <input port="1" stream="out:GetTrigData_1"/>
-            <output port="1" stream="out:FilterTrigData_1"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="!isempty(trigDataList)"/>
-        </box>
-        <box name="MarkerUnion" type="union">
-            <input port="1" stream="out:MarkerStarted_1"/>
-            <input port="2" stream="out:MarkerEnded_1"/>
-            <output port="1" stream="out:MarkerUnion_1"/>
-            <param name="strict" value="false"/>
+            <output port="1" stream="out:Split3_1"/>
+            <output port="2" stream="out:Split3_2"/>
+            <param name="output-count" value="2"/>
         </box>
         <box name="AGGToHCP" type="aggregate">
-            <input port="1" stream="out:MarkerUnion_1"/>
+            <input port="1" stream="out:Split3_2"/>
             <output port="1" stream="out:AGGToHCP_1"/>
             <param name="dimension-name.0" value="Dimension1"/>
             <param name="dimension-type.0" value="Predicate"/>
@@ -282,11 +226,62 @@
             <param name="output-group-by" value="true"/>
             <target-list>
                 <expressions>
+                    <include field="trigCount">count(DataID)-2</include>
                     <include field="*">lastval(*)</include>
-                    <replace field="perfData.t2_time">firstval(perfData.t2_time)</replace>
-                    <replace field="perfData.t3_time">lastval(perfData.t3_time)</replace>
                 </expressions>
             </target-list>
+        </box>
+        <box name="FilterMarker" type="filter">
+            <input port="1" stream="out:Split3_1"/>
+            <output port="1" stream="out:FilterMarker_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="!IsStarted &amp;&amp; !IsEnded"/>
+        </box>
+        <box name="AddTime" type="map">
+            <input port="1" stream="out:AGGToHCP_1"/>
+            <output port="1" stream="out:AddTime_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <replace field="perfData.t2_time">to_milliseconds(now())</replace>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="GetTrigData" type="map">
+            <input port="1" stream="out:FilterMarker_1"/>
+            <output port="1" stream="out:GetTrigData_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="trigDataList">GetTrigData(kafkaMessage.TerminalID,input1)</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="EndedCanProc" type="map">
+            <input port="1" stream="out:AddTime_1"/>
+            <output port="1" stream="out:EndedCanProc_1"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <declare field="t1_time">input1.perfData.t1_time-input1.perfData.start_time</declare>
+                    <declare field="t2_time">input1.perfData.t2_time-input1.perfData.start_time</declare>
+                    <declare field="end_time">to_milliseconds(now())-input1.perfData.start_time</declare>
+                </item>
+                <expressions>
+                    <include field="perfData">input1.perfData</include>
+                    <replace field="perfData.kafka_msg_id">input1.perfData.kafka_msg_id + "_CAN"</replace>
+                    <replace field="perfData.data_count">0</replace>
+                    <replace field="perfData.t1_time">t1_time</replace>
+                    <replace field="perfData.t2_time">t2_time-t1_time</replace>
+                    <replace field="perfData.t3_time">to_milliseconds(now())-input.perfData.t2_time</replace>
+                    <replace field="perfData.end_time">end_time</replace>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="FilterTrigData" type="filter">
+            <input port="1" stream="out:GetTrigData_1"/>
+            <output port="1" stream="out:FilterTrigData_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="!isempty(trigDataList)"/>
         </box>
         <box name="Iter_TrigData" type="iterate">
             <input port="1" stream="out:FilterTrigData_1"/>
@@ -305,45 +300,6 @@
                     <include field="mgmtNO">mgmtNO</include>
                 </expressions>
             </target-list>
-        </box>
-        <box name="EndedCanProc" type="map">
-            <input port="1" stream="out:AGGToHCP_1"/>
-            <output port="1" stream="out:EndedCanProc_1"/>
-            <target-list>
-                <item name="input" selection="none">
-                    <declare field="t1_time">input1.perfData.t1_time-input1.perfData.start_time</declare>
-                    <declare field="t2_time">input1.perfData.t2_time-input1.perfData.start_time</declare>
-                    <declare field="end_time">to_milliseconds(now())-input1.perfData.start_time</declare>
-                    <declare field="t3_time">input1.perfData.t3_time-input1.perfData.t2_time</declare>
-                </item>
-                <expressions>
-                    <include field="perfData">input1.perfData</include>
-                    <replace field="perfData.kafka_msg_id">input1.perfData.kafka_msg_id + "_CAN"</replace>
-                    <replace field="perfData.data_count">MSGIdx-2</replace>
-                    <replace field="perfData.t1_time">t1_time</replace>
-                    <replace field="perfData.t2_time">t2_time-t1_time</replace>
-                    <replace field="perfData.t3_time">t3_time</replace>
-                    <replace field="perfData.end_time">end_time</replace>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="Split_status" type="split">
-            <input port="1" stream="out:Iter_TrigData_1"/>
-            <output port="1" stream="out:Split_status_1"/>
-            <output port="2" stream="out:Split_status_2"/>
-            <param name="output-count" value="2"/>
-        </box>
-        <box name="Filter_NotTrig" type="filter">
-            <input port="1" stream="out:Split_status_1"/>
-            <output port="1" stream="out:Filter_NotTrig_1"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="status != 'NOMATCH' &amp;&amp; status != 'RET'"/>
-        </box>
-        <box name="FilterChangedEvent" type="filter">
-            <input port="1" stream="out:Split_status_2"/>
-            <output port="1" stream="out:FilterChangedEvent_1"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="!isempty(value) &amp;&amp; (eventName == compEvent) &amp;&amp; (isempty(compValue) || value !=compValue)"/>
         </box>
         <box name="MapToPerfData" type="map">
             <input port="1" stream="out:EndedCanProc_1"/>
@@ -380,6 +336,24 @@
             <param name="throughPort" value="false"/>
             <param name="uri" value="${LV_SERVER_URI}"/>
             <param name="useRuntimeURI" value="false"/>
+        </box>
+        <box name="Split_status" type="split">
+            <input port="1" stream="out:Iter_TrigData_1"/>
+            <output port="1" stream="out:Split_status_1"/>
+            <output port="2" stream="out:Split_status_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <box name="Filter_NotTrig" type="filter">
+            <input port="1" stream="out:Split_status_1"/>
+            <output port="1" stream="out:Filter_NotTrig_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="status != 'NOMATCH' &amp;&amp; status != 'RET'"/>
+        </box>
+        <box name="FilterChangedEvent" type="filter">
+            <input port="1" stream="out:Split_status_2"/>
+            <output port="1" stream="out:FilterChangedEvent_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="!isempty(value) &amp;&amp; (eventName == compEvent) &amp;&amp; (isempty(compValue) || value !=compValue)"/>
         </box>
         <box name="Sequence" type="seqnum">
             <input port="1" stream="out:Filter_NotTrig_1"/>
@@ -436,7 +410,7 @@
         <box name="CompUpdateUnion" type="union">
             <input port="1" stream="out:DataFromTable_1"/>
             <input port="2" stream="out:MapCompParams_1"/>
-            <input port="3" stream="out:MapInputParam_1"/>
+            <input port="3" stream="out:Map3_1"/>
             <output port="1" stream="UpdateEventStatus"/>
             <param name="strict" value="false"/>
         </box>

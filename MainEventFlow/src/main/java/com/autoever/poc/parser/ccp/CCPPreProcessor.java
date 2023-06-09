@@ -2,6 +2,7 @@ package com.autoever.poc.parser.ccp;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import com.autoever.poc.common.NumUtils;
 import com.autoever.poc.common.RawDataField;
@@ -59,16 +60,19 @@ public class CCPPreProcessor implements PreProcessable {
 	}
 
 	@Override
-	public boolean preProcess(Tuple kafkaMessage, Tuple inputTuple, List<Tuple> tuples, Object[] parsed, Schema outputSchema) {
+	public int preProcess(Tuple kafkaMessage, Tuple inputTuple, List<Tuple> tuples, Object[] parsed, Schema outputSchema) {
 		// TODO Auto-generated method stub
 		byte[] rawdata = (byte[])parsed[RawDataField.DATA.getValue()];
+		int addedCount = 0;
 		try {
 			if(prevCmd != 0 ) {
 				if(prevCmd != 255 && ((rawdata[0]&0xff) >= 0x0a) && ((rawdata[0]&0xff) <= 0x3b)) {
 					String param =  kafkaMessage.getString(AutoKafkaField.TerminalID.getName());
 					List<Pair<String, Long>> odtParsed = parseData(rawdata, ODTRepository.getInstance().mODTMap.get(param));
 					if(odtParsed != null) {
-						odtParsed.stream().forEach(pair -> {
+						addedCount = odtParsed.size();
+						IntStream.range(0, addedCount).forEach(idx -> {
+							Pair<String, Long> pair = odtParsed.get(idx);
 							try {
 								Tuple dataTuple = outputSchema.createTuple();
 								dataTuple.setInt(RawDataField.DataChannel.getValue(), (int)parsed[RawDataField.DataChannel.getValue()]);
@@ -80,6 +84,7 @@ public class CCPPreProcessor implements PreProcessable {
 								dataTuple.setLong(RawDataField.BaseTime.getValue(),  (long)parsed[RawDataField.BaseTime.getValue()]);
 								dataTuple.setBoolean(RawDataField.IsStarted.getValue(),  (boolean)parsed[RawDataField.IsStarted.getValue()]);
 								dataTuple.setBoolean(RawDataField.IsEnded.getValue(),  (boolean)parsed[RawDataField.IsEnded.getValue()]);
+								dataTuple.setInt(RawDataField.MSGIdx.getValue(), (((int)parsed[RawDataField.MSGIdx.getValue()]) + idx) );
 								dataTuple.setString("ODTField", pair.first);
 								dataTuple.setLong("ODTValue", pair.second);
 								dataTuple.setTuple("PassThroughs", inputTuple);
@@ -90,7 +95,7 @@ public class CCPPreProcessor implements PreProcessable {
 							}
 						});
 					}
-					return true;
+					return addedCount;
 				}
 			}
 		} catch (Exception e) {
@@ -99,7 +104,7 @@ public class CCPPreProcessor implements PreProcessable {
 		} finally {
 			prevCmd = rawdata[0] & 0xff;
 		}
-		return false;
+		return addedCount;
 	}
 
 	@Override

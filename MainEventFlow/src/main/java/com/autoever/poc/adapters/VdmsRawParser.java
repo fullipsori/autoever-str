@@ -199,6 +199,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 		int sIndex = 0;
 		
 		List<Tuple> tuples = new ArrayList<>();
+		int msgIdx = 0;
 
 		try {
 			int rawcount = hcpMessage.length;
@@ -212,6 +213,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 			Tuple startTuple = OutputSchema.createTuple();
 			startTuple.setBoolean(RawDataField.IsStarted.getValue(), true);
 			startTuple.setBoolean(RawDataField.IsEnded.getValue(), false);
+			startTuple.setInt(RawDataField.MSGIdx.getValue(), msgIdx++);
 			startTuple.setTuple("PassThroughs", inputTuple);
 			tuples.add(startTuple);
 
@@ -231,10 +233,11 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 				int dataSize = dlcSize[dlcIndex];
 				byte[] rawData = Arrays.copyOfRange(hcpMessage, curIndex, curIndex + dataSize);
 				
-				Object[] parsed = new Object[] { dataChannel, deltaTime, dataFlag, dataId, dlcIndex, rawData, baseTime, false, false };
+				Object[] parsed = new Object[] { dataChannel, deltaTime, dataFlag, dataId, dlcIndex, rawData, baseTime, false, false, msgIdx };
 				
 				if(preprocessor != null) {
-					preprocessor.preProcess(kafkaMessage, inputTuple, tuples, parsed, OutputSchema);
+					//tuple is added in preprocess.
+					msgIdx += preprocessor.preProcess(kafkaMessage, inputTuple, tuples, parsed, OutputSchema);
 				} else {
 					Tuple dataTuple = OutputSchema.createTuple();
 					dataTuple.setInt(RawDataField.DataChannel.getValue(), dataChannel);
@@ -246,38 +249,19 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 					dataTuple.setLong(RawDataField.BaseTime.getValue(), baseTime);
 					dataTuple.setBoolean(RawDataField.IsStarted.getValue(), false);
 					dataTuple.setBoolean(RawDataField.IsEnded.getValue(), false);
+					dataTuple.setInt(RawDataField.MSGIdx.getValue(), msgIdx++);
 					dataTuple.setTuple("PassThroughs", inputTuple);
 						
 					tuples.add(dataTuple);
 				}
 				
-				/**
-				Tuple dataTuple = OutputSchema.createTuple();
-				dataTuple.setInt(RawDataField.DataChannel.getValue(), dataChannel);
-				dataTuple.setDouble(RawDataField.DeltaTime.getValue(), deltaTime);
-				dataTuple.setInt(RawDataField.MSGInfo.getValue(), dataFlag);
-				dataTuple.setInt(RawDataField.DataID.getValue(), dataId);
-				dataTuple.setInt(RawDataField.DLC.getValue(), dlcIndex);
-//				dataTuple.setString(RawDataField.DATA.getValue(), Base64.encodeBytes(rawData));
-				dataTuple.setLong(RawDataField.BaseTime.getValue(), baseTime);
-				dataTuple.setBoolean(RawDataField.IsStarted.getValue(), false);
-				dataTuple.setBoolean(RawDataField.IsEnded.getValue(), false);
-				dataTuple.setTuple("PassThroughs", inputTuple);
-					
-				if(preprocessor != null && !preprocessor.preProcess(dataTuple, rawData, param)) {
-				}else {
-					// for speedup.
-					dataTuple.setString(RawDataField.DATA.getValue(), Base64.encodeBytes(rawData));
-					tuples.add(dataTuple);
-				}
-				**/
-
 				sIndex += (dataSize + headerSize);
 			}
 
 			Tuple endTuple = OutputSchema.createTuple();
 			endTuple.setBoolean(RawDataField.IsStarted.getValue(), false);
 			endTuple.setBoolean(RawDataField.IsEnded.getValue(), true);
+			endTuple.setInt(RawDataField.MSGIdx.getValue(), msgIdx+1); //started + ended + count(tuples)
 			endTuple.setTuple("PassThroughs", inputTuple);
 			tuples.add(endTuple);
 

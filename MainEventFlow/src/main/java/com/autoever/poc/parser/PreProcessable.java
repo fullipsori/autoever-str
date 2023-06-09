@@ -9,5 +9,5 @@ import com.streambase.sb.Tuple;
 public interface PreProcessable {
 	public void initialize(Tuple kafkaMessage);
 	public boolean preProcess(Tuple dataTuple, byte[] rawdata, String param);
-	public boolean preProcess(Tuple kafkaMessage, Tuple inputTuple, List<Tuple> tuples, Object[] parsed, Schema outputSchema);
+	public int preProcess(Tuple kafkaMessage, Tuple inputTuple, List<Tuple> tuples, Object[] parsed, Schema outputSchema);
 }

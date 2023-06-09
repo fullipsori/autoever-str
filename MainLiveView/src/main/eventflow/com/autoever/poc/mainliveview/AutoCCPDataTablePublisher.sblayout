@@ -36,7 +36,7 @@
         <param name="gui:height" value="60.0"/>
         <param name="gui:width" value="60.0"/>
     </component>
-    <component name="PublishToCCPDataTableOut">
+    <component name="PublishToAutoCCPDataTableOut">
         <param name="gui:x" value="750.0"/>
         <param name="gui:y" value="210.0"/>
         <param name="gui:height" value="60.0"/>

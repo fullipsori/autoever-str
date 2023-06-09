@@ -31,12 +31,13 @@ public class CanPreProcessor implements PreProcessable {
 	}
 
 	@Override
-	public boolean preProcess(Tuple kafkaMessage, Tuple inputTuple, List<Tuple> tuples, Object[] parsed, Schema outputSchema) {
+	public int preProcess(Tuple kafkaMessage, Tuple inputTuple, List<Tuple> tuples, Object[] parsed, Schema outputSchema) {
 		// TODO Auto-generated method stub
+		int addedCount = 0;
 		try {
 			String param =  kafkaMessage.getString(AutoKafkaField.TerminalID.getName());
 			PolicyParser policy = PolicyRepository.getInstance().mPolicyMap.get(param);
-			if(policy == null) return false;
+			if(policy == null) return addedCount;
 			if(policy.IsAvailable((int)parsed[RawDataField.DataChannel.getValue()], (int)parsed[RawDataField.DataID.getValue()])) {
 				Tuple dataTuple = outputSchema.createTuple();
 				dataTuple.setInt(RawDataField.DataChannel.getValue(), (int)parsed[RawDataField.DataChannel.getValue()]);
@@ -48,16 +49,17 @@ public class CanPreProcessor implements PreProcessable {
 				dataTuple.setLong(RawDataField.BaseTime.getValue(),  (long)parsed[RawDataField.BaseTime.getValue()]);
 				dataTuple.setBoolean(RawDataField.IsStarted.getValue(),  (boolean)parsed[RawDataField.IsStarted.getValue()]);
 				dataTuple.setBoolean(RawDataField.IsEnded.getValue(),  (boolean)parsed[RawDataField.IsEnded.getValue()]);
+				dataTuple.setInt(RawDataField.MSGIdx.getValue(), (((int)parsed[RawDataField.MSGIdx.getValue()]) + addedCount++) );
 				dataTuple.setTuple("PassThroughs", inputTuple);
 				
 				tuples.add(dataTuple);
-				return true;
+				return addedCount;
 			}
 		}catch(Exception e) {
 			e.printStackTrace();
-			return false;
+			return addedCount;
 		}
-		return false;
+		return addedCount;
 	}
 
 	@Override

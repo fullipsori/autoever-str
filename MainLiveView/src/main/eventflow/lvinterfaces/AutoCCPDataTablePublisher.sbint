@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <application version="11.0.1">
     <gui.metadata>
-        <property name="description" value="This is a generated file, do not edit. It defines the interface to which the publisher for LiveView tables [CCPDataTable] must conform."/>
+        <property name="description" value="This is a generated file, do not edit. It defines the interface to which the publisher for LiveView tables [AutoCCPDataTable] must conform."/>
     </gui.metadata>
     <annotations>
         <annotation name="hygienic"/>
     </annotations>
     <type-metadata>
         <param name="type" value="interface"/>
-        <param name="fully-qualified-name" value="lvinterfaces.CCPDataTablePublisher"/>
+        <param name="fully-qualified-name" value="lvinterfaces.AutoCCPDataTablePublisher"/>
     </type-metadata>
-    <import from="lvinterfaces.CCPDataTableSchemas"/>
+    <import from="lvinterfaces.AutoCCPDataTableSchemas"/>
     <constant description="State when the server is requesting Publishers to recover" expr="0" name="RECOVERY_IN_PROGRESS"/>
     <constant description="State Publishers send to the server to indicate they have completed recovery" expr="1" name="RECOVERY_COMPLETE"/>
     <constant description="State Publishers send to the server to indicate they have failed recovery" expr="2" name="RECOVERY_FAILED"/>
@@ -25,7 +25,7 @@
             <field description="0=recovery in progress, 1=recovery complete, 2=recovery failed" name="CurrentState" type="int"/>
         </schema>
         <schema name="PublishSchemasSchema">
-            <field description="" name="CCPDataTable" type="tuple" value="CCPDataTableDataInSchema"/>
+            <field description="" name="AutoCCPDataTable" type="tuple" value="AutoCCPDataTableDataInSchema"/>
         </schema>
         <schema name="QueryTheLastGoodRecordSchema">
             <field description="A unique string that identifies the connection" name="CQSConnectionID" type="string"/>
@@ -35,11 +35,11 @@
         <schema name="TheLastGoodRecordSchema">
             <field description="A unique string that identifies the connection" name="CQSConnectionID" type="string"/>
             <field description="A unique identifier for each publisher" name="PublisherID" type="string"/>
-            <field description="It defines the interface to which the publisher for LiveView tables [CCPDataTable] must conform." name="LowestPublishedSN" type="long"/>
-            <field description="It defines the interface to which the publisher for LiveView tables [CCPDataTable] must conform." name="LowestPersistedSN" type="long"/>
-            <field description="It defines the interface to which the publisher for LiveView tables [CCPDataTable] must conform." name="HighestPublishedSN" type="long"/>
-            <field description="It defines the interface to which the publisher for LiveView tables [CCPDataTable] must conform." name="HighestPersistedSN" type="long"/>
-            <field description="It defines the interface to which the publisher for LiveView tables [CCPDataTable] must conform." name="Tablename" type="string"/>
+            <field description="It defines the interface to which the publisher for LiveView tables [AutoCCPDataTable] must conform." name="LowestPublishedSN" type="long"/>
+            <field description="It defines the interface to which the publisher for LiveView tables [AutoCCPDataTable] must conform." name="LowestPersistedSN" type="long"/>
+            <field description="It defines the interface to which the publisher for LiveView tables [AutoCCPDataTable] must conform." name="HighestPublishedSN" type="long"/>
+            <field description="It defines the interface to which the publisher for LiveView tables [AutoCCPDataTable] must conform." name="HighestPersistedSN" type="long"/>
+            <field description="It defines the interface to which the publisher for LiveView tables [AutoCCPDataTable] must conform." name="Tablename" type="string"/>
         </schema>
     </named-schemas>
     <stream name="ServerStateIn" schema="ServerStateSchema"/>
@@ -48,5 +48,5 @@
     <stream name="TheLastGoodRecordIn" schema="TheLastGoodRecordSchema"/>
     <output-stream name="QueryTheLastGoodRecordOut" schema="QueryTheLastGoodRecordSchema"/>
     <output-stream name="PublisherStateOut" schema="ServerStateSchema"/>
-    <output-stream name="PublishToCCPDataTableOut" schema="CCPDataTableDataInSchema"/>
+    <output-stream name="PublishToAutoCCPDataTableOut" schema="AutoCCPDataTableDataInSchema"/>
 </application>

@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <application version="11.0.1">
     <gui.metadata>
-        <property name="description" value="This is a generated file, do not edit. It defines the named schemas for the CCPDataTable LiveView table."/>
+        <property name="description" value="This is a generated file, do not edit. It defines the named schemas for the AutoCCPDataTable LiveView table."/>
     </gui.metadata>
     <annotations>
         <annotation name="hygienic"/>
     </annotations>
     <type-metadata>
         <param name="type" value="interface"/>
-        <param name="fully-qualified-name" value="lvinterfaces.CCPDataTableSchemas"/>
+        <param name="fully-qualified-name" value="lvinterfaces.AutoCCPDataTableSchemas"/>
     </type-metadata>
     <import alias="CCPDataTableSchema" from="com.autoever.poc.mainliveview.LiveViewTable" item="CCPDataTableSchema"/>
     <named-schemas>
-        <schema name="CCPDataTableDataInSchema">
+        <schema name="AutoCCPDataTableDataInSchema">
             <parent-schemas>
                 <parent-schema name="CCPDataTableSchema"/>
             </parent-schemas>
@@ -23,7 +23,7 @@
             <field description="When set to true, means delete operation." name="CQSDelete" type="bool"/>
             <field name="EventArrivalTS" type="timestamp"/>
         </schema>
-        <schema name="CCPDataTableDataOutSchema">
+        <schema name="AutoCCPDataTableDataOutSchema">
             <parent-schemas>
                 <parent-schema name="CCPDataTableSchema"/>
             </parent-schemas>
@@ -32,20 +32,20 @@
             <field description="An internal reference count. Zero means deleted." name="CQSReferredCount" type="long"/>
             <field name="EventArrivalTS" type="timestamp"/>
         </schema>
-        <schema name="CCPDataTableTableSchema">
+        <schema name="AutoCCPDataTableTableSchema">
             <parent-schemas>
                 <parent-schema name="CCPDataTableSchema"/>
             </parent-schemas>
             <field name="EventArrivalTS" type="timestamp"/>
         </schema>
-        <schema name="CCPDataTableInputControlFields">
+        <schema name="AutoCCPDataTableInputControlFields">
             <field description="A unique identifier for each publisher" name="PublisherID" type="string"/>
             <field description="A monotonically increasing sequence number wrt each PublisherID" name="PublisherSN" type="long"/>
             <field description="An internal reference count. Zero means deleted." name="CQSReferredCount" type="long"/>
             <field description="RFU. Should be null." name="CQSDataUpdatePredicate" type="string"/>
             <field description="When set to true, means delete operation." name="CQSDelete" type="bool"/>
         </schema>
-        <schema name="CCPDataTablePrimaryKeySchema">
+        <schema name="AutoCCPDataTablePrimaryKeySchema">
             <field description="sb ?—?„œ ?ƒ?„±?•œ ë©”ì„¸ì§? ID (vehicleKeyID + timestamp + seq_num)" name="messageID" type="string"/>
         </schema>
     </named-schemas>
