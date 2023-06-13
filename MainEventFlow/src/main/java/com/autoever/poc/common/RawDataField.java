@@ -8,10 +8,7 @@ public enum RawDataField {
 	DataID(3),
 	DLC(4),
 	DATA(5),
-	BaseTime(6),
-	IsStarted(7),
-	IsEnded(8),
-	MSGIdx(9);
+	BaseTime(6);
 
 	final private int value;
 	

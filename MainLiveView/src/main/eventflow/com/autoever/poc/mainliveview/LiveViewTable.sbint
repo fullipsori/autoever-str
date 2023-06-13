@@ -14,18 +14,18 @@
             <field description="단말기 ID (KafkaMessage)" name="terminalID" type="string"/>
             <field description="차량번호 (KafkaMessage)" name="vehicleKeyID" type="long"/>
             <field description="차량 관리번호 (연구소 제공 자료)" name="mgmtNO" type="string"/>
-            <field name="recordCount" type="long"/>
             <field description="주행번호 (KafkaMessage)" name="rootCount" type="int"/>
             <field description="운행 baseTime (KafkaMessage)" name="baseTime" type="long"/>
             <field description="kafka DeltaTime" name="deltaTime" type="double"/>
             <field description="event 발생 시간" name="realTime" type="long"/>
-            <field description="Cell 평균" name="meanVal" type="double"/>
-            <field description="최대(cell)-최소(cell)" name="diffVal" type="long"/>
+            <field description="최대(cell)-최소(cell)" name="deltaVol" type="double"/>
             <field description="cell 데이터 값" name="cellData" type="string"/>
+            <field description="각 셀 전압변화의 편차" name="dVol" type="string"/>
             <field description="배터리팩내 개별 온도 센서" name="msrTBData" type="string"/>
             <field description="배터리 SOC 상태" name="SOC" type="double"/>
             <field description="배터리 전류값" name="IBM" type="double"/>
             <field description="배터리 충전 상태" name="chargingNow" type="long"/>
+            <field description="절연 저항값" name="ISOL" type="double"/>
         </schema>
         <schema name="CanDataTableSchema">
             <field description="sb 에서 생성한 message unique id (vehicleKeyID + timestamp + seq_num)" name="messageID" type="string"/>

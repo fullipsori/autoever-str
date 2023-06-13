@@ -9,7 +9,6 @@
             <param name="fully-qualified-name" value="com.autoever.poc.maineventflow.AutoVDMSFlow_v2"/>
         </type-metadata>
         <memory-model-settings/>
-        <implements module-reference="com.autoever.poc.maineventflow.DataParser"/>
         <implements module-reference="com.autoever.poc.maineventflow.HttpClientSchema"/>
         <implements module-reference="com.autoever.poc.maineventflow.LiveViewTable"/>
         <implements module-reference="com.autoever.poc.maineventflow.ResourceTable"/>
@@ -75,7 +74,7 @@
         </parameter-definitions>
         <dynamic-variables>
             <dynamic-variable initial-expression="list('')" name="CCPVIDs" setter-expression="newCCPVIDs" setter-stream="UpdatePolicyOutputStream"/>
-            <dynamic-variable initial-expression="tuple(false AS allowCan, false AS allowDiag, true AS allowGps, false AS allowCcp)" name="filterMessage" setter-expression="newFilterMessage" setter-stream="OutputNewFilterMessage"/>
+            <dynamic-variable initial-expression="tuple(true AS allowCan, false AS allowDiag, true AS allowGps, false AS allowCcp)" name="filterMessage" setter-expression="newFilterMessage" setter-stream="OutputNewFilterMessage"/>
             <dynamic-variable initial-expression="list('')" name="policyFiles" setter-expression="newPolicyFiles" setter-stream="UpdatePolicyOutputStream"/>
         </dynamic-variables>
         <data name="MGMTQueryTable" shared="false" source="concrete" type="querytable">

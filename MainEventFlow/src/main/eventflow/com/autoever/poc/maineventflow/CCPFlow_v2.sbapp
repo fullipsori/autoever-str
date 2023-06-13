@@ -42,6 +42,16 @@
                 </expressions>
             </target-list>
         </box>
+        <box name="nullforbinData" type="map">
+            <input port="1" stream="InputStream"/>
+            <output port="1" stream="out:nullforbinData_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <replace field="binaryData">blob(null)</replace>
+                </expressions>
+            </target-list>
+        </box>
         <box name="Union" type="union">
             <input port="1" stream="ControlStream"/>
             <input port="2" stream="out:InitMeta_1"/>
@@ -56,7 +66,7 @@
         </box>
         <module-reference name="CCPParserModule">
             <input dispatch="broadcast" name="ControlStream" port="1" stream="out:Split_2"/>
-            <input dispatch="numerical" key="int(kafkaMessage.VehicleKeyID)" name="InputStream" port="2" stream="InputStream"/>
+            <input dispatch="numerical" key="int(kafkaMessage.VehicleKeyID)" name="InputStream" port="2" stream="out:nullforbinData_1"/>
             <output name="ccpOutputStream" port="1" stream="ccpOutputStream"/>
             <output name="StatusOutput" port="2" stream="StatusStream"/>
             <param name="parallel" value="true"/>

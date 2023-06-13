@@ -1,7 +1,6 @@
 package com.autoever.poc.parser.can;
 
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.autoever.poc.common.RawDataField;
@@ -9,7 +8,6 @@ import com.autoever.poc.parser.AutoKafkaField;
 import com.autoever.poc.parser.PreProcessable;
 import com.streambase.sb.Schema;
 import com.streambase.sb.Tuple;
-import com.streambase.sb.util.Base64;
 
 public class CanPreProcessor implements PreProcessable {
 
@@ -17,9 +15,8 @@ public class CanPreProcessor implements PreProcessable {
 		// TODO Auto-generated constructor stub
 	}
 
-	public static ArrayList<Schema.Field> getSchemaFields(Schema baseSchema) {
-		ArrayList<Schema.Field> outputSchemaField = new ArrayList<>(baseSchema.fields());
-		return outputSchemaField;
+	public static void addSchemaField(List<Schema.Field> outputSchemaField) {
+		return;
 	}
 
 	@Override
@@ -31,35 +28,19 @@ public class CanPreProcessor implements PreProcessable {
 	}
 
 	@Override
-	public int preProcess(Tuple kafkaMessage, Tuple inputTuple, List<Tuple> tuples, Object[] parsed, Schema outputSchema) {
+	public boolean preProcess(Tuple kafkaMessage, Tuple dataTuple, byte[] rawData) {
 		// TODO Auto-generated method stub
-		int addedCount = 0;
 		try {
 			String param =  kafkaMessage.getString(AutoKafkaField.TerminalID.getName());
 			PolicyParser policy = PolicyRepository.getInstance().mPolicyMap.get(param);
-			if(policy == null) return addedCount;
-			if(policy.IsAvailable((int)parsed[RawDataField.DataChannel.getValue()], (int)parsed[RawDataField.DataID.getValue()])) {
-				Tuple dataTuple = outputSchema.createTuple();
-				dataTuple.setInt(RawDataField.DataChannel.getValue(), (int)parsed[RawDataField.DataChannel.getValue()]);
-				dataTuple.setDouble(RawDataField.DeltaTime.getValue(), (double)parsed[RawDataField.DeltaTime.getValue()]);
-				dataTuple.setInt(RawDataField.MSGInfo.getValue(),  (int)parsed[RawDataField.MSGInfo.getValue()]);
-				dataTuple.setInt(RawDataField.DataID.getValue(),  (int)parsed[RawDataField.DataID.getValue()]);
-				dataTuple.setInt(RawDataField.DLC.getValue(),  (int)parsed[RawDataField.DLC.getValue()]);
-				dataTuple.setString(RawDataField.DATA.getValue(),  Base64.encodeBytes((byte[])parsed[RawDataField.DATA.getValue()]));
-				dataTuple.setLong(RawDataField.BaseTime.getValue(),  (long)parsed[RawDataField.BaseTime.getValue()]);
-				dataTuple.setBoolean(RawDataField.IsStarted.getValue(),  (boolean)parsed[RawDataField.IsStarted.getValue()]);
-				dataTuple.setBoolean(RawDataField.IsEnded.getValue(),  (boolean)parsed[RawDataField.IsEnded.getValue()]);
-				dataTuple.setInt(RawDataField.MSGIdx.getValue(), (((int)parsed[RawDataField.MSGIdx.getValue()]) + addedCount++) );
-				dataTuple.setTuple("PassThroughs", inputTuple);
-				
-				tuples.add(dataTuple);
-				return addedCount;
-			}
+			if(policy == null) return false;
+			int ch = dataTuple.getTuple("RawHeader").getInt(RawDataField.DataChannel.getValue());
+			int id = dataTuple.getTuple("RawHeader").getInt(RawDataField.DataID.getValue());
+			return policy.IsAvailable(ch, id);
 		}catch(Exception e) {
 			e.printStackTrace();
-			return addedCount;
+			return false;
 		}
-		return addedCount;
 	}
 
 	@Override

@@ -6,19 +6,25 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import com.autoever.poc.common.NumUtils;
 import com.autoever.poc.parser.can.PolicyParser;
 import com.autoever.poc.parser.can.PolicyRepository;
+import com.autoever.poc.parser.ccp.CCPPreProcessor;
+import com.autoever.poc.parser.ccp.ODTParser;
+import com.autoever.poc.parser.ccp.ODTRepository;
 import com.streambase.sb.CompleteDataType;
 import com.streambase.sb.NullValueException;
 import com.streambase.sb.Schema;
 import com.streambase.sb.Tuple;
 import com.streambase.sb.TupleException;
 import com.streambase.sb.util.Base64;
+import com.streambase.sb.util.Pair;
 
 public class RawDataParser implements Parseable {
 
+	private int headerLength = 0;
 	private byte[] hcpMessage;
 	private List<Tuple> parsedData = new ArrayList<>();
 	final static Schema dataSchema = new Schema(
@@ -32,16 +38,18 @@ public class RawDataParser implements Parseable {
 					, new Schema.Field("BaseTime", CompleteDataType.forLong())
 				);
 
-	public RawDataParser(byte[] message) {
+	public RawDataParser(byte[] message, int headerLength) {
 		this.hcpMessage = message;
+		this.headerLength= headerLength;
 	}
 	
-	public RawDataParser(String filePath) {
+	public RawDataParser(String filePath, int headerLength) {
 		byte[] allBytes;
 		try {
 			allBytes = Files.readAllBytes(Paths.get(filePath));
 			if(allBytes != null && allBytes.length > 0) {
 				this.hcpMessage = allBytes;
+				this.headerLength= headerLength;
 			} else {
 				this.hcpMessage = null;
 			}
@@ -53,7 +61,7 @@ public class RawDataParser implements Parseable {
 	public void parse() {
 		// TODO Auto-generated method stub
 		int[] dlcSize = {0,1,2,3,4,5,6,7,8,12,16,20,24,32,48,64};
-		int sIndex = 0;
+		int sIndex = headerLength;
 		final int headerSize = 10;	//IBBI(10byte)
 		
 		try {
@@ -99,9 +107,11 @@ public class RawDataParser implements Parseable {
 		return parsedData;
 	}
 
+
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		
+		/** For CAN
 		String filepath= "d:/projects/vdms/resources/download/BM-15C-0088_142714_1_1685938107_1685938583675.dat";
 		PolicyRepository.getInstance().LoadPolicy("d:/projects/vdms/resources/policy", "xml");
 		String filename =  Paths.get(filepath).getFileName().toString().substring(0, Paths.get(filepath).getFileName().toString().lastIndexOf('.')).split("_")[0];
@@ -150,6 +160,44 @@ public class RawDataParser implements Parseable {
 		});
 
 		Arrays.stream(PolicyParser.debug_val).forEach(System.out::println);
+		**/
+		
+		/** For CCP **/
+		String filepath= "D:/projects/autoever-str/MainEventFlow/src/main/resources/data/HREV_N19-08-728_VM-21C-0016_BASE_257_4_-1_CCP_20230424074628_146119_noheader.dat";
+		ODTRepository.getInstance().LoadEVT("d:/projects/vdms/resources/evt", "evt");
+		String filename = "VM-21C-0016";
+		
+		List<Tuple> result = new RawDataParser(filepath, 0).getParsed();
+		
+		if(result.isEmpty()) {
+			System.out.println("empty");
+			return;
+		}
+		
+		List<Tuple> tuples = new ArrayList<>();
+		CCPPreProcessor ccpProcessor = new CCPPreProcessor();
+
+		System.out.println("Started--->");
+		for(Tuple tuple : result) {
+			byte[] rawdata;
+			try {
+				rawdata = Base64.decode(tuple.getString("DATA"));
+				Tuple ccpTuple = ccpProcessor.checkProcess(filename, tuple, rawdata);
+				if(ccpTuple != null) tuples.add(ccpTuple);
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		}
+		// print 
+		tuples.stream().forEach(t -> {
+			try {
+				System.out.println("SOC:" + t.getDouble("SOC") + " ISOL:" + t.getDouble("ISOL"));
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
+		});
+		System.out.println("tuple Count:" + tuples.size());
 	}
 
 }

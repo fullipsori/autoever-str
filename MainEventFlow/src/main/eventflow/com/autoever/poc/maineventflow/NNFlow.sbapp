@@ -26,6 +26,15 @@
                 <field name="modelFolder" type="string"/>
             </schema>
         </stream>
+        <stream name="InputStream">
+            <schema>
+                <field name="x_input" type="list">
+                    <element-type type="list">
+                        <element-type type="double"/>
+                    </element-type>
+                </field>
+            </schema>
+        </stream>
         <box name="InputAdapter" type="inputadapter">
             <output port="1" stream="out:InputAdapter_1"/>
             <param name="start:state" value="true"/>
@@ -56,6 +65,16 @@
             <param name="UseTempFile" value="false"/>
             <param name="WorkingDir" value="."/>
         </box>
+        <box name="pack" type="map">
+            <input port="1" stream="InputStream"/>
+            <output port="1" stream="out:pack_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="inputVars.x_input">x_input</include>
+                </expressions>
+            </target-list>
+        </box>
         <box name="ReloadModel" type="map">
             <input port="1" stream="ControlStream"/>
             <output port="1" stream="out:ReloadModel_1"/>
@@ -67,6 +86,25 @@
                 </expressions>
             </target-list>
         </box>
+        <box name="Predict" type="java">
+            <input port="1" stream="out:pack_1"/>
+            <output port="1" stream="out:Predict_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.python.PythonAdapter"/>
+            <param name="Asynchronous" value="true"/>
+            <param name="GlobalInstanceId" value=""/>
+            <param name="InstanceType" value="Local"/>
+            <param name="LocalInstanceId" value="nn_instance"/>
+            <param name="LogLevel" value="INFO"/>
+            <param name="OutputVarsSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema&gt;&#13;&#10;    &lt;field name=&quot;y_predict&quot; type=&quot;list&quot;&gt;&#13;&#10;        &lt;element-type type=&quot;double&quot;/&gt;&#13;&#10;    &lt;/field&gt;&#13;&#10;&lt;/schema&gt;&#13;&#10;"/>
+            <param name="Script" value="import numpy as np&#13;&#10;&#13;&#10;x_input_data = np.array(x_input)&#13;&#10;x_input_data = x_input_data.reshape(1,-1)&#13;&#10;&#13;&#10;y_output_predict = KERAS_MODEL.predict(x_input_data)&#13;&#10;y_predict = list(y_output_predict[0])&#13;&#10;&#13;&#10;        "/>
+            <param name="ScriptFile" value=""/>
+            <param name="ScriptSource" value="Script text"/>
+            <param name="amsRequiredOnStartup" value="false"/>
+            <param name="artifactName" value=""/>
+            <param name="artifactVersion" value=""/>
+            <param name="enableControlPort" value="false"/>
+        </box>
         <box name="Union" type="union">
             <input port="1" stream="out:ReloadModel_1"/>
             <input port="2" stream="out:LoadModel2_1"/>
@@ -75,7 +113,7 @@
         </box>
         <box name="LoadModel" type="java">
             <input port="1" stream="out:Union_1"/>
-            <output port="1" stream="out:LoadModel_1"/>
+            <output port="1" stream="LoadModelOutputStream"/>
             <error stream="ErrorOutputStream"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.streambase.sb.adapter.python.PythonAdapter"/>
@@ -93,6 +131,18 @@
             <param name="artifactVersion" value=""/>
             <param name="enableControlPort" value="false"/>
         </box>
+        <box name="unpack" type="map">
+            <input port="1" stream="out:Predict_1"/>
+            <output port="1" stream="OutputStream"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="y_predict">outputVars.y_predict</include>
+                </expressions>
+            </target-list>
+        </box>
         <error-output-stream name="ErrorOutputStream"/>
+        <output-stream name="LoadModelOutputStream"/>
+        <output-stream name="OutputStream"/>
     </add>
 </modify>

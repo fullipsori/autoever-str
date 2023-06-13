@@ -27,44 +27,6 @@ import com.streambase.sb.client.CustomFunctionResolver;
 */
 public class ParseUtil {
 
-	/**
-	* A StreamBase Simple Function. Use this function
-	* in StreamBase expressions using the <em>calljava</em> function, or 
-	* by an assigned alias. It can then be called directly 
-	* using the alias name instead of using calljava().
-	*/
-	@CustomFunctionResolver("GetRawsCustomFunctionResolver0")
-	public static List<Tuple> GetRaws(ByteArrayView binData, String filePath) {
-		// TODO Implement function here
-		if(binData != null && binData.length() > 0) {
-			byte[] bytes = binData.array();
-			return new RawDataParser(bytes).getParsed();
-		}else if(filePath != null && filePath.length() > 0){
-			return new RawDataParser(filePath).getParsed();
-		}
-		return null;
-	}
-
-	/**
-	* A StreamBase Custom Function Resolver Function. This method is used by 
-	* StreamBase for type checking.  Use this method
-	* to resolve functions that take lists or tuples as arguments 
-	* or return lists or tuples.  This method should be used to ensure the 
-	* data types of your function are correct.
-	
-	* For custom functions that return simple types (the Java equivalents of the simple 
-	* StreamBase types: int, long, double, bool, string, blob, timestamp), the returned CompleteDataType
-	* must be the appropriate corresponding simple type (e.g., as returned by CompleteDataType.forInt()).
-	* For custom functions that return non-simple types (the Java equivalents of the non-simple
-	* StreamBase types: tuple, list), the returned CompleteDataType must fully describe the appropriate
-	* non-simple type (as returned by CompleteDataType.forTuple(Schema) or CompleteDataType.forList(CompleteDataType))
-	*{@see com.streambase.sb.client.CustomFunctionResolver}  
-	*/
-	public static CompleteDataType GetRawsCustomFunctionResolver0(CompleteDataType binData, CompleteDataType filePath) {
-		// TODO: Implement custom function resolver functionality here
-		return CompleteDataType.forList(CompleteDataType.forTuple(RawDataParser.dataSchema));
-	}
-
 	@CustomFunctionResolver("GetKeyFlagCustomFunctionResolver0")
 	public static boolean GetKeyFlag(String policy, Tuple message) {
 		PolicyParser policyParser = PolicyRepository.getInstance().mPolicyMap.get(policy);

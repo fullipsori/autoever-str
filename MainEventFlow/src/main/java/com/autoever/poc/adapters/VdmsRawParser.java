@@ -58,6 +58,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 	private int outputPorts = 2;
 
 	private Schema OutputSchema = null;
+	private Schema rawHeaderSchema = null;
 	private Schema StatusSchema = null;
 	private PreProcessable preprocessor = null;
 
@@ -100,16 +101,22 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 			inputSchema.getField("binaryData").checkType(CompleteDataType.forBlob());
 			inputSchema.getField("filePath").checkType(CompleteDataType.forString());
 
-			Schema rawOutputSchema = getNamedSchema("VDMSBaseRaw");
-			ArrayList<Schema.Field> outputSchemaField;// = new ArrayList<>(rawOutputSchema.fields());
+			ArrayList<Schema.Field> outputSchemaField = new ArrayList<>();
+			rawHeaderSchema = getNamedSchema("VDMSBaseRaw");
+
+			outputSchemaField.add(new Schema.Field("IsStarted", CompleteDataType.forBoolean()));
+			outputSchemaField.add(new Schema.Field("IsEnded", CompleteDataType.forBoolean()));
+			outputSchemaField.add(new Schema.Field("MSGIdx", CompleteDataType.forInt()));
+			outputSchemaField.add(new Schema.Field("RawHeader", CompleteDataType.forTuple(rawHeaderSchema)));
+			
 			if(getParserType() == parserTypeEnum.CAN) {
-				outputSchemaField = CanPreProcessor.getSchemaFields(rawOutputSchema);
+				CanPreProcessor.addSchemaField(outputSchemaField);
 			}else if(getParserType() == parserTypeEnum.CCP) {
-				outputSchemaField = CCPPreProcessor.getSchemaFields(rawOutputSchema);
+				CCPPreProcessor.addSchemaField(outputSchemaField);
 			}else if(getParserType() == parserTypeEnum.GPS) {
-				outputSchemaField = GPSPreProcessor.getSchemaFields(rawOutputSchema);
+				GPSPreProcessor.addSchemaField(outputSchemaField);
 			}else {
-				outputSchemaField = new ArrayList<>(rawOutputSchema.fields());
+				// no action
 			}
 			outputSchemaField.add(new Schema.Field("PassThroughs", CompleteDataType.forTuple(inputSchema)));
 				
@@ -160,7 +167,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 			}else if(filePath != null && !filePath.isEmpty()) {
 				Path file = Paths.get(filePath);
 				allBytes = Files.readAllBytes(file);
-				Files.delete(file);
+//				Files.delete(file);
 			}else {
 				return;
 			}
@@ -212,9 +219,9 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 			}
 			
 			Tuple startTuple = OutputSchema.createTuple();
-			startTuple.setBoolean(RawDataField.IsStarted.getValue(), true);
-			startTuple.setBoolean(RawDataField.IsEnded.getValue(), false);
-			startTuple.setInt(RawDataField.MSGIdx.getValue(), msgIdx++);
+			startTuple.setBoolean("IsStarted", true);
+			startTuple.setBoolean("IsEnded", false);
+			startTuple.setInt("MSGIdx", msgIdx++);
 			startTuple.setTuple("PassThroughs", inputTuple);
 			tuples.add(startTuple);
 
@@ -234,6 +241,30 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 				int dataSize = dlcSize[dlcIndex];
 				byte[] rawData = Arrays.copyOfRange(hcpMessage, curIndex, curIndex + dataSize);
 				
+				Tuple dataTuple = OutputSchema.createTuple();
+				dataTuple.setBoolean("IsStarted", false);
+				dataTuple.setBoolean("IsEnded", false);
+				dataTuple.setInt("MSGIdx", msgIdx);
+
+				Tuple headerTuple = rawHeaderSchema.createTuple();
+				headerTuple.setInt(RawDataField.DataChannel.getValue(), dataChannel);
+				headerTuple.setDouble(RawDataField.DeltaTime.getValue(), deltaTime);
+				headerTuple.setInt(RawDataField.MSGInfo.getValue(), dataFlag);
+				headerTuple.setInt(RawDataField.DataID.getValue(), dataId);
+				headerTuple.setInt(RawDataField.DLC.getValue(), dlcIndex);
+				headerTuple.setString(RawDataField.DATA.getValue(), Base64.encodeBytes(rawData));
+				headerTuple.setLong(RawDataField.BaseTime.getValue(), baseTime);
+				
+				dataTuple.setTuple("RawHeader", headerTuple);
+				dataTuple.setTuple("PassThroughs", inputTuple);
+				
+				if(preprocessor != null && preprocessor.preProcess(kafkaMessage, dataTuple, rawData)) {
+					tuples.add(dataTuple);
+					msgIdx++;
+				}else {
+					// no action
+				}
+				/**
 				Object[] parsed = new Object[] { dataChannel, deltaTime, dataFlag, dataId, dlcIndex, rawData, baseTime, false, false, msgIdx };
 				
 				if(preprocessor != null) {
@@ -255,14 +286,15 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 						
 					tuples.add(dataTuple);
 				}
+				**/
 				
 				sIndex += (dataSize + headerSize);
 			}
 
 			Tuple endTuple = OutputSchema.createTuple();
-			endTuple.setBoolean(RawDataField.IsStarted.getValue(), false);
-			endTuple.setBoolean(RawDataField.IsEnded.getValue(), true);
-			endTuple.setInt(RawDataField.MSGIdx.getValue(), msgIdx+1); //started + ended + count(tuples)
+			endTuple.setBoolean("IsStarted", false);
+			endTuple.setBoolean("IsEnded", true);
+			endTuple.setInt("MSGIdx", msgIdx+1); //started + ended + count(tuples)
 			endTuple.setTuple("PassThroughs", inputTuple);
 			tuples.add(endTuple);
 

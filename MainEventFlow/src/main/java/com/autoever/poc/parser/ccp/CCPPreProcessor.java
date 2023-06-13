@@ -2,32 +2,38 @@ package com.autoever.poc.parser.ccp;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
 
 import com.autoever.poc.common.NumUtils;
-import com.autoever.poc.common.RawDataField;
 import com.autoever.poc.parser.AutoKafkaField;
 import com.autoever.poc.parser.PreProcessable;
 import com.streambase.sb.CompleteDataType;
-import com.streambase.sb.NullValueException;
 import com.streambase.sb.Schema;
-import com.streambase.sb.Schema.Field;
 import com.streambase.sb.Tuple;
-import com.streambase.sb.TupleException;
-import com.streambase.sb.util.Base64;
 import com.streambase.sb.util.Pair;
 
-import avro.shaded.com.google.common.base.Optional;
 
 public class CCPPreProcessor implements PreProcessable {
 
-	int prevCmd = 0;
+	private int prevCmd = 0;
+	private Tuple ccpTuple = null;
+
+	public final static Schema FieldType = new Schema("FieldType", List.of(
+			new Schema.Field("ODTField", CompleteDataType.forString()),
+			new Schema.Field("ODTValue", CompleteDataType.forLong())));
+
+	public final static Schema RawParsed = new Schema("RawParsed", 
+		List.of(
+			new Schema.Field("cellData", CompleteDataType.forList(CompleteDataType.forTuple(FieldType))),
+			new Schema.Field("msrTBData", CompleteDataType.forList(CompleteDataType.forTuple(FieldType))),
+			new Schema.Field("SOC", CompleteDataType.forDouble()),
+			new Schema.Field("IBM", CompleteDataType.forDouble()),
+			new Schema.Field("chargingNow", CompleteDataType.forLong()),
+			new Schema.Field("ISOL", CompleteDataType.forDouble())
+		));
 	
-	public static ArrayList<Schema.Field> getSchemaFields(Schema baseSchema) {
-		ArrayList<Schema.Field> outputSchemaField = new ArrayList<>(baseSchema.fields());
-		outputSchemaField.add(new Schema.Field("ODTField", CompleteDataType.forString()));
-		outputSchemaField.add(new Schema.Field("ODTValue", CompleteDataType.forLong()));
-		return outputSchemaField;
+	public static void addSchemaField(List<Schema.Field> outputSchemaField) {
+		outputSchemaField.add(new Schema.Field("RawParsed", CompleteDataType.forTuple(RawParsed)));
+		return;
 	}
 
 	public CCPPreProcessor() {
@@ -47,63 +53,124 @@ public class CCPPreProcessor implements PreProcessable {
 		return false;
 	}
 
-	@Override
-	public int preProcess(Tuple kafkaMessage, Tuple inputTuple, List<Tuple> tuples, Object[] parsed, Schema outputSchema) {
-		// TODO Auto-generated method stub
-		byte[] rawdata = (byte[])parsed[RawDataField.DATA.getValue()];
-		int addedCount = 0;
+	@SuppressWarnings("unchecked")
+	public void addTupleField(int command, Pair<String, Long> data) {
 		try {
-			if(prevCmd != 0 ) {
-				if(prevCmd != 255 && ((rawdata[0]&0xff) >= 0x0a) && ((rawdata[0]&0xff) <= 0x3b)) {
-					String param =  kafkaMessage.getString(AutoKafkaField.TerminalID.getName());
-					List<Pair<String, Long>> odtParsed = parseData(rawdata, ODTRepository.getInstance().mODTMap.get(param));
-					if(odtParsed != null) {
-						addedCount = odtParsed.size();
-						IntStream.range(0, addedCount).forEach(idx -> {
-							Pair<String, Long> pair = odtParsed.get(idx);
-							try {
-								Tuple dataTuple = outputSchema.createTuple();
-								dataTuple.setInt(RawDataField.DataChannel.getValue(), (int)parsed[RawDataField.DataChannel.getValue()]);
-								dataTuple.setDouble(RawDataField.DeltaTime.getValue(), (double)parsed[RawDataField.DeltaTime.getValue()]);
-								dataTuple.setInt(RawDataField.MSGInfo.getValue(),  (int)parsed[RawDataField.MSGInfo.getValue()]);
-								dataTuple.setInt(RawDataField.DataID.getValue(),  (int)parsed[RawDataField.DataID.getValue()]);
-								dataTuple.setInt(RawDataField.DLC.getValue(),  (int)parsed[RawDataField.DLC.getValue()]);
-								dataTuple.setString(RawDataField.DATA.getValue(),  Base64.encodeBytes((byte[])parsed[RawDataField.DATA.getValue()]));
-								dataTuple.setLong(RawDataField.BaseTime.getValue(),  (long)parsed[RawDataField.BaseTime.getValue()]);
-								dataTuple.setBoolean(RawDataField.IsStarted.getValue(),  (boolean)parsed[RawDataField.IsStarted.getValue()]);
-								dataTuple.setBoolean(RawDataField.IsEnded.getValue(),  (boolean)parsed[RawDataField.IsEnded.getValue()]);
-								dataTuple.setInt(RawDataField.MSGIdx.getValue(), (((int)parsed[RawDataField.MSGIdx.getValue()]) + idx) );
-								dataTuple.setString("ODTField", pair.first);
-								dataTuple.setLong("ODTValue", pair.second);
-								dataTuple.setTuple("PassThroughs", inputTuple);
-								
-								tuples.add(dataTuple);
-							}catch(Exception e) {
-								e.printStackTrace();
-							}
-						});
-					}
-					return addedCount;
+
+			if(data.first.startsWith("cell_")) {
+				Tuple field = FieldType.createTuple();
+				field.setString(0, data.first);
+				field.setLong(1, data.second);
+				if(ccpTuple.isNull("cellData")) {
+					List<Tuple> dataList = new ArrayList<>();
+					dataList.add(field);
+					ccpTuple.setList("cellData", dataList);
+				}else {
+					List<Tuple> prevData = (List<Tuple>)ccpTuple.getList("cellData");
+					List<Tuple> dataList = new ArrayList<>(prevData);
+					dataList.add(field);
+					ccpTuple.setList("cellData", dataList);
 				}
+			}else if(data.first.startsWith("msr_tb_")) {
+				Tuple field = FieldType.createTuple();
+				field.setString(0, data.first);
+				field.setLong(1, data.second);
+				if(ccpTuple.isNull("msrTBData")) {
+					List<Tuple> dataList= new ArrayList<>();
+					dataList.add(field);
+					ccpTuple.setList("msrTBData", dataList);
+				}else {
+					List<Tuple> prevData = (List<Tuple>)ccpTuple.getList("msrTBData");
+					List<Tuple> dataList = new ArrayList<>(prevData);
+					dataList.add(field);
+					ccpTuple.setList("msrTBData", dataList);
+				}
+			}else if("SOC".equals(data.first)) {
+				ccpTuple.setDouble("SOC", data.second);
+			}else if("msr_data.ibm".equals(data.first)) {
+				ccpTuple.setDouble("IBM", data.second);
+			}else if("chg_charging_now".equals(data.first)) {
+				ccpTuple.setLong("chargingNow", data.second);
+			}else if("msr_data.r_isol".equals(data.first)) {
+				ccpTuple.setDouble("ISOL", data.second);
 			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} finally {
-			prevCmd = rawdata[0] & 0xff;
 		}
-		return addedCount;
+
 	}
+
+	@Override
+	public boolean preProcess(Tuple kafkaMessage, Tuple dataTuple, byte[] rawData) {
+		// TODO Auto-generated method stub
+		if(prevCmd != 0 ) {
+			if(prevCmd != 255 && ((rawData[0]&0xff) >= 0x0a) && ((rawData[0]&0xff) <= 0x3b)) {
+				prevCmd = rawData[0] & 0xff;
+				try {
+					String param =  kafkaMessage.getString(AutoKafkaField.TerminalID.getName());
+					List<Pair<String, Long>> odtParsed = parseData(rawData, ODTRepository.getInstance().mODTMap.get(param));
+					if(odtParsed != null) {
+						if(ccpTuple == null) ccpTuple = RawParsed.createTuple();
+						odtParsed.stream().forEach(pair -> addTupleField(prevCmd, pair));
+					}
+
+					if(prevCmd == 0x3b) {
+						dataTuple.setTuple("RawParsed", ccpTuple);
+						ccpTuple = null;
+						return true; // ccpTuple need to be added.
+					}
+					return false;
+				}catch(Exception e) {
+					e.printStackTrace();
+					return false;
+				}
+			}
+		}
+		prevCmd = rawData[0] & 0xff;
+		return false;
+	}
+
 
 	@Override
 	public void initialize(Tuple kafkaMessage) {
 		// TODO Auto-generated method stub
 		prevCmd = 0;
+		ccpTuple = null;
 	}
 
+	public Tuple checkProcess(String terminalID, Tuple dataTuple, byte[] rawData) {
+
+		if(prevCmd != 0 ) {
+			if(prevCmd != 255 && ((rawData[0]&0xff) >= 0x0a) && ((rawData[0]&0xff) <= 0x3b)) {
+				prevCmd = rawData[0] & 0xff;
+
+				try {
+					List<Pair<String, Long>> odtParsed = parseData(rawData, ODTRepository.getInstance().mODTMap.get(terminalID));
+					if(odtParsed != null) {
+						if(ccpTuple == null) ccpTuple = RawParsed.createTuple();
+						odtParsed.stream().forEach(pair -> addTupleField(prevCmd, pair));
+					}
+
+					if(prevCmd == 0x3b) { //adding tuple.
+						Tuple result = ccpTuple;
+						ccpTuple = null;
+						return result;
+					}
+					return null;
+					
+				}catch(Exception e) {
+					e.printStackTrace();
+					ccpTuple = null;
+					return null;
+				}
+			}
+		}
+		prevCmd = rawData[0] & 0xff;
+		return null;
+	}
 
 	@SuppressWarnings("unchecked")
-	private List<Pair<String, Long>> parseData(byte[] rawdata, ODTParser evtParser) {
+	public static List<Pair<String, Long>> parseData(byte[] rawdata, ODTParser evtParser) {
 
 		if(evtParser == null) return null;
 
@@ -137,5 +204,6 @@ public class CCPPreProcessor implements PreProcessable {
 		}
 		return resultList;
 	}
+
 
 }

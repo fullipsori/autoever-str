@@ -16,7 +16,7 @@
         <named-schemas>
             <schema name="FieldType">
                 <field name="fieldName" type="string"/>
-                <field name="fieldValue" type="double"/>
+                <field name="fieldValue" type="long"/>
             </schema>
         </named-schemas>
         <parameter-definitions>
@@ -34,17 +34,17 @@
             </schema>
         </stream>
         <stream name="InputStream" schema="MainOutputSchema"/>
-        <box name="VDMSRawCCP" type="java">
+        <box name="CCPRawParser" type="java">
             <input port="1" stream="InputStream"/>
-            <output port="1" stream="out:VDMSRawCCP_1"/>
+            <output port="1" stream="out:CCPRawParser_1"/>
             <output port="2" stream="StatusOutput"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.autoever.poc.adapters.VdmsRawParser"/>
-            <param name="parserType" value="ccp"/>
+            <param name="parserType" value="CCP"/>
         </box>
         <output-stream name="StatusOutput"/>
         <box name="Organize" type="map">
-            <input port="1" stream="out:VDMSRawCCP_1"/>
+            <input port="1" stream="out:CCPRawParser_1"/>
             <output port="1" stream="out:Organize_1"/>
             <target-list>
                 <item name="input" selection="all">
@@ -57,203 +57,159 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="FilterCCP" type="filter">
+        <box name="FilterMarker" type="filter">
             <input port="1" stream="out:Organize_1"/>
-            <output port="1" stream="out:FilterCCP_1"/>
-            <output port="2" stream="out:FilterCCP_2"/>
-            <output port="3" stream="out:FilterCCP_3"/>
-            <output port="4" stream="out:FilterCCP_4"/>
-            <output port="5" stream="out:FilterCCP_5"/>
-            <output port="6" stream="out:FilterCCP_6"/>
-            <output port="7" stream="out:FilterCCP_7"/>
-            <output port="8" stream="out:FilterCCP_8"/>
-            <param name="autogen-nomatch-port" value="false"/>
+            <output port="1" stream="out:FilterMarker_1"/>
+            <output port="2" stream="out:FilterMarker_2"/>
+            <output port="3" stream="out:FilterMarker_3"/>
+            <param name="autogen-nomatch-port" value="true"/>
             <param name="expression.0" value="IsStarted"/>
             <param name="expression.1" value="IsEnded"/>
-            <param name="expression.2" value="contains(ODTField, 'cell_')"/>
-            <param name="expression.3" value="contains(ODTField, 'msr_tb_')"/>
-            <param name="expression.4" value="ODTField == 'SOC'"/>
-            <param name="expression.5" value="ODTField == 'msr_data.ibm'"/>
-            <param name="expression.6" value="ODTField == 'chg_charging_now'"/>
-            <param name="expression.7" value="ODTField == 'msr_data.isol'"/>
+            <param name="expression.2" value="true"/>
         </box>
-        <box name="MAP_CHG" type="map">
-            <input port="1" stream="out:FilterCCP_7"/>
-            <output port="1" stream="out:MAP_CHG_1"/>
+        <box name="MarkerEnded" type="map">
+            <input port="1" stream="out:FilterMarker_2"/>
+            <output port="1" stream="out:MarkerEnded_1"/>
             <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="messageID">messageID</include>
-                    <include field="chg_charging_now">ODTValue</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="MAP_ISOL" type="map">
-            <input port="1" stream="out:FilterCCP_8"/>
-            <output port="1" stream="out:MAP_ISOL_1"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="messageID">messageID</include>
-                    <include field="isol">ODTValue</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="MAP_MSR_IBM" type="map">
-            <input port="1" stream="out:FilterCCP_6"/>
-            <output port="1" stream="out:MAP_MSR_IBM_1"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="IBM">ODTValue * 0.1</include>
-                    <include field="messageID">messageID</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="MAP_SOC" type="map">
-            <input port="1" stream="out:FilterCCP_5"/>
-            <output port="1" stream="out:MAP_SOC_1"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="SOC">ODTValue * 0.1</include>
-                    <include field="messageID">messageID</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="Union3" type="union">
-            <input port="1" stream="out:FilterCCP_1"/>
-            <input port="2" stream="out:FilterCCP_2"/>
-            <output port="1" stream="out:Union3_1"/>
-            <param name="strict" value="false"/>
-        </box>
-        <box name="Split2" type="split">
-            <input port="1" stream="out:Union3_1"/>
-            <output port="1" stream="out:Split2_1"/>
-            <output port="2" stream="out:Split2_2"/>
-            <param name="output-count" value="2"/>
-        </box>
-        <box name="Union" type="union">
-            <input port="1" stream="out:Split2_1"/>
-            <input port="2" stream="out:FilterCCP_3"/>
-            <output port="1" stream="out:Union_1"/>
-            <param name="strict" value="false"/>
-        </box>
-        <box name="Union4" type="union">
-            <input port="1" stream="out:Split2_2"/>
-            <input port="2" stream="out:FilterCCP_4"/>
-            <output port="1" stream="out:Union4_1"/>
-            <param name="strict" value="false"/>
-        </box>
-        <box name="AGG_CELL" type="aggregate">
-            <input port="1" stream="out:Union_1"/>
-            <output port="1" stream="out:AGG_CELL_1"/>
-            <param name="dimension-name.0" value="Dimension1"/>
-            <param name="dimension-type.0" value="Predicate"/>
-            <param name="dimension-partial.0" value="no"/>
-            <param name="dimension-open-predicate.0" value="IsStarted"/>
-            <param name="dimension-close-predicate.0" value="IsEnded"/>
-            <param name="dimension-emit-predicate.0" value="count(ODTField)==90"/>
-            <param name="dimension-emit-close-first.0" value="false"/>
-            <param name="output-group-by" value="true"/>
-            <target-list>
-                <expressions>
-                    <include field="cellData">join(',', sort(filterlist(aggregatelist(FieldType(ODTField, ODTValue)), function(t FieldType){ !isempty(t.fieldName)}), function(t1 FieldType, t2 FieldType) {if(t1.fieldName &gt; t2.fieldName) then 1 else if(t1.fieldName &lt; t2.fieldName) then -1 else 0}))</include>
-                    <include field="diffVal">max(ODTValue) - min(ODTValue)</include>
-                    <include field="meanVal">avg(ODTValue)</include>
-                    <include field="messageID">firstval(messageID)</include>
-                    <include field="kafkaMessage">lastval(kafkaMessage)</include>
-                    <include field="perfData">lastval(perfData)</include>
-                    <include field="mgmtNO">lastval(mgmtNO)</include>
-                    <include field="deltaTime">firstnonnullval(DeltaTime)</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="AGG_MSR" type="aggregate">
-            <input port="1" stream="out:Union4_1"/>
-            <output port="1" stream="out:AGG_MSR_1"/>
-            <param name="dimension-name.0" value="Dimension1"/>
-            <param name="dimension-type.0" value="Predicate"/>
-            <param name="dimension-partial.0" value="no"/>
-            <param name="dimension-open-predicate.0" value="IsStarted"/>
-            <param name="dimension-close-predicate.0" value="IsEnded"/>
-            <param name="dimension-emit-predicate.0" value="count(ODTField)==9"/>
-            <param name="dimension-emit-close-first.0" value="false"/>
-            <param name="output-group-by" value="true"/>
-            <target-list>
-                <expressions>
-                    <include field="msrTBData">join(',', sort(filterlist(aggregatelist(FieldType(ODTField, ODTValue*0.1)), function(t FieldType){ !isempty(t.fieldName)}), function(t1 FieldType, t2 FieldType) {if(t1.fieldName &gt; t2.fieldName) then 1 else if(t1.fieldName &lt; t2.fieldName) then -1 else 0}))</include>
-                    <include field="messageID">firstval(messageID)</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="Gather" type="gather">
-            <input port="1" stream="out:AGG_CELL_1"/>
-            <input port="2" stream="out:AGG_MSR_1"/>
-            <input port="3" stream="out:MAP_SOC_1"/>
-            <input port="4" stream="out:MAP_MSR_IBM_1"/>
-            <input port="5" stream="out:MAP_CHG_1"/>
-            <input port="6" stream="out:MAP_ISOL_1"/>
-            <output port="1" stream="out:Gather_1"/>
-            <target-list>
-                <item name="input1" selection="all"/>
-                <item name="input2" selection="none">
-                    <include field="msrTBData"/>
+                <item name="input" selection="none">
+                    <include field="perfData"/>
+                    <include field="IsEnded"/>
+                    <include field="IsStarted"/>
+                    <include field="MSGIdx"/>
                 </item>
-                <item name="input3" selection="none">
-                    <include field="SOC"/>
-                </item>
-                <item name="input4" selection="none">
-                    <include field="IBM"/>
-                </item>
-                <item name="input5" selection="none">
-                    <include field="chg_charging_now"/>
-                </item>
-                <item name="input6" selection="none">
-                    <declare field="isol">isol</declare>
-                </item>
+                <expressions>
+                    <replace field="perfData.t3_time">to_milliseconds(now())</replace>
+                </expressions>
             </target-list>
-            <param name="key-field" value="messageID"/>
-            <param name="output-last-time-field" value="false"/>
-            <param name="emit-on-completion" value="true"/>
-            <param name="replacement-type" value="keep_first"/>
+        </box>
+        <box name="MarkerStarted" type="map">
+            <input port="1" stream="out:FilterMarker_1"/>
+            <output port="1" stream="out:MarkerStarted_1"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="perfData"/>
+                    <include field="IsEnded"/>
+                    <include field="IsStarted"/>
+                    <include field="MSGIdx"/>
+                </item>
+                <expressions>
+                    <replace field="perfData.t2_time">to_milliseconds(now())</replace>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="POST_OP" type="map">
+            <input port="1" stream="out:FilterMarker_3"/>
+            <output port="1" stream="out:POST_OP_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="deltaVol">if(RawParsed.chargingNow &gt; 0 &amp;&amp; RawParsed.SOC &gt;= 50) then calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetDeltaVol', RawParsed.cellData) else 0</include>
+                    <include field="dVols">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetDVol', RawParsed.cellData)</include>
+                </expressions>
+            </target-list>
         </box>
         <box name="add_seq_id" type="seqnum">
-            <input port="1" stream="out:Gather_1"/>
+            <input port="1" stream="out:POST_OP_1"/>
             <output port="1" stream="out:add_seq_id_1"/>
             <param name="output-field" value="seq_id"/>
             <param name="sequence-id" value="sequenceid"/>
             <param name="update-expression" value="sequenceid + 1"/>
         </box>
+        <box name="MarkerUnion" type="union">
+            <input port="1" stream="out:MarkerStarted_1"/>
+            <input port="2" stream="out:MarkerEnded_1"/>
+            <output port="1" stream="out:MarkerUnion_1"/>
+            <param name="strict" value="false"/>
+        </box>
+        <box name="AGGToHCP" type="aggregate">
+            <input port="1" stream="out:MarkerUnion_1"/>
+            <output port="1" stream="out:AGGToHCP_1"/>
+            <param name="dimension-name.0" value="Dimension1"/>
+            <param name="dimension-type.0" value="Predicate"/>
+            <param name="dimension-partial.0" value="no"/>
+            <param name="dimension-open-predicate.0" value="IsStarted"/>
+            <param name="dimension-close-predicate.0" value="IsEnded"/>
+            <param name="dimension-emit-close-first.0" value="false"/>
+            <param name="output-group-by" value="true"/>
+            <target-list>
+                <expressions>
+                    <include field="*">lastval(*)</include>
+                    <replace field="perfData.t2_time">firstval(perfData.t2_time)</replace>
+                    <replace field="perfData.t3_time">lastval(perfData.t3_time)</replace>
+                </expressions>
+            </target-list>
+        </box>
         <box name="unpack" type="map">
             <input port="1" stream="out:add_seq_id_1"/>
             <output port="1" stream="out:unpack_1"/>
             <target-list>
-                <item name="input" selection="all"/>
+                <item name="input" selection="all">
+                    <remove field="kafkaMessage"/>
+                    <remove field="perfData"/>
+                    <remove field="dVols"/>
+                    <remove field="seq_id"/>
+                    <remove field="RawHeader"/>
+                    <remove field="RawParsed"/>
+                    <remove field="IsEnded"/>
+                    <remove field="IsStarted"/>
+                    <remove field="MSGIdx"/>
+                </item>
                 <expressions>
                     <include field="terminalID">kafkaMessage.TerminalID</include>
                     <include field="vehicleKeyID">kafkaMessage.VehicleKeyID</include>
                     <include field="baseTime">kafkaMessage.BaseTime</include>
-                    <include field="realTime">long(GetLocalTime(kafkaMessage.BaseTime + long(deltaTime), ''))</include>
+                    <include field="realTime">long(GetLocalTime(kafkaMessage.BaseTime + long(RawHeader.DeltaTime), ''))</include>
                     <include field="rootCount">kafkaMessage.RootCount</include>
                     <replace field="messageID">messageID + '_' + seq_id</replace>
+                    <include field="*">RawParsed.*</include>
+                    <replace field="cellData">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromCellTuples', RawParsed.cellData)</replace>
+                    <replace field="msrTBData">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromCellTuples', RawParsed.msrTBData)</replace>
+                    <include field="dVol">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromDoubleList', dVols)</include>
                 </expressions>
             </target-list>
         </box>
-        <box name="MAP_PUB" type="map">
-            <input port="1" stream="out:unpack_1"/>
-            <output port="1" stream="out:MAP_PUB_1"/>
+        <box name="EndedCCPProc" type="map">
+            <input port="1" stream="out:AGGToHCP_1"/>
+            <output port="1" stream="out:EndedCCPProc_1"/>
             <target-list>
-                <item name="input" selection="all">
-                    <remove field="kafkaMessage"/>
-                    <remove field="perfData"/>
-                    <remove field="seq_id"/>
+                <item name="input" selection="none">
+                    <declare field="t1_time">input1.perfData.t1_time-input1.perfData.start_time</declare>
+                    <declare field="t2_time">input1.perfData.t2_time-input1.perfData.start_time</declare>
+                    <declare field="end_time">to_milliseconds(now())-input1.perfData.start_time</declare>
+                    <declare field="t3_time">input1.perfData.t3_time-input1.perfData.t2_time</declare>
                 </item>
+                <expressions>
+                    <include field="perfData">input1.perfData</include>
+                    <replace field="perfData.kafka_msg_id">input1.perfData.kafka_msg_id + "_CCP"</replace>
+                    <replace field="perfData.data_count">MSGIdx-2</replace>
+                    <replace field="perfData.t1_time">t1_time</replace>
+                    <replace field="perfData.t2_time">t2_time-t1_time</replace>
+                    <replace field="perfData.t3_time">t3_time</replace>
+                    <replace field="perfData.end_time">end_time</replace>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Filter" type="filter">
+            <input port="1" stream="out:unpack_1"/>
+            <output port="1" stream="out:Filter_1"/>
+            <output port="2" stream="out:Filter_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="false"/>
+            <param name="expression.1" value="true"/>
+        </box>
+        <box name="MapToPerfData" type="map">
+            <input port="1" stream="out:EndedCCPProc_1"/>
+            <output port="1" stream="out:MapToPerfData_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="*">input1.perfData.*</include>
+                </expressions>
             </target-list>
         </box>
         <box name="PublishCCP" type="outputadapter">
-            <input port="1" stream="out:MAP_PUB_1"/>
-            <output port="1" stream="ccpOutputStream"/>
+            <input port="1" stream="out:Filter_1"/>
+            <output port="1" stream="out:PublishCCP_1"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.streambase.sb.adapter.liveview.LiveViewPublish"/>
             <param name="ackPeriod" value="0"/>
@@ -276,6 +232,48 @@
             <param name="throughPort" value="false"/>
             <param name="uri" value="${LV_SERVER_URI}"/>
             <param name="useRuntimeURI" value="false"/>
+        </box>
+        <box name="Filter2" type="filter">
+            <input port="1" stream="out:MapToPerfData_1"/>
+            <output port="1" stream="out:Filter2_1"/>
+            <output port="2" stream="out:Filter2_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="false"/>
+            <param name="expression.1" value="true"/>
+        </box>
+        <box name="PublishPerf" type="outputadapter">
+            <input port="1" stream="out:Filter2_1"/>
+            <output port="1" stream="out:PublishPerf_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.liveview.LiveViewPublish"/>
+            <param name="ackPeriod" value="0"/>
+            <param name="adHoc" value="false"/>
+            <param name="bufferSize" value="100"/>
+            <param name="connectInline" value="false"/>
+            <param name="connectionKey" value=""/>
+            <param name="deleteField" value=""/>
+            <param name="dynamicTableName" value="false"/>
+            <param name="enableCompressedConnection" value="false"/>
+            <param name="encapsulatingLV" value="false"/>
+            <param name="flushInterval" value="25"/>
+            <param name="logLevel" value="INFO"/>
+            <param name="lvTableName" value="PerfDataTable"/>
+            <param name="pubName" value=""/>
+            <param name="reliablePub" value="false"/>
+            <param name="seqField" value=""/>
+            <param name="shareConnection" value="true"/>
+            <param name="strictSchema" value="false"/>
+            <param name="throughPort" value="false"/>
+            <param name="uri" value="${LV_SERVER_URI}"/>
+            <param name="useRuntimeURI" value="false"/>
+        </box>
+        <box name="Union" type="union">
+            <input port="1" stream="out:PublishPerf_1"/>
+            <input port="2" stream="out:PublishCCP_1"/>
+            <input port="3" stream="out:Filter2_2"/>
+            <input port="4" stream="out:Filter_2"/>
+            <output port="1" stream="ccpOutputStream"/>
+            <param name="strict" value="false"/>
         </box>
         <output-stream name="ccpOutputStream"/>
     </add>
