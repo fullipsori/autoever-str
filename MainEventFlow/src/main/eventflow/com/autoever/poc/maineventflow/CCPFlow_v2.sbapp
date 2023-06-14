@@ -89,7 +89,7 @@
             <param name="parallel-region-queue-max-processing-batch-size" value="5"/>
             <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
             <multiplicity number="5" type="concrete"/>
-            <param name="file" value="com.autoever.poc.parser.CCPParser_v2"/>
+            <param name="file" value="com.autoever.poc.parser.CCPParser_v3"/>
             <parameter-bindings>
                 <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
                 <binding name="RESOURCE_ROOT" value="${RESOURCE_ROOT}"/>

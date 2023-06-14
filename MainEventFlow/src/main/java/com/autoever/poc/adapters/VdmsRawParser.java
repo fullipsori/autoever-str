@@ -10,6 +10,7 @@ import java.util.List;
 
 import com.autoever.poc.common.NumUtils;
 import com.autoever.poc.common.RawDataField;
+import com.autoever.poc.parser.AutoDataHeaderField;
 import com.autoever.poc.parser.DefaultPreProcessor;
 import com.autoever.poc.parser.PreProcessable;
 import com.autoever.poc.parser.can.CanPreProcessor;
@@ -228,17 +229,17 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 
 			while(sIndex < rawcount) {
 
-				int dlcIndex = NumUtils.getIntFromBig(hcpMessage, sIndex, 1);
-				sIndex += 1;
+				int dlcIndex = NumUtils.getIntFromBig(hcpMessage, sIndex, AutoDataHeaderField.DataLength.getsize());
+				sIndex += AutoDataHeaderField.DataLength.getsize();
 				int curIndex =  sIndex;
-				double deltaTime = (double)(NumUtils.getLongFromBig(hcpMessage, curIndex, 4) * 0.00005);
-				curIndex += 4;
-				int dataFlag = NumUtils.getIntFromBig(hcpMessage, curIndex, 1);
-				curIndex += 1;
-				int dataChannel = NumUtils.getIntFromBig(hcpMessage, curIndex, 1);
-				curIndex += 1;
-				int dataId = NumUtils.getIntFromBig(hcpMessage, curIndex, 4);
-				curIndex += 4;
+				double deltaTime = (double)(NumUtils.getLongFromBig(hcpMessage, curIndex, AutoDataHeaderField.DeltaTime.getsize()) * 0.00005);
+				curIndex += AutoDataHeaderField.DeltaTime.getsize();
+				int dataFlag = NumUtils.getIntFromBig(hcpMessage, curIndex, AutoDataHeaderField.DataFlag.getsize());
+				curIndex += AutoDataHeaderField.DataFlag.getsize();
+				int dataChannel = NumUtils.getIntFromBig(hcpMessage, curIndex, AutoDataHeaderField.DataChannel.getsize());
+				curIndex += AutoDataHeaderField.DataChannel.getsize();
+				int dataId = NumUtils.getIntFromBig(hcpMessage, curIndex, AutoDataHeaderField.DataID.getsize());
+				curIndex += AutoDataHeaderField.DataID.getsize();
 				int dataSize = dlcSize[dlcIndex];
 				byte[] rawData = Arrays.copyOfRange(hcpMessage, curIndex, curIndex + dataSize);
 				
