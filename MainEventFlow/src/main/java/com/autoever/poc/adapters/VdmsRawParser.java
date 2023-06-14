@@ -10,6 +10,7 @@ import java.util.List;
 
 import com.autoever.poc.common.NumUtils;
 import com.autoever.poc.common.RawDataField;
+import com.autoever.poc.parser.DefaultPreProcessor;
 import com.autoever.poc.parser.PreProcessable;
 import com.autoever.poc.parser.can.CanPreProcessor;
 import com.autoever.poc.parser.ccp.CCPPreProcessor;
@@ -39,7 +40,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 
 	// Enum definition for property parserType 
 	public static enum parserTypeEnum {
-		CAN("CAN"), CCP("CCP"), GPS("GPS");
+		DEFAULT("default"), CAN("CAN"), CCP("CCP"), GPS("GPS");
 
 		private final String rep;
 
@@ -76,7 +77,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 		setPortHints(inputPorts, outputPorts);
 		setDisplayName(displayName);
 		setShortDisplayName(this.getClass().getSimpleName());
-		setParserType(parserTypeEnum.CAN);
+		setParserType(parserTypeEnum.DEFAULT);
 
 	}
 
@@ -116,7 +117,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 			}else if(getParserType() == parserTypeEnum.GPS) {
 				GPSPreProcessor.addSchemaField(outputSchemaField);
 			}else {
-				// no action
+				DefaultPreProcessor.addSchemaField(outputSchemaField);
 			}
 			outputSchemaField.add(new Schema.Field("PassThroughs", CompleteDataType.forTuple(inputSchema)));
 				
@@ -245,49 +246,25 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 				dataTuple.setBoolean("IsStarted", false);
 				dataTuple.setBoolean("IsEnded", false);
 				dataTuple.setInt("MSGIdx", msgIdx);
-
-				Tuple headerTuple = rawHeaderSchema.createTuple();
-				headerTuple.setInt(RawDataField.DataChannel.getValue(), dataChannel);
-				headerTuple.setDouble(RawDataField.DeltaTime.getValue(), deltaTime);
-				headerTuple.setInt(RawDataField.MSGInfo.getValue(), dataFlag);
-				headerTuple.setInt(RawDataField.DataID.getValue(), dataId);
-				headerTuple.setInt(RawDataField.DLC.getValue(), dlcIndex);
-				headerTuple.setString(RawDataField.DATA.getValue(), Base64.encodeBytes(rawData));
-				headerTuple.setLong(RawDataField.BaseTime.getValue(), baseTime);
-				
-				dataTuple.setTuple("RawHeader", headerTuple);
+				{
+					Tuple headerTuple = rawHeaderSchema.createTuple();
+					headerTuple.setInt(RawDataField.DataChannel.getValue(), dataChannel);
+					headerTuple.setDouble(RawDataField.DeltaTime.getValue(), deltaTime);
+					headerTuple.setInt(RawDataField.MSGInfo.getValue(), dataFlag);
+					headerTuple.setInt(RawDataField.DataID.getValue(), dataId);
+					headerTuple.setInt(RawDataField.DLC.getValue(), dlcIndex);
+					headerTuple.setString(RawDataField.DATA.getValue(), Base64.encodeBytes(rawData));
+					headerTuple.setLong(RawDataField.BaseTime.getValue(), baseTime);
+					dataTuple.setTuple("RawHeader", headerTuple);
+				}
 				dataTuple.setTuple("PassThroughs", inputTuple);
 				
-				if(preprocessor != null && preprocessor.preProcess(kafkaMessage, dataTuple, rawData)) {
+				if(preprocessor == null || preprocessor.preProcess(kafkaMessage, dataTuple, rawData)) {
 					tuples.add(dataTuple);
 					msgIdx++;
 				}else {
 					// no action
 				}
-				/**
-				Object[] parsed = new Object[] { dataChannel, deltaTime, dataFlag, dataId, dlcIndex, rawData, baseTime, false, false, msgIdx };
-				
-				if(preprocessor != null) {
-					//tuple is added in preprocess.
-					msgIdx += preprocessor.preProcess(kafkaMessage, inputTuple, tuples, parsed, OutputSchema);
-				} else {
-					Tuple dataTuple = OutputSchema.createTuple();
-					dataTuple.setInt(RawDataField.DataChannel.getValue(), dataChannel);
-					dataTuple.setDouble(RawDataField.DeltaTime.getValue(), deltaTime);
-					dataTuple.setInt(RawDataField.MSGInfo.getValue(), dataFlag);
-					dataTuple.setInt(RawDataField.DataID.getValue(), dataId);
-					dataTuple.setInt(RawDataField.DLC.getValue(), dlcIndex);
-					dataTuple.setString(RawDataField.DATA.getValue(), Base64.encodeBytes(rawData));
-					dataTuple.setLong(RawDataField.BaseTime.getValue(), baseTime);
-					dataTuple.setBoolean(RawDataField.IsStarted.getValue(), false);
-					dataTuple.setBoolean(RawDataField.IsEnded.getValue(), false);
-					dataTuple.setInt(RawDataField.MSGIdx.getValue(), msgIdx++);
-					dataTuple.setTuple("PassThroughs", inputTuple);
-						
-					tuples.add(dataTuple);
-				}
-				**/
-				
 				sIndex += (dataSize + headerSize);
 			}
 
@@ -299,7 +276,8 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 			tuples.add(endTuple);
 
 		}catch(Exception e) {
-			System.out.println("RawParser Exception:" + e.getMessage());
+			e.printStackTrace();
+//			System.out.println("RawParser Exception:" + e.getMessage());
 			return tuples;
 		}
 		
@@ -324,7 +302,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 		}else if(parserType == parserTypeEnum.GPS){
 			preprocessor = new GPSPreProcessor();
 		}else {
-			preprocessor = null;
+			preprocessor = new DefaultPreProcessor();
 		}
 
 		OutputSchema = getRuntimeOutputSchema(0);

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sbfs:Simulation xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:sbfs="http://www.streambase.com/schemas/feedsim/02/SBFS">
   <SimStreams Name="InputStream">
-    <ProcessingOptions DataRatePerSecond="1.0" DataGenerationMethod="Custom"/>
+    <ProcessingOptions MaxTuples="1" DataRatePerSecond="1.0" DataGenerationMethod="Custom"/>
     <Schema>
       <Fields Name="kafkaMessage" DataTypeName="tuple" Description="">
         <Distribution GenerationMethod="Random"/>
@@ -28,7 +28,7 @@
             <DataSourceMapping/>
           </Fields>
           <Fields Name="VehicleKeyID" DataTypeName="long" Description="차량 키 아이디">
-            <Distribution GenerationMethod="Constant" ConstantValue="146119"/>
+            <Distribution GenerationMethod="Constant" ConstantValue="219054"/>
             <DataSourceMapping/>
           </Fields>
           <Fields Name="PolicyVersion" DataTypeName="int" Description="데이터 수집 정책 버전">
@@ -86,10 +86,12 @@
         <DataSourceMapping/>
       </Fields>
       <Fields Name="binaryData" DataTypeName="blob" Description="">
-        <Distribution GenerationMethod="RandomBlob" ConstantValue="" UseRandomSize="true" BlobMinSize="4">
+        <Distribution GenerationMethod="RandomBlob" ConstantValue="" UseRandomSize="true" BlobSize="0" BlobMinSize="0">
           <ConditionalCases>
+            <FieldDependedOn>filePath</FieldDependedOn>
             <Cases>
-              <Distribution GenerationMethod="RandomBlob"/>
+              <NamesAndValues Name="filePath" Value="" MatchAnyValue="true"/>
+              <Distribution GenerationMethod="RandomBlob" UseRandomSize="true" BlobMinSize="4"/>
             </Cases>
           </ConditionalCases>
         </Distribution>

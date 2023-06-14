@@ -107,14 +107,14 @@ public class CCPPreProcessor implements PreProcessable {
 			if(prevCmd != 255 && ((rawData[0]&0xff) >= 0x0a) && ((rawData[0]&0xff) <= 0x3b)) {
 				prevCmd = rawData[0] & 0xff;
 				try {
-					String param =  kafkaMessage.getString(AutoKafkaField.TerminalID.getName());
-					List<Pair<String, Long>> odtParsed = parseData(rawData, ODTRepository.getInstance().mODTMap.get(param));
+					long vehicleKeyID = kafkaMessage.getLong(AutoKafkaField.VehicleKeyID.getName());
+					List<Pair<String, Long>> odtParsed = parseData(rawData, ODTRepository.getInstance().mODTMap.get(String.valueOf(vehicleKeyID)));
 					if(odtParsed != null) {
 						if(ccpTuple == null) ccpTuple = RawParsed.createTuple();
 						odtParsed.stream().forEach(pair -> addTupleField(prevCmd, pair));
 					}
 
-					if(prevCmd == 0x3b) {
+					if(prevCmd == 0x3b && ccpTuple != null) {
 						dataTuple.setTuple("RawParsed", ccpTuple);
 						ccpTuple = null;
 						return true; // ccpTuple need to be added.
@@ -138,20 +138,20 @@ public class CCPPreProcessor implements PreProcessable {
 		ccpTuple = null;
 	}
 
-	public Tuple checkProcess(String terminalID, Tuple dataTuple, byte[] rawData) {
+	public Tuple checkProcess(long vehicleKeyID, Tuple dataTuple, byte[] rawData) {
 
 		if(prevCmd != 0 ) {
 			if(prevCmd != 255 && ((rawData[0]&0xff) >= 0x0a) && ((rawData[0]&0xff) <= 0x3b)) {
 				prevCmd = rawData[0] & 0xff;
 
 				try {
-					List<Pair<String, Long>> odtParsed = parseData(rawData, ODTRepository.getInstance().mODTMap.get(terminalID));
+					List<Pair<String, Long>> odtParsed = parseData(rawData, ODTRepository.getInstance().mODTMap.get(String.valueOf(vehicleKeyID)));
 					if(odtParsed != null) {
 						if(ccpTuple == null) ccpTuple = RawParsed.createTuple();
 						odtParsed.stream().forEach(pair -> addTupleField(prevCmd, pair));
 					}
 
-					if(prevCmd == 0x3b) { //adding tuple.
+					if(prevCmd == 0x3b && ccpTuple != null) { //adding tuple.
 						Tuple result = ccpTuple;
 						ccpTuple = null;
 						return result;

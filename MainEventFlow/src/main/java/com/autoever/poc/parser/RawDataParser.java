@@ -165,7 +165,7 @@ public class RawDataParser implements Parseable {
 		/** For CCP **/
 		String filepath= "D:/projects/autoever-str/MainEventFlow/src/main/resources/data/HREV_N19-08-728_VM-21C-0016_BASE_257_4_-1_CCP_20230424074628_146119_noheader.dat";
 		ODTRepository.getInstance().LoadEVT("d:/projects/vdms/resources/evt", "evt");
-		String filename = "VM-21C-0016";
+		long vehicleKeyID = 219054;
 		
 		List<Tuple> result = new RawDataParser(filepath, 0).getParsed();
 		
@@ -182,8 +182,10 @@ public class RawDataParser implements Parseable {
 			byte[] rawdata;
 			try {
 				rawdata = Base64.decode(tuple.getString("DATA"));
-				Tuple ccpTuple = ccpProcessor.checkProcess(filename, tuple, rawdata);
-				if(ccpTuple != null) tuples.add(ccpTuple);
+				Tuple ccpTuple = ccpProcessor.checkProcess(vehicleKeyID, tuple, rawdata);
+				if(ccpTuple != null) {
+					tuples.add(ccpTuple);
+				}
 			} catch (Exception e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -198,6 +200,10 @@ public class RawDataParser implements Parseable {
 			}
 		});
 		System.out.println("tuple Count:" + tuples.size());
+		
+//		double a = 1234568.12;
+//		Double b = a;
+//		System.out.println("double : " + a + " b:" + b);
 	}
 
 }

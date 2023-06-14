@@ -17,6 +17,12 @@
             <parameter default="0.0" name="THRESHOLD"/>
         </parameter-definitions>
         <dynamic-variables/>
+        <stream name="controlFeedSB">
+            <schema>
+                <field name="command" type="string"/>
+                <field name="value" type="double"/>
+            </schema>
+        </stream>
         <stream name="ControlStream">
             <schema>
                 <field name="command" type="string"/>
@@ -42,20 +48,30 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="nullforbinData" type="map">
-            <input port="1" stream="InputStream"/>
-            <output port="1" stream="out:nullforbinData_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <replace field="binaryData">blob(null)</replace>
-                </expressions>
-            </target-list>
+        <box name="InputAdapter" type="inputadapter">
+            <input port="1" stream="controlFeedSB"/>
+            <output port="1" stream="FeedStatusStream"/>
+            <output port="2" stream="out:InputAdapter_2"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.sbfeedsim.SBFeedsim"/>
+            <param name="enableControlPort" value="true"/>
+            <param name="filenameFieldName" value=""/>
+            <param name="logLevel" value="INFO"/>
+            <param name="reportRateS" value="0"/>
+            <param name="sbfsFileName" value="CCP_Feed.sbfs"/>
+            <param name="waitForStartCommand" value="true"/>
         </box>
+        <output-stream name="FeedStatusStream"/>
         <box name="Union" type="union">
             <input port="1" stream="ControlStream"/>
             <input port="2" stream="out:InitMeta_1"/>
             <output port="1" stream="out:Union_1"/>
+            <param name="strict" value="false"/>
+        </box>
+        <box name="Union2" type="union">
+            <input port="1" stream="out:InputAdapter_2"/>
+            <input port="2" stream="InputStream"/>
+            <output port="1" stream="out:Union2_1"/>
             <param name="strict" value="false"/>
         </box>
         <box name="Split" type="split">
@@ -66,7 +82,7 @@
         </box>
         <module-reference name="CCPParserModule">
             <input dispatch="broadcast" name="ControlStream" port="1" stream="out:Split_2"/>
-            <input dispatch="numerical" key="int(kafkaMessage.VehicleKeyID)" name="InputStream" port="2" stream="out:nullforbinData_1"/>
+            <input dispatch="numerical" key="int(kafkaMessage.VehicleKeyID)" name="InputStream" port="2" stream="out:Union2_1"/>
             <output name="ccpOutputStream" port="1" stream="ccpOutputStream"/>
             <output name="StatusOutput" port="2" stream="StatusStream"/>
             <param name="parallel" value="true"/>

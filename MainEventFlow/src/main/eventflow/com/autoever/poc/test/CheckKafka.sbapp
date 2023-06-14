@@ -92,7 +92,6 @@
             <target-list>
                 <item name="input" selection="all"/>
                 <expressions>
-                    <include field="firstPID_hex">convertStrToHexWithCharset(input1.message.FirstPID, "ISO8859-1")</include>
                     <include field="second_id">getThreadId()</include>
                 </expressions>
             </target-list>

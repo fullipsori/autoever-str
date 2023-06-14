@@ -19,16 +19,15 @@ public class CustomUtils {
 		}
 	}
 
-	// fullipsori
 	@CustomFunctionResolver("GetDeltaVolCustomUtilsResolver0")
-	public static double GetDeltaVol(List<Tuple> cellDatas){
+	public static long GetDeltaVol(List<Tuple> cellDatas){
 		if(cellDatas == null) return 0;
 		return cellDatas.stream().map(tuple -> CustomUtils.GetFieldValue(tuple, 1)).mapToLong(v->v).max().getAsLong()
 				- cellDatas.stream().map(tuple -> CustomUtils.GetFieldValue(tuple, 1)).mapToLong(v-> v).min().getAsLong();
 	}
 
 	public static CompleteDataType GetDeltaVolCustomUtilsResolver0(CompleteDataType cellDatas) {
-		return CompleteDataType.forDouble();
+		return CompleteDataType.forLong();
 	}
 	
 	@CustomFunctionResolver("GetDVolCustomUtilsResolver0")
@@ -44,7 +43,7 @@ public class CustomUtils {
 			}
 		}
 		
-		double mean = (int)Arrays.stream(cellDiffs).average().orElse(0);
+		double mean = Math.round(Arrays.stream(cellDiffs).average().orElse(0.0) * 10.0)/10.0;
 		return Arrays.stream(cellDiffs).map(v -> v-mean).boxed().collect(Collectors.toList());
 	}
 	
@@ -62,13 +61,13 @@ public class CustomUtils {
 		return CompleteDataType.forString();
 	}
 
-	@CustomFunctionResolver("JoinFromDoubleListCustomUtilsResolver0")
-	public static String JoinFromDoubleList(List<Double> datas){
+	@CustomFunctionResolver("JoinFromNumberListCustomUtilsResolver0")
+	public static String JoinFromNumberList(List<? extends Number> datas){
 		if(datas == null) return "";
 		return datas.stream().map(v-> String.valueOf(v)).collect(Collectors.joining(","));
 	}
 
-	public static CompleteDataType JoinFromDoubleListCustomUtilsResolver0(CompleteDataType datas) {
+	public static CompleteDataType JoinFromNumberListCustomUtilsResolver0(CompleteDataType datas) {
 		return CompleteDataType.forString();
 	}
 }

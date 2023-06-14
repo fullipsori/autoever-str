@@ -18,7 +18,7 @@
             <field description="운행 baseTime (KafkaMessage)" name="baseTime" type="long"/>
             <field description="kafka DeltaTime" name="deltaTime" type="double"/>
             <field description="event 발생 시간" name="realTime" type="long"/>
-            <field description="최대(cell)-최소(cell)" name="deltaVol" type="double"/>
+            <field description="최대(cell)-최소(cell)" name="deltaVol" type="long"/>
             <field description="cell 데이터 값" name="cellData" type="string"/>
             <field description="각 셀 전압변화의 편차" name="dVol" type="string"/>
             <field description="배터리팩내 개별 온도 센서" name="msrTBData" type="string"/>

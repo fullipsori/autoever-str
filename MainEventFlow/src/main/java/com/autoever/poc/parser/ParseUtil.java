@@ -4,9 +4,7 @@ import java.util.List;
 
 import com.autoever.poc.parser.can.PolicyParser;
 import com.autoever.poc.parser.can.PolicyRepository;
-import com.autoever.poc.parser.ccp.ODTParser;
 import com.autoever.poc.parser.ccp.ODTRepository;
-import com.streambase.sb.ByteArrayView;
 import com.streambase.sb.CompleteDataType;
 import com.streambase.sb.Tuple;
 import com.streambase.sb.client.CustomFunctionResolver;

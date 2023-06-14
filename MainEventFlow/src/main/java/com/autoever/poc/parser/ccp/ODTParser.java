@@ -3,9 +3,7 @@ package com.autoever.poc.parser.ccp;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -13,14 +11,12 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
 import com.autoever.poc.parser.Parseable;
 import com.streambase.sb.util.Pair;
@@ -88,7 +84,6 @@ public class ODTParser implements Parseable {
 		});
 	};
 	
-	@SuppressWarnings("unchecked")
 	public void genODT(List<Pair<String,String>> dataList) {
 		odt_map.clear();
 		
