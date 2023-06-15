@@ -24,6 +24,7 @@
             <parameter default="d:/projects/vdms/resources" name="RESOURCE_ROOT"/>
         </parameter-definitions>
         <dynamic-variables>
+            <dynamic-variable initial-expression="false" name="fEmitTuples" setter-expression="enableEmit" setter-stream="updateControlFlag"/>
             <dynamic-variable initial-expression="0.0" name="thresholdValue" setter-expression="newThresholdValue" setter-stream="ControlStream"/>
         </dynamic-variables>
         <stream name="ControlStream">
@@ -67,21 +68,6 @@
             <param name="expression.1" value="IsEnded"/>
             <param name="expression.2" value="true"/>
         </box>
-        <box name="MarkerStarted" type="map">
-            <input port="1" stream="out:FilterMarker_1"/>
-            <output port="1" stream="out:MarkerStarted_1"/>
-            <target-list>
-                <item name="input" selection="none">
-                    <include field="perfData"/>
-                    <include field="IsEnded"/>
-                    <include field="IsStarted"/>
-                    <include field="MSGIdx"/>
-                </item>
-                <expressions>
-                    <replace field="perfData.t2_time">to_milliseconds(now())</replace>
-                </expressions>
-            </target-list>
-        </box>
         <box name="POST_OP" type="map">
             <input port="1" stream="out:FilterMarker_3"/>
             <output port="1" stream="out:POST_OP_1"/>
@@ -90,15 +76,30 @@
                 <expressions>
                     <include field="deltaVol">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetDeltaVol', RawParsed.cellData)</include>
                     <include field="dVols">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetDVol', RawParsed.cellData)</include>
-                    <include field="RESs">''</include>
                 </expressions>
             </target-list>
+        </box>
+        <box name="Split" type="split">
+            <input port="1" stream="out:FilterMarker_1"/>
+            <output port="1" stream="out:Split_1"/>
+            <output port="2" stream="out:Split_2"/>
+            <param name="output-count" value="2"/>
         </box>
         <box name="Split2" type="split">
             <input port="1" stream="out:FilterMarker_2"/>
             <output port="1" stream="out:Split2_1"/>
             <output port="2" stream="out:Split2_2"/>
             <param name="output-count" value="2"/>
+        </box>
+        <box name="ControlEmit" type="map">
+            <input port="1" stream="out:Split_1"/>
+            <output port="1" stream="out:ControlEmit_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="enableEmit">true</include>
+                </expressions>
+            </target-list>
         </box>
         <box name="gen_seq_id" type="seqnum">
             <input port="1" stream="out:POST_OP_1"/>
@@ -119,6 +120,21 @@
                 </item>
                 <expressions>
                     <replace field="perfData.t3_time">to_milliseconds(now())</replace>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="MarkerStarted" type="map">
+            <input port="1" stream="out:Split_2"/>
+            <output port="1" stream="out:MarkerStarted_1"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="perfData"/>
+                    <include field="IsEnded"/>
+                    <include field="IsStarted"/>
+                    <include field="MSGIdx"/>
+                </item>
+                <expressions>
+                    <replace field="perfData.t2_time">to_milliseconds(now())</replace>
                 </expressions>
             </target-list>
         </box>
@@ -158,27 +174,9 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="Split" type="split">
-            <input port="1" stream="out:addSeqId_1"/>
-            <output port="1" stream="out:Split_1"/>
-            <output port="2" stream="out:Split_2"/>
-            <param name="output-count" value="2"/>
-        </box>
-        <box name="EndedCCPProc" type="map">
-            <input port="1" stream="out:AGGToHCP_1"/>
-            <output port="1" stream="out:EndedCCPProc_1"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="perfData">input1.perfData</include>
-                    <replace field="perfData.kafka_msg_id">input1.perfData.kafka_msg_id + "_CCP"</replace>
-                    <replace field="perfData.data_count">MSGIdx-2</replace>
-                </expressions>
-            </target-list>
-        </box>
         <box name="Union2" type="union">
             <input port="1" stream="out:Split2_1"/>
-            <input port="2" stream="out:Split_1"/>
+            <input port="2" stream="out:addSeqId_1"/>
             <output port="1" stream="out:Union2_1"/>
             <param name="strict" value="false"/>
         </box>
@@ -195,9 +193,27 @@
             <target-list>
                 <expressions>
                     <include field="*">lastval(*)</include>
-                    <replace field="RESs">string(lastnonnullval(RawParsed.IBM)-firstnonnullval(RawParsed.IBM))</replace>
+                    <include field="RESs">string(lastnonnullval(RawParsed.IBM) - firstnonnullval(RawParsed.IBM))</include>
                 </expressions>
             </target-list>
+        </box>
+        <box name="EndedCCPProc" type="map">
+            <input port="1" stream="out:AGGToHCP_1"/>
+            <output port="1" stream="out:EndedCCPProc_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="perfData">input1.perfData</include>
+                    <replace field="perfData.kafka_msg_id">input1.perfData.kafka_msg_id + "_CCP"</replace>
+                    <replace field="perfData.data_count">MSGIdx-2</replace>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Filter2" type="filter">
+            <input port="1" stream="out:AggRES_1"/>
+            <output port="1" stream="out:Filter2_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="!IsEnded"/>
         </box>
         <box name="FilterCopy" type="filter">
             <input port="1" stream="out:EndedCCPProc_1"/>
@@ -206,12 +222,6 @@
             <param name="autogen-nomatch-port" value="true"/>
             <param name="expression.0" value="true"/>
             <param name="expression.1" value="true"/>
-        </box>
-        <box name="Filter2" type="filter">
-            <input port="1" stream="out:AggRES_1"/>
-            <output port="1" stream="out:Filter2_1"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="!IsEnded"/>
         </box>
         <module-reference name="PublishPerf">
             <input name="InputStream" port="1" stream="out:FilterCopy_1"/>
@@ -223,25 +233,20 @@
                 <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
             </parameter-bindings>
         </module-reference>
-        <box name="Gather" type="gather">
+        <box name="Split3" type="split">
             <input port="1" stream="out:Filter2_1"/>
-            <input port="2" stream="out:Split_2"/>
-            <output port="1" stream="out:Gather_1"/>
-            <target-list>
-                <item name="input1" prefix="input1_" selection="none"/>
-                <item name="input2" selection="all"/>
-                <expressions>
-                    <replace field="RESs">if(!isnull(input1)) then input1.RESs else input2.RESs</replace>
-                </expressions>
-            </target-list>
-            <param name="key-field" value="messageID"/>
-            <param name="output-last-time-field" value="false"/>
-            <param name="emit-on-completion" value="true"/>
-            <param name="replacement-type" value="keep_first"/>
-            <param name="predicate" value="isnull(input1)"/>
+            <output port="1" stream="out:Split3_1"/>
+            <output port="2" stream="out:Split3_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <box name="Filter3" type="filter">
+            <input port="1" stream="out:Split3_1"/>
+            <output port="1" stream="out:Filter3_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="fEmitTuples &amp;&amp; !isnull(RawParsed.IBM)"/>
         </box>
         <box name="MapToCCPTable" type="map">
-            <input port="1" stream="out:Gather_1"/>
+            <input port="1" stream="out:Split3_2"/>
             <output port="1" stream="out:MapToCCPTable_1"/>
             <target-list>
                 <item name="input" selection="all">
@@ -279,6 +284,16 @@
             <param name="expression.0" value="true"/>
             <param name="expression.1" value="true"/>
         </box>
+        <box name="Map" type="map">
+            <input port="1" stream="out:Filter3_1"/>
+            <output port="1" stream="out:Map_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="enableEmit">false</include>
+                </expressions>
+            </target-list>
+        </box>
         <box name="PublishCCP" type="outputadapter">
             <input port="1" stream="out:Filter_1"/>
             <output port="1" stream="out:PublishCCP_1"/>
@@ -305,6 +320,13 @@
             <param name="uri" value="${LV_SERVER_URI}"/>
             <param name="useRuntimeURI" value="false"/>
         </box>
+        <box name="Union3" type="union">
+            <input port="1" stream="out:ControlEmit_1"/>
+            <input port="2" stream="out:Map_1"/>
+            <output port="1" stream="updateControlFlag"/>
+            <param name="strict" value="false"/>
+        </box>
+        <output-stream name="updateControlFlag"/>
         <box name="Union" type="union">
             <input port="1" stream="out:PublishPerf_1"/>
             <input port="2" stream="out:PublishCCP_1"/>
