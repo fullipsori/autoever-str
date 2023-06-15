@@ -74,7 +74,7 @@
         <dynamic-variables>
             <dynamic-variable initial-expression="emptylist(string())" name="CCPVIDs" setter-expression="newCCPVIDs" setter-stream="UpdatePolicyOutputStream"/>
             <dynamic-variable initial-expression="false" name="allowCan" setter-expression="if (!isnull(input.allowCan)) then input.allowCan else allowCan" setter-stream="ControlFilterMessage"/>
-            <dynamic-variable initial-expression="false" name="allowCcp" setter-expression="if (!isnull(input.allowCcp)) then input.allowCcp else allowCcp" setter-stream="ControlFilterMessage"/>
+            <dynamic-variable initial-expression="true" name="allowCcp" setter-expression="if (!isnull(input.allowCcp)) then input.allowCcp else allowCcp" setter-stream="ControlFilterMessage"/>
             <dynamic-variable initial-expression="false" name="allowDiag" setter-expression="if (!isnull(input.allowDiag)) then input.allowDiag else allowDiag" setter-stream="ControlFilterMessage"/>
             <dynamic-variable initial-expression="false" name="allowGps" setter-expression="if (!isnull(input.allowGps)) then input.allowGps else allowGps" setter-stream="ControlFilterMessage"/>
             <dynamic-variable initial-expression="emptylist(string())" name="policyFiles" setter-expression="newPolicyFiles" setter-stream="UpdatePolicyOutputStream"/>
@@ -415,7 +415,7 @@
             <param name="autogen-nomatch-port" value="false"/>
             <param name="expression.0" value="message.MessageType==1 &amp;&amp; contains(policyFiles, message.TerminalID)"/>
             <param name="expression.1" value="message.MessageType==4 || message.MessageType==6"/>
-            <param name="expression.2" value="message.MessageType==2 || contains(CCPVIDs, string(message.VehicleKeyID))"/>
+            <param name="expression.2" value="message.MessageType==2 &amp;&amp; contains(CCPVIDs, string(message.VehicleKeyID))"/>
         </box>
         <box name="Union5" type="union">
             <input port="1" stream="out:DistributeMessageType_1"/>
@@ -467,7 +467,7 @@
             <input port="1" stream="out:QueryUnion_1"/>
             <output port="1" stream="out:CheckMgmtNO_1"/>
             <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="mgmtNO != &quot;unknown&quot;"/>
+            <param name="expression.0" value="true || mgmtNO != &quot;unknown&quot;"/>
         </box>
         <box name="RunMode" type="filter">
             <input port="1" stream="out:CheckMgmtNO_1"/>

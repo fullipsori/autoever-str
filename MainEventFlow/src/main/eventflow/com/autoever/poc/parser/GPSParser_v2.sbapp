@@ -137,6 +137,7 @@
                 <expressions>
                     <replace field="messageID">input1.messageID + '_' + string(input1.sequenceId)</replace>
                     <include field="baseTime">kafkaMessage.BaseTime</include>
+                    <include field="deltaTime">RawHeader.DeltaTime</include>
                     <include field="realTime">long(GetLocalTime(kafkaMessage.BaseTime + long(RawHeader.DeltaTime), ''))</include>
                     <include field="rootCount">kafkaMessage.RootCount</include>
                     <include field="terminalID">kafkaMessage.TerminalID</include>

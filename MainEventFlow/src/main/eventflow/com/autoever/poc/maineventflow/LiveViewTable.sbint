@@ -26,6 +26,7 @@
             <field description="배터리 전류값" name="IBM" type="double"/>
             <field description="배터리 충전 상태" name="chargingNow" type="long"/>
             <field description="절연 저항값" name="ISOL" type="double"/>
+            <field description="Cell 저항값(1초 변화량)" name="RESs" type="string"/>
         </schema>
         <schema name="CanDataTableSchema">
             <field description="sb 에서 생성한 message unique id (vehicleKeyID + timestamp + seq_num)" name="messageID" type="string"/>

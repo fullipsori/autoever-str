@@ -15,6 +15,8 @@ import com.streambase.sb.util.Pair;
 public class CCPPreProcessor implements PreProcessable {
 
 	private int prevCmd = 0;
+	private final int ccpStartCmd = 0x0a;
+	private final int ccpEndCmd = 0x36; // 들어올 수 있는 유효한 데이터의 끝이여야 함.
 	private Tuple ccpTuple = null;
 
 	public final static Schema FieldType = new Schema("FieldType", List.of(
@@ -56,7 +58,6 @@ public class CCPPreProcessor implements PreProcessable {
 	@SuppressWarnings("unchecked")
 	public void addTupleField(int command, Pair<String, Long> data) {
 		try {
-
 			if(data.first.startsWith("cell_")) {
 				Tuple field = FieldType.createTuple();
 				field.setString(0, data.first);
@@ -99,12 +100,32 @@ public class CCPPreProcessor implements PreProcessable {
 		}
 
 	}
+	
+	@SuppressWarnings("unchecked")
+	private boolean validate(Tuple ccpData) {
+		try {
+			List<Tuple> cellData = (List<Tuple>)ccpData.getField("cellData");
+			if(cellData.size() != 90) return false;
+			List<Tuple> msrTBData = (List<Tuple>)ccpData.getList("msrTBData");
+			if(msrTBData.size() != 9) return false;
+			if(ccpData.isNull("SOC")) return false;
+			if(ccpData.isNull("IBM")) return false;
+			if(ccpData.isNull("chargingNow")) return false;
+			if(ccpData.isNull("ISOL")) return false;
+
+			// ok 
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
+	}
 
 	@Override
 	public boolean preProcess(Tuple kafkaMessage, Tuple dataTuple, byte[] rawData) {
 		// TODO Auto-generated method stub
+		if(rawData == null || rawData.length == 0) return false;
 		if(prevCmd != 0 ) {
-			if(prevCmd != 255 && ((rawData[0]&0xff) >= 0x0a) && ((rawData[0]&0xff) <= 0x3b)) {
+			if(prevCmd != 255 && ((rawData[0]&0xff) >= this.ccpStartCmd) && ((rawData[0]&0xff) <= 0x3b)) {
 				prevCmd = rawData[0] & 0xff;
 				try {
 					long vehicleKeyID = kafkaMessage.getLong(AutoKafkaField.VehicleKeyID.getName());
@@ -114,10 +135,15 @@ public class CCPPreProcessor implements PreProcessable {
 						odtParsed.stream().forEach(pair -> addTupleField(prevCmd, pair));
 					}
 
-					if(prevCmd == 0x3b && ccpTuple != null) {
-						dataTuple.setTuple("RawParsed", ccpTuple);
-						ccpTuple = null;
-						return true; // ccpTuple need to be added.
+					if(prevCmd >= this.ccpEndCmd && ccpTuple != null) {
+						if(validate(ccpTuple)) {
+							dataTuple.setTuple("RawParsed", ccpTuple); 
+							ccpTuple = null;
+							return true;
+						}else {
+							ccpTuple = null;
+							return false;
+						}
 					}
 					return false;
 				}catch(Exception e) {
@@ -140,10 +166,11 @@ public class CCPPreProcessor implements PreProcessable {
 
 	public Tuple checkProcess(long vehicleKeyID, Tuple dataTuple, byte[] rawData) {
 
+		if(rawData == null || rawData.length == 0) return null;
+
 		if(prevCmd != 0 ) {
 			if(prevCmd != 255 && ((rawData[0]&0xff) >= 0x0a) && ((rawData[0]&0xff) <= 0x3b)) {
 				prevCmd = rawData[0] & 0xff;
-
 				try {
 					List<Pair<String, Long>> odtParsed = parseData(rawData, ODTRepository.getInstance().mODTMap.get(String.valueOf(vehicleKeyID)));
 					if(odtParsed != null) {
@@ -151,10 +178,16 @@ public class CCPPreProcessor implements PreProcessable {
 						odtParsed.stream().forEach(pair -> addTupleField(prevCmd, pair));
 					}
 
-					if(prevCmd == 0x3b && ccpTuple != null) { //adding tuple.
-						Tuple result = ccpTuple;
-						ccpTuple = null;
-						return result;
+					if(prevCmd >= 0x36 && ccpTuple != null) { //adding tuple.
+						if(validate(ccpTuple)) {  
+							Tuple result = ccpTuple;
+							ccpTuple = null;
+							return result;
+						}else {
+							ccpTuple = null;
+							// tuple is invalid
+							return null;
+						}
 					}
 					return null;
 					

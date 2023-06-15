@@ -64,6 +64,8 @@ public class GPSPreProcessor implements PreProcessable {
 	@Override
 	public boolean preProcess(Tuple kafkaMessage, Tuple dataTuple, byte[] rawData) {
 		// TODO Auto-generated method stub
+		if(rawData == null || rawData.length == 0) return false;
+
 		try {
 			Tuple rawParsed = RawParsed.createTuple();
 
@@ -89,7 +91,6 @@ public class GPSPreProcessor implements PreProcessable {
 			rawParsed.setString("EW", getEW(longitude)? "E" : "W");
 			
 			dataTuple.setTuple("RawParsed", rawParsed);
-			
 			return true;
 		}catch(Exception e) {
 			e.printStackTrace();

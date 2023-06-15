@@ -173,9 +173,9 @@
                 </item>
             </target-list>
         </box>
-        <box name="CanRawParser" type="java">
+        <box name="CANRawParser" type="java">
             <input port="1" stream="out:RemoveUnnecessary_1"/>
-            <output port="1" stream="out:CanRawParser_1"/>
+            <output port="1" stream="out:CANRawParser_1"/>
             <output port="2" stream="StatusOutputStream"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.autoever.poc.adapters.VdmsRawParser"/>
@@ -183,7 +183,7 @@
         </box>
         <output-stream name="StatusOutputStream"/>
         <box name="Organize" type="map">
-            <input port="1" stream="out:CanRawParser_1"/>
+            <input port="1" stream="out:CANRawParser_1"/>
             <output port="1" stream="out:Organize_1"/>
             <target-list>
                 <item name="input" selection="all">

@@ -190,9 +190,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					
 				}
-
 			}
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
@@ -227,7 +225,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 			startTuple.setTuple("PassThroughs", inputTuple);
 			tuples.add(startTuple);
 
-			while(sIndex < rawcount) {
+			while((sIndex + headerSize) < rawcount) {
 
 				int dlcIndex = NumUtils.getIntFromBig(hcpMessage, sIndex, AutoDataHeaderField.DataLength.getsize());
 				sIndex += AutoDataHeaderField.DataLength.getsize();
@@ -241,7 +239,10 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 				int dataId = NumUtils.getIntFromBig(hcpMessage, curIndex, AutoDataHeaderField.DataID.getsize());
 				curIndex += AutoDataHeaderField.DataID.getsize();
 				int dataSize = dlcSize[dlcIndex];
-				byte[] rawData = Arrays.copyOfRange(hcpMessage, curIndex, curIndex + dataSize);
+				byte[] rawData = null; 
+				if(dataSize > 0) {
+					rawData =  Arrays.copyOfRange(hcpMessage, curIndex, curIndex + dataSize);
+				}
 				
 				Tuple dataTuple = OutputSchema.createTuple();
 				dataTuple.setBoolean("IsStarted", false);
@@ -254,7 +255,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 					headerTuple.setInt(RawDataField.MSGInfo.getValue(), dataFlag);
 					headerTuple.setInt(RawDataField.DataID.getValue(), dataId);
 					headerTuple.setInt(RawDataField.DLC.getValue(), dlcIndex);
-					headerTuple.setString(RawDataField.DATA.getValue(), Base64.encodeBytes(rawData));
+					if(rawData != null) headerTuple.setString(RawDataField.DATA.getValue(), Base64.encodeBytes(rawData));
 					headerTuple.setLong(RawDataField.BaseTime.getValue(), baseTime);
 					dataTuple.setTuple("RawHeader", headerTuple);
 				}

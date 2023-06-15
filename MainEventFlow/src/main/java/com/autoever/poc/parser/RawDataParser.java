@@ -66,7 +66,7 @@ public class RawDataParser implements Parseable {
 		
 		try {
 			int rawcount = hcpMessage.length;
-			while(sIndex < rawcount) {
+			while((sIndex + headerSize + 1) < rawcount) {
 				int dlcIndex = NumUtils.getIntFromBig(hcpMessage, sIndex, 1);
 				sIndex += 1;
 				int curIndex =  sIndex;
@@ -95,7 +95,7 @@ public class RawDataParser implements Parseable {
 				sIndex += (dataSize + headerSize);
 			}
 		}catch(Exception e) {
-			System.out.println("RawParser Exception:" + e.getMessage());
+			System.out.println("RawDataParser Exception:" + e.getMessage());
 			return;
 		}
 		
@@ -163,7 +163,7 @@ public class RawDataParser implements Parseable {
 		**/
 		
 		/** For CCP **/
-		String filepath= "D:/projects/autoever-str/MainEventFlow/src/main/resources/data/HREV_N19-08-728_VM-21C-0016_BASE_257_4_-1_CCP_20230424074628_146119_noheader.dat";
+		String filepath= "D:/projects/vdms/resources/download/VM-21C-0074_219054_2_1686784306_1686785255628.dat";
 		ODTRepository.getInstance().LoadEVT("d:/projects/vdms/resources/evt", "evt");
 		long vehicleKeyID = 219054;
 		
@@ -177,7 +177,7 @@ public class RawDataParser implements Parseable {
 		List<Tuple> tuples = new ArrayList<>();
 		CCPPreProcessor ccpProcessor = new CCPPreProcessor();
 
-		System.out.println("Started--->");
+		System.out.println("Started:[" + result.size() + "]:-->");
 		for(Tuple tuple : result) {
 			byte[] rawdata;
 			try {
