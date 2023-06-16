@@ -9,6 +9,9 @@ import java.util.stream.Collectors;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import com.autoever.poc.parser.AutoKafkaField;
+import com.streambase.sb.Tuple;
+
 public class ODTRepository {
 
 	public Map<String, ODTParser> mODTMap = null;
@@ -16,6 +19,16 @@ public class ODTRepository {
 	private static ODTRepository mInstance = new ODTRepository();
 	public static ODTRepository getInstance() {
 		return mInstance;
+	}
+	
+	public ODTParser getMapper(Tuple kafkaMessage) {
+		
+		try {
+			long vehicleKeyID = kafkaMessage.getLong(AutoKafkaField.VehicleKeyID.getName());
+			return ODTRepository.getInstance().mODTMap.get(String.valueOf(vehicleKeyID));
+		}catch(Exception e) {
+			return null;
+		}
 	}
 
 	public void setODT(Map<String,ODTParser> map) {

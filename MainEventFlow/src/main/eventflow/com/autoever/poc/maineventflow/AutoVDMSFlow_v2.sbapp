@@ -467,7 +467,7 @@
             <input port="1" stream="out:QueryUnion_1"/>
             <output port="1" stream="out:CheckMgmtNO_1"/>
             <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="true || mgmtNO != &quot;unknown&quot;"/>
+            <param name="expression.0" value="mgmtNO != &quot;unknown&quot;"/>
         </box>
         <box name="RunMode" type="filter">
             <input port="1" stream="out:CheckMgmtNO_1"/>

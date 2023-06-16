@@ -31,8 +31,7 @@ public class CanPreProcessor implements PreProcessable {
 	public boolean preProcess(Tuple kafkaMessage, Tuple dataTuple, byte[] rawData) {
 		// TODO Auto-generated method stub
 		try {
-			String param =  kafkaMessage.getString(AutoKafkaField.TerminalID.getName());
-			PolicyParser policy = PolicyRepository.getInstance().mPolicyMap.get(param);
+			PolicyParser policy = PolicyRepository.getInstance().getMapper(kafkaMessage);
 			if(policy == null) return false;
 			int ch = dataTuple.getTuple("RawHeader").getInt(RawDataField.DataChannel.getValue());
 			int id = dataTuple.getTuple("RawHeader").getInt(RawDataField.DataID.getValue());
@@ -46,10 +45,8 @@ public class CanPreProcessor implements PreProcessable {
 	@Override
 	public void initialize(Tuple kafkaMessage) {
 		try {
-			String terminalID = kafkaMessage.getString(AutoKafkaField.TerminalID.getName());
 			int rootCount = kafkaMessage.getInt(AutoKafkaField.RootCount.getName());
-				
-			PolicyParser policyParser = PolicyRepository.getInstance().mPolicyMap.get(terminalID);
+			PolicyParser policyParser = PolicyRepository.getInstance().getMapper(kafkaMessage);
 			if(policyParser != null) policyParser.InitParams(rootCount);
 		}catch(Exception e) {}
 	}

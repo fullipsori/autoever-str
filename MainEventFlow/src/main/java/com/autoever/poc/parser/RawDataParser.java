@@ -6,21 +6,14 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.IntStream;
 
 import com.autoever.poc.common.NumUtils;
-import com.autoever.poc.parser.can.PolicyParser;
-import com.autoever.poc.parser.can.PolicyRepository;
 import com.autoever.poc.parser.ccp.CCPPreProcessor;
-import com.autoever.poc.parser.ccp.ODTParser;
 import com.autoever.poc.parser.ccp.ODTRepository;
 import com.streambase.sb.CompleteDataType;
-import com.streambase.sb.NullValueException;
 import com.streambase.sb.Schema;
 import com.streambase.sb.Tuple;
-import com.streambase.sb.TupleException;
 import com.streambase.sb.util.Base64;
-import com.streambase.sb.util.Pair;
 
 public class RawDataParser implements Parseable {
 
@@ -88,7 +81,6 @@ public class RawDataParser implements Parseable {
 				dataTuple.setInt(3, dataId);
 				dataTuple.setInt(4, dlcIndex);
 				dataTuple.setString(5, Base64.encodeBytes(rawData));
-				
 				dataTuple.setLong(6, 10000);  //for BaseTime
 
 				parsedData.add(dataTuple);
@@ -192,6 +184,7 @@ public class RawDataParser implements Parseable {
 			}
 		}
 		// print 
+		/**
 		tuples.stream().forEach(t -> {
 			try {
 				System.out.println("SOC:" + t.getDouble("SOC") + " ISOL:" + t.getDouble("ISOL"));
@@ -200,6 +193,7 @@ public class RawDataParser implements Parseable {
 			}
 		});
 		System.out.println("tuple Count:" + tuples.size());
+		**/
 		
 //		double a = 1234568.12;
 //		Double b = a;

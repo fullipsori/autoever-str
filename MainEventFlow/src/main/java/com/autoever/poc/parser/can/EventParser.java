@@ -3,16 +3,11 @@ package com.autoever.poc.parser.can;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import com.autoever.poc.parser.Parseable;
-import com.streambase.sb.functions.IsEmpty;
 
 public class EventParser implements EventCallback {
 

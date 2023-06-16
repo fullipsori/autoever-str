@@ -1,8 +1,5 @@
 package com.autoever.poc.parser.can;
 
-import java.util.Arrays;
-
-import com.autoever.poc.common.StringUtils;
 import com.streambase.sb.Tuple;
 
 public class Dm1Evaluable extends Evaluable {

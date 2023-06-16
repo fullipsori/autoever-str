@@ -2,13 +2,9 @@ package com.autoever.poc.parser.can;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -21,9 +17,7 @@ import org.w3c.dom.NodeList;
 
 import com.autoever.poc.common.RawDataField;
 import com.autoever.poc.parser.Parseable;
-import com.streambase.sb.NullValueException;
 import com.streambase.sb.Tuple;
-import com.streambase.sb.TupleException;
 
 public class PolicyParser implements Parseable {
 
@@ -171,7 +165,6 @@ public class PolicyParser implements Parseable {
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
 	public boolean InitParams(int rootCount) { //check kafka.RootCount(trip number)
 
 		if(this.rootCount != rootCount) { 

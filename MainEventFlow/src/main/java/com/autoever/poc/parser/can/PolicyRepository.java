@@ -2,17 +2,14 @@ package com.autoever.poc.parser.can;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import com.autoever.poc.parser.AutoKafkaField;
 import com.streambase.sb.CompleteDataType;
 import com.streambase.sb.Schema;
 import com.streambase.sb.Tuple;
@@ -24,6 +21,16 @@ public class PolicyRepository {
 	private static PolicyRepository mInstance = new PolicyRepository();
 	public static PolicyRepository getInstance() {
 		return mInstance;
+	}
+	
+	public PolicyParser getMapper(Tuple kafkaMessage) {
+		
+		try {
+			String terminalID = kafkaMessage.getString(AutoKafkaField.TerminalID.getName());
+			return PolicyRepository.getInstance().mPolicyMap.get(terminalID);
+		}catch(Exception e) {
+			return null;
+		}
 	}
 	
 	public static Schema trigDataSchema = new Schema(

@@ -61,6 +61,16 @@ public class CustomUtils {
 		return CompleteDataType.forString();
 	}
 
+	@CustomFunctionResolver("GetCellTupleDataCustomUtilsResolver0")
+	public static List<Long> GetCellTupleData(List<Tuple> cellDatas){
+		if(cellDatas == null) return null;
+		return cellDatas.stream().map(tuple -> GetFieldValue(tuple, 1)).collect(Collectors.toList());
+	}
+
+	public static CompleteDataType GetCellTupleDataCustomUtilsResolver0(CompleteDataType cellDatas) {
+		return CompleteDataType.forList(CompleteDataType.forLong());
+	}
+
 	@CustomFunctionResolver("JoinFromMsrTBTuplesCustomUtilsResolver0")
 	public static String JoinFromMsrTBTuples(List<Tuple> msrTBDatas){
 		if(msrTBDatas== null) return "";
@@ -71,15 +81,38 @@ public class CustomUtils {
 		return CompleteDataType.forString();
 	}
 
+	@CustomFunctionResolver("GetMsrTBTupleDataCustomUtilsResolver0")
+	public static List<Double> GetMsrTBTupleData(List<Tuple> msrTBDatas){
+		if(msrTBDatas== null) return null;
+		return msrTBDatas.stream().map(tuple -> GetFieldValue(tuple, 1)).map(l -> Math.round(l)/10.0).collect(Collectors.toList());
+	}
+
+	public static CompleteDataType GetMsrTBTupleDataCustomUtilsResolver0(CompleteDataType msrTBDatas) {
+		return CompleteDataType.forList(CompleteDataType.forDouble());
+	}
+
 	@CustomFunctionResolver("JoinFromNumberListCustomUtilsResolver0")
 	public static String JoinFromNumberList(List<? extends Number> datas){
-		if(datas == null) return "";
+		if(datas == null || datas.size() == 0) return "none";
 		return datas.stream().map(v-> String.valueOf(v)).collect(Collectors.joining(","));
 	}
 
 	public static CompleteDataType JoinFromNumberListCustomUtilsResolver0(CompleteDataType datas) {
 		return CompleteDataType.forString();
 	}
+	
+	
+	@CustomFunctionResolver("getMatchedTupleByIntervalCustomUtilsResolver0")
+	public static Tuple getMatchedTupleByInterval(Tuple kafkaMessage, Tuple dataTuple, double realTime, double minInterval) {
+		ODTParser odtParser = ODTRepository.getInstance().getMapper(kafkaMessage);
+		if(odtParser != null) return odtParser.getMatchedTupleByInterval(dataTuple, realTime, minInterval);
+		return null;
+	}
+	
+	public static CompleteDataType getMatchedTupleByIntervalCustomUtilsResolver0(CompleteDataType kafkaMessage, CompleteDataType dataTuple, CompleteDataType realTime, CompleteDataType minInterval) {
+		return CompleteDataType.forTuple(CCPPreProcessor.RawParsed);
+	}
+	
 	
 	public static List<Double> checkDVol(List<Integer> cellDatas){
 		// TODO Implement function here
@@ -99,6 +132,8 @@ public class CustomUtils {
 		System.out.println("mean:" + mean);
 		return Arrays.stream(cellDiffs).map(v -> v-mean).boxed().collect(Collectors.toList());
 	}
+	
+	
 	public static void main(String[] args) {
 		
 		List<Integer> data = List.of(

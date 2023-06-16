@@ -24,7 +24,6 @@
             <parameter default="d:/projects/vdms/resources" name="RESOURCE_ROOT"/>
         </parameter-definitions>
         <dynamic-variables>
-            <dynamic-variable initial-expression="false" name="fEmitTuples" setter-expression="enableEmit" setter-stream="updateControlFlag"/>
             <dynamic-variable initial-expression="0.0" name="thresholdValue" setter-expression="newThresholdValue" setter-stream="ControlStream"/>
         </dynamic-variables>
         <stream name="ControlStream">
@@ -68,48 +67,8 @@
             <param name="expression.1" value="IsEnded"/>
             <param name="expression.2" value="true"/>
         </box>
-        <box name="POST_OP" type="map">
-            <input port="1" stream="out:FilterMarker_3"/>
-            <output port="1" stream="out:POST_OP_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="deltaVol">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetDeltaVol', RawParsed.cellData)</include>
-                    <include field="dVols">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetDVol', RawParsed.cellData)</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="Split" type="split">
-            <input port="1" stream="out:FilterMarker_1"/>
-            <output port="1" stream="out:Split_1"/>
-            <output port="2" stream="out:Split_2"/>
-            <param name="output-count" value="2"/>
-        </box>
-        <box name="Split2" type="split">
-            <input port="1" stream="out:FilterMarker_2"/>
-            <output port="1" stream="out:Split2_1"/>
-            <output port="2" stream="out:Split2_2"/>
-            <param name="output-count" value="2"/>
-        </box>
-        <box name="ControlEmit" type="map">
-            <input port="1" stream="out:Split_1"/>
-            <output port="1" stream="out:ControlEmit_1"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="enableEmit">true</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="gen_seq_id" type="seqnum">
-            <input port="1" stream="out:POST_OP_1"/>
-            <output port="1" stream="out:gen_seq_id_1"/>
-            <param name="output-field" value="seq_id"/>
-            <param name="sequence-id" value="sequenceid"/>
-            <param name="update-expression" value="sequenceid + 1"/>
-        </box>
         <box name="MarkerEnded" type="map">
-            <input port="1" stream="out:Split2_2"/>
+            <input port="1" stream="out:FilterMarker_2"/>
             <output port="1" stream="out:MarkerEnded_1"/>
             <target-list>
                 <item name="input" selection="none">
@@ -124,7 +83,7 @@
             </target-list>
         </box>
         <box name="MarkerStarted" type="map">
-            <input port="1" stream="out:Split_2"/>
+            <input port="1" stream="out:FilterMarker_1"/>
             <output port="1" stream="out:MarkerStarted_1"/>
             <target-list>
                 <item name="input" selection="none">
@@ -138,6 +97,30 @@
                 </expressions>
             </target-list>
         </box>
+        <box name="POST_OP" type="map">
+            <input port="1" stream="out:FilterMarker_3"/>
+            <output port="1" stream="out:POST_OP_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <replace field="RawParsed.deltaVol">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetDeltaVol', RawParsed.cellData)</replace>
+                    <replace field="RawParsed.dVols">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetDVol', RawParsed.cellData)</replace>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="gen_seq_id" type="seqnum">
+            <input port="1" stream="out:POST_OP_1"/>
+            <output port="1" stream="out:gen_seq_id_1"/>
+            <param name="output-field" value="seq_id"/>
+            <param name="sequence-id" value="sequenceid"/>
+            <param name="update-expression" value="sequenceid + 1"/>
+        </box>
+        <box name="MarkerUnion" type="union">
+            <input port="1" stream="out:MarkerStarted_1"/>
+            <input port="2" stream="out:MarkerEnded_1"/>
+            <output port="1" stream="out:MarkerUnion_1"/>
+            <param name="strict" value="false"/>
+        </box>
         <box name="addSeqId" type="map">
             <input port="1" stream="out:gen_seq_id_1"/>
             <output port="1" stream="out:addSeqId_1"/>
@@ -149,12 +132,6 @@
                     <replace field="messageID">messageID + '_' + seq_id</replace>
                 </expressions>
             </target-list>
-        </box>
-        <box name="MarkerUnion" type="union">
-            <input port="1" stream="out:MarkerStarted_1"/>
-            <input port="2" stream="out:MarkerEnded_1"/>
-            <output port="1" stream="out:MarkerUnion_1"/>
-            <param name="strict" value="false"/>
         </box>
         <box name="AGGToHCP" type="aggregate">
             <input port="1" stream="out:MarkerUnion_1"/>
@@ -174,26 +151,15 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="Union2" type="union">
-            <input port="1" stream="out:Split2_1"/>
-            <input port="2" stream="out:addSeqId_1"/>
-            <output port="1" stream="out:Union2_1"/>
-            <param name="strict" value="false"/>
-        </box>
-        <box name="AggRES" type="aggregate">
-            <input port="1" stream="out:Union2_1"/>
-            <output port="1" stream="out:AggRES_1"/>
-            <param name="dimension-name.0" value="Dimension1"/>
-            <param name="dimension-type.0" value="Predicate"/>
-            <param name="dimension-partial.0" value="no"/>
-            <param name="dimension-open-predicate.0" value="!isnull(RawParsed.IBM)"/>
-            <param name="dimension-close-predicate.0" value="IsEnded || (lastval(RawHeader.DeltaTime) - firstval(RawHeader.DeltaTime)) &gt;= 1"/>
-            <param name="dimension-emit-close-first.0" value="false"/>
-            <param name="output-group-by" value="true"/>
+        <box name="CheckMatching" type="map">
+            <input port="1" stream="out:addSeqId_1"/>
+            <output port="1" stream="out:CheckMatching_1"/>
             <target-list>
+                <item name="input" selection="all">
+                    <declare field="matchedTuple">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'getMatchedTupleByInterval', kafkaMessage, RawParsed, RawHeader.BaseTime + RawHeader.DeltaTime, 1.0)</declare>
+                </item>
                 <expressions>
-                    <include field="*">lastval(*)</include>
-                    <include field="RESs">string(lastnonnullval(RawParsed.IBM) - firstnonnullval(RawParsed.IBM))</include>
+                    <replace field="RawParsed.RESs">if(!isnull(matchedTuple)) then list(matchedTuple.IBM-RawParsed.IBM) else emptylist(double(null))</replace>
                 </expressions>
             </target-list>
         </box>
@@ -209,12 +175,6 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="Filter2" type="filter">
-            <input port="1" stream="out:AggRES_1"/>
-            <output port="1" stream="out:Filter2_1"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="!IsEnded"/>
-        </box>
         <box name="FilterCopy" type="filter">
             <input port="1" stream="out:EndedCCPProc_1"/>
             <output port="1" stream="out:FilterCopy_1"/>
@@ -223,36 +183,13 @@
             <param name="expression.0" value="true"/>
             <param name="expression.1" value="true"/>
         </box>
-        <module-reference name="PublishPerf">
-            <input name="InputStream" port="1" stream="out:FilterCopy_1"/>
-            <output name="OutputStream" port="1" stream="out:PublishPerf_1"/>
-            <param name="parallel" value="true"/>
-            <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
-            <param name="file" value="com.autoever.poc.maineventflow.PerfFlow"/>
-            <parameter-bindings>
-                <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
-            </parameter-bindings>
-        </module-reference>
-        <box name="Split3" type="split">
-            <input port="1" stream="out:Filter2_1"/>
-            <output port="1" stream="out:Split3_1"/>
-            <output port="2" stream="out:Split3_2"/>
-            <param name="output-count" value="2"/>
-        </box>
-        <box name="Filter3" type="filter">
-            <input port="1" stream="out:Split3_1"/>
-            <output port="1" stream="out:Filter3_1"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="fEmitTuples &amp;&amp; !isnull(RawParsed.IBM)"/>
-        </box>
         <box name="MapToCCPTable" type="map">
-            <input port="1" stream="out:Split3_2"/>
+            <input port="1" stream="out:CheckMatching_1"/>
             <output port="1" stream="out:MapToCCPTable_1"/>
             <target-list>
                 <item name="input" selection="all">
                     <remove field="kafkaMessage"/>
                     <remove field="perfData"/>
-                    <remove field="dVols"/>
                     <remove field="RawHeader"/>
                     <remove field="RawParsed"/>
                     <remove field="IsEnded"/>
@@ -267,9 +204,11 @@
                     <include field="realTime">long(GetLocalTime(kafkaMessage.BaseTime + long(RawHeader.DeltaTime), ''))</include>
                     <include field="rootCount">kafkaMessage.RootCount</include>
                     <include field="*">RawParsed.*</include>
+                    <remove field="dVols"/>
+                    <replace field="RESs">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromNumberList', RawParsed.RESs)</replace>
                     <replace field="cellData">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromCellTuples', RawParsed.cellData)</replace>
                     <replace field="msrTBData">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromMsrTBTuples', RawParsed.msrTBData)</replace>
-                    <include field="dVol">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromNumberList', dVols)</include>
+                    <include field="dVol">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromNumberList', RawParsed.dVols)</include>
                     <replace field="SOC">round(RawParsed.SOC * 1.0)/10.0</replace>
                     <replace field="IBM">round(RawParsed.IBM * 1.0)/10.0</replace>
                     <replace field="ISOL">round(RawParsed.ISOL * 1.0)/10.0</replace>
@@ -284,16 +223,16 @@
             <param name="expression.0" value="true"/>
             <param name="expression.1" value="true"/>
         </box>
-        <box name="Map" type="map">
-            <input port="1" stream="out:Filter3_1"/>
-            <output port="1" stream="out:Map_1"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="enableEmit">false</include>
-                </expressions>
-            </target-list>
-        </box>
+        <module-reference name="PublishPerf">
+            <input name="InputStream" port="1" stream="out:FilterCopy_1"/>
+            <output name="OutputStream" port="1" stream="out:PublishPerf_1"/>
+            <param name="parallel" value="true"/>
+            <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
+            <param name="file" value="com.autoever.poc.maineventflow.PerfFlow"/>
+            <parameter-bindings>
+                <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
+            </parameter-bindings>
+        </module-reference>
         <box name="PublishCCP" type="outputadapter">
             <input port="1" stream="out:Filter_1"/>
             <output port="1" stream="out:PublishCCP_1"/>
@@ -320,13 +259,6 @@
             <param name="uri" value="${LV_SERVER_URI}"/>
             <param name="useRuntimeURI" value="false"/>
         </box>
-        <box name="Union3" type="union">
-            <input port="1" stream="out:ControlEmit_1"/>
-            <input port="2" stream="out:Map_1"/>
-            <output port="1" stream="updateControlFlag"/>
-            <param name="strict" value="false"/>
-        </box>
-        <output-stream name="updateControlFlag"/>
         <box name="Union" type="union">
             <input port="1" stream="out:PublishPerf_1"/>
             <input port="2" stream="out:PublishCCP_1"/>

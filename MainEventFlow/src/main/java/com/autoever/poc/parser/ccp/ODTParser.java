@@ -19,6 +19,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import com.autoever.poc.parser.Parseable;
+import com.streambase.sb.Tuple;
 import com.streambase.sb.util.Pair;
 
 
@@ -27,6 +28,10 @@ public class ODTParser implements Parseable {
 	private String filename;
 	private Path filePath;
 	private Element rootNode;
+	
+	private int rootCount = 0;
+	public List<Pair<Double, Tuple>> prevTuples= new ArrayList<>();
+	private final double maxInterval = 5.0;
 	
 	private List<Pair<String,String>> measurement_list;
 	public List<Object[]> odt_map = new ArrayList<>();
@@ -45,6 +50,28 @@ public class ODTParser implements Parseable {
 	
 	public String GetFilename() {
 		return filename;
+	}
+	
+	public boolean InitParams(int rootCount) {
+
+		if(this.rootCount != rootCount) { 
+			this.rootCount = rootCount;
+			prevTuples.clear();
+			return true;
+		}
+		return true;
+	}
+	
+	public Tuple getMatchedTupleByInterval(Tuple dataTuple, double realTime, double minInterval) {
+		// removed over maxInterval
+		final double removeTime = realTime - maxInterval;
+		final double searchTime = realTime - minInterval;
+		prevTuples.removeIf(p -> p.first <= removeTime);
+		//search matched tuple
+		Tuple matched = prevTuples.stream().filter(p -> p.first <= searchTime).findFirst().map(Pair::getSecond).orElse(null);
+		//add current tuple
+		prevTuples.add(0, new Pair<Double, Tuple>(realTime, dataTuple));
+		return matched;
 	}
 
 	@Override
@@ -116,6 +143,7 @@ public class ODTParser implements Parseable {
 			});
 	}
 	
+	@SuppressWarnings("unchecked")
 	public static void main(String[] args) {
 		
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
