@@ -26,7 +26,7 @@ public class PolicyRepository {
 	public PolicyParser getMapper(Tuple kafkaMessage) {
 		
 		try {
-			String terminalID = kafkaMessage.getString(AutoKafkaField.TerminalID.getName());
+			String terminalID = kafkaMessage.getString(AutoKafkaField.TerminalID.getIndex());
 			return PolicyRepository.getInstance().mPolicyMap.get(terminalID);
 		}catch(Exception e) {
 			return null;

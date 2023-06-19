@@ -24,7 +24,7 @@ public class ODTRepository {
 	public ODTParser getMapper(Tuple kafkaMessage) {
 		
 		try {
-			long vehicleKeyID = kafkaMessage.getLong(AutoKafkaField.VehicleKeyID.getName());
+			long vehicleKeyID = kafkaMessage.getLong(AutoKafkaField.VehicleKeyID.getIndex());
 			return ODTRepository.getInstance().mODTMap.get(String.valueOf(vehicleKeyID));
 		}catch(Exception e) {
 			return null;

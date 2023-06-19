@@ -8,6 +8,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.autoever.poc.common.NumUtils;
+import com.autoever.poc.parser.can.CanPreProcessor;
+import com.autoever.poc.parser.can.PolicyParser;
+import com.autoever.poc.parser.can.PolicyRepository;
 import com.autoever.poc.parser.ccp.CCPPreProcessor;
 import com.autoever.poc.parser.ccp.ODTRepository;
 import com.streambase.sb.CompleteDataType;
@@ -103,21 +106,40 @@ public class RawDataParser implements Parseable {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		
-		/** For CAN
-		String filepath= "d:/projects/vdms/resources/download/BM-15C-0088_142714_1_1685938107_1685938583675.dat";
+		String filepath= "d:/projects/vdms/resources/download/VM-21C-0004_177554_1_1687108486_1687135408089.dat";
 		PolicyRepository.getInstance().LoadPolicy("d:/projects/vdms/resources/policy", "xml");
-		String filename =  Paths.get(filepath).getFileName().toString().substring(0, Paths.get(filepath).getFileName().toString().lastIndexOf('.')).split("_")[0];
-		// can data test
 		
-		List<Tuple> result = new RawDataParser(filepath).getParsed();
+		List<Tuple> result = new RawDataParser(filepath, 0).getParsed();
 		
 		if(result.isEmpty()) {
 			System.out.println("empty");
 			return;
 		}
 		
-		PolicyParser.debug_val[0] = result.size();
+		List<Tuple> tuples = new ArrayList<>();
+		CanPreProcessor canPreProcessor = new CanPreProcessor();
 
+		long started, ended;
+		long elapsed = 0;
+		System.out.println("Started:[" + result.size() + "]:-->");
+		for(Tuple tuple : result) {
+			byte[] rawdata;
+			try {
+				rawdata = Base64.decode(tuple.getString("DATA"));
+				started = System.currentTimeMillis();
+				if(canPreProcessor.checkProcess("VM-21C-0004", tuple, rawdata)) {
+					tuples.add(tuple);
+				}
+				ended = System.currentTimeMillis();
+				elapsed += ended - started;
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		}
+		System.out.println("result:" + elapsed);
+
+		/**
 		PolicyParser parser = PolicyRepository.getInstance().mPolicyMap.get(filename);
 		result.stream().forEach(t -> {
 			if(parser.GetKeyFlag(t)) {
@@ -150,11 +172,9 @@ public class RawDataParser implements Parseable {
 			}
 				
 		});
-
-		Arrays.stream(PolicyParser.debug_val).forEach(System.out::println);
 		**/
-		
-		/** For CCP **/
+
+		/** For CCP check
 		String filepath= "D:/projects/vdms/resources/download/VM-21C-0074_219054_2_1686784306_1686785255628.dat";
 		ODTRepository.getInstance().LoadEVT("d:/projects/vdms/resources/evt", "evt");
 		long vehicleKeyID = 219054;
@@ -184,7 +204,6 @@ public class RawDataParser implements Parseable {
 			}
 		}
 		// print 
-		/**
 		tuples.stream().forEach(t -> {
 			try {
 				System.out.println("SOC:" + t.getDouble("SOC") + " ISOL:" + t.getDouble("ISOL"));
@@ -193,11 +212,8 @@ public class RawDataParser implements Parseable {
 			}
 		});
 		System.out.println("tuple Count:" + tuples.size());
-		**/
 		
-//		double a = 1234568.12;
-//		Double b = a;
-//		System.out.println("double : " + a + " b:" + b);
+		**/
 	}
 
 }

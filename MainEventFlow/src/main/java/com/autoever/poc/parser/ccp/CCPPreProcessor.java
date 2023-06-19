@@ -166,7 +166,7 @@ public class CCPPreProcessor implements PreProcessable {
 		prevCmd = 0;
 		rawParsedData = null;
 		try {
-			int rootCount = kafkaMessage.getInt(AutoKafkaField.RootCount.getName());
+			int rootCount = kafkaMessage.getInt(AutoKafkaField.RootCount.getIndex());
 			ODTParser odtParser = ODTRepository.getInstance().getMapper(kafkaMessage);
 			if(odtParser != null) odtParser.InitParams(rootCount);
 		}catch(Exception e) {}

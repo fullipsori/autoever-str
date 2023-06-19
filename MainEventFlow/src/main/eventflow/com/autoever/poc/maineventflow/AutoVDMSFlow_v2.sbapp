@@ -73,7 +73,7 @@
         </parameter-definitions>
         <dynamic-variables>
             <dynamic-variable initial-expression="emptylist(string())" name="CCPVIDs" setter-expression="newCCPVIDs" setter-stream="UpdatePolicyOutputStream"/>
-            <dynamic-variable initial-expression="false" name="allowCan" setter-expression="if (!isnull(input.allowCan)) then input.allowCan else allowCan" setter-stream="ControlFilterMessage"/>
+            <dynamic-variable initial-expression="true" name="allowCan" setter-expression="if (!isnull(input.allowCan)) then input.allowCan else allowCan" setter-stream="ControlFilterMessage"/>
             <dynamic-variable initial-expression="true" name="allowCcp" setter-expression="if (!isnull(input.allowCcp)) then input.allowCcp else allowCcp" setter-stream="ControlFilterMessage"/>
             <dynamic-variable initial-expression="false" name="allowDiag" setter-expression="if (!isnull(input.allowDiag)) then input.allowDiag else allowDiag" setter-stream="ControlFilterMessage"/>
             <dynamic-variable initial-expression="false" name="allowGps" setter-expression="if (!isnull(input.allowGps)) then input.allowGps else allowGps" setter-stream="ControlFilterMessage"/>

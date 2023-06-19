@@ -21,8 +21,6 @@ import com.streambase.sb.Tuple;
 
 public class PolicyParser implements Parseable {
 
-	public static int[] debug_val = new int[] {0,0,0,0,0};
-
 	private String filename;
 	private Path xmlFilePath;
 	private Element rootNode;
@@ -189,21 +187,17 @@ public class PolicyParser implements Parseable {
 	
 	public boolean IsAvailable(Tuple dataTuple) {
 		try {
-			int dataChannel = dataTuple.getInt(RawDataField.DataChannel.getValue());
-			int dataID = dataTuple.getInt(RawDataField.DataID.getValue()) & 0x00FFFFFF;
+			int dataChannel = dataTuple.getInt(RawDataField.DataChannel.getIndex());
+			int dataID = dataTuple.getInt(RawDataField.DataID.getIndex()) & 0x00FFFFFF;
 			if(dataID == KeyTrig.id && dataChannel == KeyTrig.ch) {
 				return true;
 			}
-			Map<Integer,List<Evaluable>> channelInfo = Optional.ofNullable((Map<Integer,List<Evaluable>>)msgFilter.get(dataChannel)).orElse(null);
-			if(channelInfo != null && channelInfo.containsKey(dataID)) {
-				return true;
-			}
+			return Optional.ofNullable((Map<Integer,List<Evaluable>>)msgFilter.get(dataChannel)).map(m -> m.containsKey(dataID)).orElse(false);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return false;
 		}
-		return false;
 	}
 
 	public boolean IsAvailable(int ch, int id) {
@@ -213,16 +207,13 @@ public class PolicyParser implements Parseable {
 			if(dataID == KeyTrig.id && dataChannel == KeyTrig.ch) {
 				return true;
 			}
-			Map<Integer,List<Evaluable>> channelInfo = Optional.ofNullable((Map<Integer,List<Evaluable>>)msgFilter.get(dataChannel)).orElse(null);
-			if(channelInfo != null && channelInfo.containsKey(dataID)) {
-				return true;
-			}
+			
+			return Optional.ofNullable((Map<Integer,List<Evaluable>>)msgFilter.get(dataChannel)).map(m -> m.containsKey(dataID)).orElse(false);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return false;
 		}
-		return false;
 	}
 
 	public static void main(String[] args) {

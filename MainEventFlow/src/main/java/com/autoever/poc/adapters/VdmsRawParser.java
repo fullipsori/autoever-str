@@ -53,6 +53,18 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 			return rep;
 		}
 	}
+	
+	public static enum RawParserDataField {
+		IsStarted(0),
+		IsEnded(1),
+		MSGIdx(2),
+		RawHeader(3);
+		
+		public final int index;
+		private RawParserDataField(int index) {
+			this.index = index;
+		}
+	}
 
 	private String displayName = "Vdms Message Parser";
 	// Local variables
@@ -197,7 +209,6 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 			e1.printStackTrace();
 		} 
 		
-		
 	}
 
 	public List<Tuple> GetTuples(Tuple inputTuple, byte[] hcpMessage) {
@@ -219,9 +230,9 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 			}
 			
 			Tuple startTuple = OutputSchema.createTuple();
-			startTuple.setBoolean("IsStarted", true);
-			startTuple.setBoolean("IsEnded", false);
-			startTuple.setInt("MSGIdx", msgIdx++);
+			startTuple.setBoolean(RawParserDataField.IsStarted.index, true);
+			startTuple.setBoolean(RawParserDataField.IsEnded.index, false);
+			startTuple.setInt(RawParserDataField.MSGIdx.index, msgIdx++);
 			startTuple.setTuple("PassThroughs", inputTuple);
 			tuples.add(startTuple);
 
@@ -245,19 +256,19 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 				}
 				
 				Tuple dataTuple = OutputSchema.createTuple();
-				dataTuple.setBoolean("IsStarted", false);
-				dataTuple.setBoolean("IsEnded", false);
-				dataTuple.setInt("MSGIdx", msgIdx);
+				dataTuple.setBoolean(RawParserDataField.IsStarted.index, false);
+				dataTuple.setBoolean(RawParserDataField.IsEnded.index, false);
+				dataTuple.setInt(RawParserDataField.MSGIdx.index, msgIdx);
 				{
 					Tuple headerTuple = rawHeaderSchema.createTuple();
-					headerTuple.setInt(RawDataField.DataChannel.getValue(), dataChannel);
-					headerTuple.setDouble(RawDataField.DeltaTime.getValue(), deltaTime);
-					headerTuple.setInt(RawDataField.MSGInfo.getValue(), dataFlag);
-					headerTuple.setInt(RawDataField.DataID.getValue(), dataId);
-					headerTuple.setInt(RawDataField.DLC.getValue(), dlcIndex);
-					if(rawData != null) headerTuple.setString(RawDataField.DATA.getValue(), Base64.encodeBytes(rawData));
-					headerTuple.setLong(RawDataField.BaseTime.getValue(), baseTime);
-					dataTuple.setTuple("RawHeader", headerTuple);
+					headerTuple.setInt(RawDataField.DataChannel.getIndex(), dataChannel);
+					headerTuple.setDouble(RawDataField.DeltaTime.getIndex(), deltaTime);
+					headerTuple.setInt(RawDataField.MSGInfo.getIndex(), dataFlag);
+					headerTuple.setInt(RawDataField.DataID.getIndex(), dataId);
+					headerTuple.setInt(RawDataField.DLC.getIndex(), dlcIndex);
+					if(rawData != null) headerTuple.setString(RawDataField.DATA.getIndex(), Base64.encodeBytes(rawData));
+					headerTuple.setLong(RawDataField.BaseTime.getIndex(), baseTime);
+					dataTuple.setTuple(RawParserDataField.RawHeader.index, headerTuple);
 				}
 				dataTuple.setTuple("PassThroughs", inputTuple);
 				
@@ -271,9 +282,9 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 			}
 
 			Tuple endTuple = OutputSchema.createTuple();
-			endTuple.setBoolean("IsStarted", false);
-			endTuple.setBoolean("IsEnded", true);
-			endTuple.setInt("MSGIdx", msgIdx+1); //started + ended + count(tuples)
+			endTuple.setBoolean(RawParserDataField.IsStarted.index, false);
+			endTuple.setBoolean(RawParserDataField.IsEnded.index, true);
+			endTuple.setInt(RawParserDataField.MSGIdx.index, msgIdx+1); //started + ended + count(tuples)
 			endTuple.setTuple("PassThroughs", inputTuple);
 			tuples.add(endTuple);
 

@@ -10,14 +10,14 @@ public enum RawDataField {
 	DATA(5),
 	BaseTime(6);
 
-	final private int value;
+	final private int index;
 	
-	private RawDataField(int value) {
-		this.value = value;
+	private RawDataField(int index) {
+		this.index = index;
 	}
 	
-	public int getValue() {
-		return this.value;
+	public int getIndex() {
+		return this.index;
 	}
 	
 }
