@@ -189,11 +189,10 @@ public class PolicyParser implements Parseable {
 		try {
 			int dataChannel = dataTuple.getInt(RawDataField.DataChannel.getIndex());
 			int dataID = dataTuple.getInt(RawDataField.DataID.getIndex()) & 0x00FFFFFF;
-			boolean isEvaluable = Optional.ofNullable((Map<Integer,List<Evaluable>>)msgFilter.get(dataChannel)).map(m -> m.containsKey(dataID)).orElse(false);
-			if((!"ON".equals(KeyStatus) || (dataID == KeyTrig.id && dataChannel == KeyTrig.ch)) && isEvaluable) {
+			if(!"ON".equals(KeyStatus) || (dataID == KeyTrig.id && dataChannel == KeyTrig.ch)) {
 				return true;
 			}
-			return false;
+			return Optional.ofNullable((Map<Integer,List<Evaluable>>)msgFilter.get(dataChannel)).map(m -> m.containsKey(dataID)).orElse(false);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -208,11 +207,11 @@ public class PolicyParser implements Parseable {
 		try {
 			int dataChannel = ch;
 			int dataID = id & 0x00FFFFFF;
-			boolean isEvaluable = Optional.ofNullable((Map<Integer,List<Evaluable>>)msgFilter.get(dataChannel)).map(m -> m.containsKey(dataID)).orElse(false);
-			if((!"ON".equals(KeyStatus) || (dataID == KeyTrig.id && dataChannel == KeyTrig.ch)) && isEvaluable) {
+			if(!"ON".equals(KeyStatus) || (dataID == KeyTrig.id && dataChannel == KeyTrig.ch)) {
 				return true;
 			}
-			return false;
+			/* KeyTrig.status 가 True 로 평가된 이후에는 dataID Key 가 존재하는 경우에는 모두 유효한 값으로 된다. */
+			return Optional.ofNullable((Map<Integer,List<Evaluable>>)msgFilter.get(dataChannel)).map(m -> m.containsKey(dataID)).orElse(false);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -72,12 +72,12 @@
             <parameter default="memory" name="downloadMode"/>
         </parameter-definitions>
         <dynamic-variables>
-            <dynamic-variable initial-expression="emptylist(string())" name="CCPVIDs" setter-expression="newCCPVIDs" setter-stream="UpdatePolicyOutputStream"/>
+            <dynamic-variable initial-expression="emptylist(string())" name="CCPVIDs" setter-expression="newCCPVIDs" setter-stream="UpdateMetaOutputStream"/>
             <dynamic-variable initial-expression="true" name="allowCan" setter-expression="if (!isnull(input.allowCan)) then input.allowCan else allowCan" setter-stream="ControlFilterMessage"/>
             <dynamic-variable initial-expression="true" name="allowCcp" setter-expression="if (!isnull(input.allowCcp)) then input.allowCcp else allowCcp" setter-stream="ControlFilterMessage"/>
             <dynamic-variable initial-expression="false" name="allowDiag" setter-expression="if (!isnull(input.allowDiag)) then input.allowDiag else allowDiag" setter-stream="ControlFilterMessage"/>
             <dynamic-variable initial-expression="false" name="allowGps" setter-expression="if (!isnull(input.allowGps)) then input.allowGps else allowGps" setter-stream="ControlFilterMessage"/>
-            <dynamic-variable initial-expression="emptylist(string())" name="policyFiles" setter-expression="newPolicyFiles" setter-stream="UpdatePolicyOutputStream"/>
+            <dynamic-variable initial-expression="emptylist(string())" name="policyFiles" setter-expression="newPolicyFiles" setter-stream="UpdateMetaOutputStream"/>
         </dynamic-variables>
         <data name="MGMTQueryTable" shared="false" source="concrete" type="querytable">
             <param name="storage-method" value="heap"/>
@@ -229,6 +229,17 @@
             <output port="1" stream="out:Union4_1"/>
             <param name="strict" value="false"/>
         </box>
+        <box name="GenerateKeys" type="map">
+            <input port="1" stream="out:Union4_1"/>
+            <output port="1" stream="out:GenerateKeys_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="newPolicyFiles">GetFilenameListInPath(policyFolder, 'xml')</include>
+                    <include field="newCCPVIDs">GetFilenameListInPath(evtFolder, 'evt')</include>
+                </expressions>
+            </target-list>
+        </box>
         <box name="InsertMGMT" type="query">
             <input port="1" stream="out:LoadMGMT_1"/>
             <dataref id="querytable" name="MGMTQueryTable"/>
@@ -259,17 +270,6 @@
                 <item name="input" selection="all"/>
             </target-list>
         </box>
-        <box name="PolicyMap" type="map">
-            <input port="1" stream="out:Union4_1"/>
-            <output port="1" stream="out:PolicyMap_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="newPolicyFiles">GetFilenameListInPath(policyFolder, 'xml')</include>
-                    <include field="newCCPVIDs">GetFilenameListInPath(evtFolder, 'evt')</include>
-                </expressions>
-            </target-list>
-        </box>
         <box name="Union2" type="union">
             <input port="1" stream="out:CreateTime_1"/>
             <input port="2" stream="out:DefaultValues_1"/>
@@ -287,13 +287,13 @@
             </target-list>
         </box>
         <box name="Split" type="split">
-            <input port="1" stream="out:PolicyMap_1"/>
-            <output port="1" stream="UpdatePolicyOutputStream"/>
+            <input port="1" stream="out:GenerateKeys_1"/>
+            <output port="1" stream="UpdateMetaOutputStream"/>
             <output port="2" stream="out:Split_2"/>
             <output port="3" stream="out:Split_3"/>
             <param name="output-count" value="3"/>
         </box>
-        <output-stream name="UpdatePolicyOutputStream"/>
+        <output-stream name="UpdateMetaOutputStream"/>
         <box name="CheckCan" type="filter">
             <input port="1" stream="out:Split_2"/>
             <output port="1" stream="out:CheckCan_1"/>
