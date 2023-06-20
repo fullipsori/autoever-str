@@ -272,7 +272,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 				}
 				dataTuple.setTuple("PassThroughs", inputTuple);
 				
-				if(preprocessor == null || preprocessor.preProcess(kafkaMessage, dataTuple, rawData)) {
+				if(preprocessor == null || preprocessor.preProcess(kafkaMessage, dataTuple, dataChannel, dataId, rawData)) {
 					tuples.add(dataTuple);
 					msgIdx++;
 				}else {

@@ -34,12 +34,6 @@ public class GPSPreProcessor implements PreProcessable {
 		
 	}
 
-	@Override
-	public boolean preProcess(Tuple dataTuple, byte[] rawdata, String param) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
 	public static double getGPSX(int longitude) {
 		return (longitude & 0xfffffffe) * 0.0000001;
 	}
@@ -62,7 +56,7 @@ public class GPSPreProcessor implements PreProcessable {
 	}
 	
 	@Override
-	public boolean preProcess(Tuple kafkaMessage, Tuple dataTuple, byte[] rawData) {
+	public boolean preProcess(Tuple kafkaMessage, Tuple dataTuple, int channel, int id, byte[] rawData) {
 		// TODO Auto-generated method stub
 		if(rawData == null || rawData.length == 0) return false;
 
@@ -97,7 +91,7 @@ public class GPSPreProcessor implements PreProcessable {
 			return false;
 		}
 	}
-	
+
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 

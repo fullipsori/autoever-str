@@ -11,6 +11,7 @@ import java.util.stream.IntStream;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import com.autoever.poc.common.RawDataField;
 import com.autoever.poc.common.StringUtils;
 import com.autoever.poc.parser.Parseable;
 import com.streambase.sb.Tuple;
@@ -225,8 +226,8 @@ public class TriggerParser {
 	@SuppressWarnings("unused")
 	public static Object EvalCAN(TriggerParser trigger, Tuple canmsg) {
 		try {
-			byte[] rawdata = Base64.decode(canmsg.getString("DATA"));
-			long baseTime = canmsg.getLong("BaseTime");
+			byte[] rawdata = Base64.decode(canmsg.getString(RawDataField.DATA.getIndex()));
+			long baseTime = canmsg.getLong(RawDataField.BaseTime.getIndex());
 			long rawvalue = 0;
 			int startbyte = trigger.sigstartbit >> 3;
 			int lastbyte = (trigger.sigstartbit + trigger.siglength -1) >> 3;
@@ -317,9 +318,9 @@ public class TriggerParser {
 	
 	public static Object EvalDM1(TriggerParser trigger, Tuple dm1msg) {
 		try {
-			byte[] rawdata = Base64.decode(dm1msg.getString("DATA"));
-			int dataID= dm1msg.getInt("DataID");
-			trigger.time = dm1msg.getDouble("DeltaTime");
+			byte[] rawdata = Base64.decode(dm1msg.getString(RawDataField.DATA.getIndex()));
+			int dataID= dm1msg.getInt(RawDataField.DataID.getIndex());
+			trigger.time = dm1msg.getDouble(RawDataField.DeltaTime.getIndex());
 			
 			if(trigger.id == (dataID & 0x00FFFFFF)) {
 				if((rawdata[5]&0xFF) == 0xCA && (rawdata[6]&0xFF) == 0xFE) {
@@ -387,7 +388,7 @@ public class TriggerParser {
 
 	public static Object EvalUDS(TriggerParser trigger, Tuple udsmsg) {
 		try {
-			byte[] rawdata = Base64.decode(udsmsg.getString("DATA"));
+			byte[] rawdata = Base64.decode(udsmsg.getString(RawDataField.DATA.getIndex()));
 			int frameType = (rawdata[0] & 0xff) >> 4;;
 			int length;
 

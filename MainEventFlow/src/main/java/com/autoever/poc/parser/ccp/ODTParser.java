@@ -35,6 +35,7 @@ public class ODTParser implements Parseable {
 	
 	private List<Pair<String,String>> measurement_list;
 	public List<Object[]> odt_map = new ArrayList<>();
+	public int ccpRawEndCmd = 0x36;
 	
 	public ODTParser(Path filePath, DocumentBuilder documentBuilder) {
 		this.filePath = filePath;
@@ -141,6 +142,10 @@ public class ODTParser implements Parseable {
 			.forEach(el -> {
 				el[2] = ((String)el[2]).concat(byteInit.substring(0, ((Integer)el[1])));
 			});
+
+		// last Element Index (start: 0x0a + (first_7 -1) -1)
+		ccpRawEndCmd = CCPPreProcessor.ccpStartCmd - 1 +  IntStream.range(0, odt_map.size()).filter(d -> ((Integer)((Object[])odt_map.get(d))[1]) == 7).findFirst().orElse(odt_map.size());
+		if(ccpRawEndCmd > CCPPreProcessor.ccpEndCmd) ccpRawEndCmd = CCPPreProcessor.ccpEndCmd;
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -151,11 +156,12 @@ public class ODTParser implements Parseable {
 		try {
 			documentBuilder = factory.newDocumentBuilder();
 			
-			Path evtPath = Paths.get("d:/projects/autoever-str/MainEventFlow/src/main/resources/evt/VM-21C-0016.evt");
+			Path evtPath = Paths.get("d:/projects/autoever-str/MainEventFlow/src/main/resources/evt/219054.evt");
 			ODTParser evtParser =  new ODTParser(evtPath, documentBuilder);
 			
 			evtParser.odt_map.stream()
 				.forEach(el -> System.out.printf("[[%s],%d,%s]\n", String.join(",", ((ArrayList<String>)el[0])), (Integer)el[1], (String)el[2]));
+			System.out.printf("CCP End:0x%x\n" , evtParser.ccpRawEndCmd);
 			
 		}catch(Exception e) {
 			e.printStackTrace();

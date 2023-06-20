@@ -7,18 +7,19 @@ import com.autoever.poc.common.NumUtils;
 import com.autoever.poc.common.StringUtils;
 import com.autoever.poc.parser.AutoKafkaField;
 import com.autoever.poc.parser.PreProcessable;
+import com.autoever.poc.parser.RawDataParser;
 import com.streambase.sb.CompleteDataType;
 import com.streambase.sb.Schema;
 import com.streambase.sb.Tuple;
+import com.streambase.sb.util.Base64;
 import com.streambase.sb.util.Pair;
 
 
 public class CCPPreProcessor implements PreProcessable {
 
 	private int prevCmd = 0;
-	private final int ccpStartCmd = 0x0a;
-	private final int ccpEndCmd = 0x3b;
-	private final int ccpRawEndCmd = 0x36; // 들어올 수 있는 유효한 데이터의 끝이여야 함.
+	public static final int ccpStartCmd = 0x0a;
+	public static final int ccpEndCmd = 0x3b;
 	private RawParsedData rawParsedData = null;
 
 	private class RawParsedData {
@@ -110,35 +111,23 @@ public class CCPPreProcessor implements PreProcessable {
 		// TODO Auto-generated constructor stub
 	}
 
-	@Override
-	public boolean preProcess(Tuple dataTuple, byte[] rawdata, String param) {
-		// TODO Auto-generated method stub
-		if(prevCmd != 0 ) {
-			if(prevCmd != 255 && ((rawdata[0]&0xff) >= ccpStartCmd) && ((rawdata[0]&0xff) <= ccpEndCmd)) {
-				prevCmd = rawdata[0] & 0xff;
-				return true;
-			}
-		}
-		prevCmd = rawdata[0] & 0xff;
-		return false;
-	}
-
 
 	@Override
-	public boolean preProcess(Tuple kafkaMessage, Tuple dataTuple, byte[] rawData) {
+	public boolean preProcess(Tuple kafkaMessage, Tuple dataTuple, int channel, int id, byte[] rawData) {
 		// TODO Auto-generated method stub
 		if(rawData == null || rawData.length == 0) return false;
 		if(prevCmd != 0 ) {
-			if(prevCmd != 255 && ((rawData[0]&0xff) >= this.ccpStartCmd) && ((rawData[0]&0xff) <= 0x3b)) {
+			if(prevCmd != 255 && ((rawData[0]&0xff) >= ccpStartCmd) && ((rawData[0]&0xff) <= ccpEndCmd)) {
 				prevCmd = rawData[0] & 0xff;
 				try {
-					List<Pair<String, Long>> odtParsed = parseData(rawData, ODTRepository.getInstance().getMapper(kafkaMessage));
+					ODTParser odtParser = ODTRepository.getInstance().getMapper(kafkaMessage);
+					List<Pair<String, Long>> odtParsed = parseData(rawData, odtParser);
 					if(odtParsed != null) {
 						if(rawParsedData == null) rawParsedData = new RawParsedData();
 						odtParsed.stream().forEach(pair -> rawParsedData.addFieldData(prevCmd, pair));
 					}
 
-					if(prevCmd >= this.ccpRawEndCmd && rawParsedData != null) {
+					if(prevCmd >= odtParser.ccpRawEndCmd && rawParsedData != null) {
 						Tuple resTuple = rawParsedData.GetTuple();
 						rawParsedData = null;
 						if(resTuple != null) {
@@ -158,7 +147,6 @@ public class CCPPreProcessor implements PreProcessable {
 		prevCmd = rawData[0] & 0xff;
 		return false;
 	}
-
 
 	@Override
 	public void initialize(Tuple kafkaMessage) {
@@ -183,12 +171,13 @@ public class CCPPreProcessor implements PreProcessable {
 					System.out.println(StringUtils.convertbytesToHex(rawData, 0, rawData.length));
 				}
 				try {
-					List<Pair<String, Long>> odtParsed = parseData(rawData, ODTRepository.getInstance().mODTMap.get(String.valueOf(vehicleKeyID)));
+					ODTParser odtParser = ODTRepository.getInstance().mODTMap.get(String.valueOf(vehicleKeyID));
+					List<Pair<String, Long>> odtParsed = parseData(rawData, odtParser);
 					if(odtParsed != null) {
 						if(rawParsedData == null) rawParsedData = new RawParsedData();
 						odtParsed.stream().forEach(pair -> rawParsedData.addFieldData(prevCmd, pair));
 					}
-					if(prevCmd >= ccpRawEndCmd && rawParsedData != null) { //adding tuple.
+					if(prevCmd >= odtParser.ccpRawEndCmd && rawParsedData != null) { //adding tuple.
 						Tuple resTuple = rawParsedData.GetTuple();
 						rawParsedData = null;
 						return resTuple;
@@ -240,6 +229,47 @@ public class CCPPreProcessor implements PreProcessable {
 			}
 		}
 		return resultList;
+	}
+
+	public static void main(String[] args) {
+		
+		String filepath= "D:/projects/vdms/resources/download/VM-21C-0074_219054_2_1686784306_1686785255628.dat";
+		ODTRepository.getInstance().LoadEVT("d:/projects/vdms/resources/evt", "evt");
+		long vehicleKeyID = 219054;
+		
+		List<Tuple> result = new RawDataParser(filepath, 0).getParsed();
+		
+		if(result.isEmpty()) {
+			System.out.println("empty");
+			return;
+		}
+		
+		List<Tuple> tuples = new ArrayList<>();
+		CCPPreProcessor ccpProcessor = new CCPPreProcessor();
+
+		System.out.println("Started:[" + result.size() + "]:-->");
+		for(Tuple tuple : result) {
+			byte[] rawdata;
+			try {
+				rawdata = Base64.decode(tuple.getString("DATA"));
+				Tuple ccpTuple = ccpProcessor.checkProcess(vehicleKeyID, tuple, rawdata);
+				if(ccpTuple != null) {
+					tuples.add(ccpTuple);
+				}
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		}
+		// print 
+		tuples.stream().forEach(t -> {
+			try {
+				System.out.println("SOC:" + t.getDouble("SOC") + " ISOL:" + t.getDouble("ISOL"));
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
+		});
+		System.out.println("tuple Count:" + tuples.size());
 	}
 
 }

@@ -15,6 +15,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import com.autoever.poc.adapters.VdmsRawParser.RawParserDataField;
 import com.autoever.poc.common.RawDataField;
 import com.autoever.poc.parser.Parseable;
 import com.streambase.sb.Tuple;
@@ -97,8 +98,8 @@ public class PolicyParser implements Parseable {
 	//[DataChannel, DeltaTime, MSGInfo, DataID, DLC, data[10:10 + dlc_Size[DLC]]]
 	public boolean GetKeyFlag(Tuple message) {
 		try {
-			int dataChannel = message.getInt("DataChannel");
-			int dataID = message.getInt("DataID");
+			int dataChannel = message.getInt(RawDataField.DataChannel.getIndex());
+			int dataID = message.getInt(RawDataField.DataID.getIndex());
 			if((dataID & 0x00FFFFFF) == KeyTrig.id && dataChannel == KeyTrig.ch) {
 				KeyTrig.callback.Evaluate(message);
 			}
@@ -119,12 +120,11 @@ public class PolicyParser implements Parseable {
 	public List<Tuple> GetTrigData(Tuple message) {
 
 		try {
+			int dataChannel = message.getInt(RawDataField.DataChannel.getIndex());
+			double deltaTime = message.getDouble(RawDataField.DeltaTime.getIndex());
+			int dataID = message.getInt(RawDataField.DataID.getIndex());
 
-			int dataChannel = message.getInt("DataChannel");
-			double deltaTime = message.getDouble("DeltaTime");
-			int dataID = message.getInt("DataID");
-
-			if(msgFilter.get(dataChannel) == null) return null;
+			if(!msgFilter.containsKey(dataChannel)) return null;
 
 			List<Evaluable> callbacks = (List<Evaluable>)((Map<Integer, List<Evaluable>>)msgFilter.get(dataChannel)).get(dataID & 0x00FFFFFF);
 			if(callbacks != null) {
