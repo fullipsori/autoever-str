@@ -171,9 +171,6 @@
                     <remove field="eventValue"/>
                     <remove field="terminalID"/>
                 </item>
-                <expressions>
-                    <replace field="perfData.t2_time">to_milliseconds(now())</replace>
-                </expressions>
             </target-list>
         </box>
         <box name="CANRawParser" type="java">
@@ -226,7 +223,7 @@
                     <include field="MSGIdx"/>
                 </item>
                 <expressions>
-                    <replace field="perfData.t4_time">to_milliseconds(now())</replace>
+                    <replace field="perfData.t3_time">to_milliseconds(now())</replace>
                 </expressions>
             </target-list>
         </box>
@@ -241,7 +238,7 @@
                     <include field="MSGIdx"/>
                 </item>
                 <expressions>
-                    <replace field="perfData.t3_time">to_milliseconds(now())</replace>
+                    <replace field="perfData.t2_time">to_milliseconds(now())</replace>
                 </expressions>
             </target-list>
         </box>
@@ -274,8 +271,8 @@
             <target-list>
                 <expressions>
                     <include field="*">lastval(*)</include>
-                    <replace field="perfData.t3_time">firstval(perfData.t3_time)</replace>
-                    <replace field="perfData.t4_time">lastval(perfData.t4_time)</replace>
+                    <replace field="perfData.t2_time">firstval(perfData.t2_time)</replace>
+                    <replace field="perfData.t3_time">lastval(perfData.t3_time)</replace>
                 </expressions>
             </target-list>
         </box>

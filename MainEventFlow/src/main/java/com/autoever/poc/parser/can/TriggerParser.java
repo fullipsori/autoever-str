@@ -192,7 +192,7 @@ public class TriggerParser {
 			int backwardIndex = (sigstartbit + siglength -1) - i;
 			int byteIndex = backwardIndex >> 3;
 			int bitshift= 7- backwardIndex%8;
-			rawvalue |= ((((byte)((0x1 << bitshift) & rawdata[byteIndex]) & (byte)0xff) == 0x00)? 0x00 : 0x01) << i;
+			rawvalue |= (((((0x1 << bitshift) & rawdata[byteIndex]) & 0xff) == 0x00)? 0x00 : 0x01) << i;
 		}
 
 		ByteBuffer byteBuffer = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt((int)rawvalue).rewind();
@@ -305,6 +305,7 @@ public class TriggerParser {
 						return trigger.eventCallback.OnCalled(trigger.time, false, String.valueOf(value));
 					}
 				}
+				trigger.conditionTime = trigger.time + baseTime;
 			}
 			return trigger.eventCallback.OnCalled(trigger.time, null, String.valueOf(value));
 
@@ -321,8 +322,8 @@ public class TriggerParser {
 			trigger.time = dm1msg.getDouble("DeltaTime");
 			
 			if(trigger.id == (dataID & 0x00FFFFFF)) {
-				if(rawdata[5] == (byte)0xCA && rawdata[6] == (byte)0xFE) {
-					trigger.nowDmSize = (rawdata[2] & (byte)0xF) * 256 + (rawdata[1]&0xff);
+				if((rawdata[5]&0xFF) == 0xCA && (rawdata[6]&0xFF) == 0xFE) {
+					trigger.nowDmSize = (rawdata[2] & 0xF) * 256 + (rawdata[1]&0xFF);
 					trigger.dm1Data = rawdata;
 				}else {
 					trigger.dm1Data = null;
@@ -393,8 +394,8 @@ public class TriggerParser {
 			trigger.time = udsmsg.getDouble("DeltaTime");
 			
 			if(frameType == 0) {
-				length = rawdata[0] & (byte)0xF;
-				if(rawdata[1] == (byte)0x59 || rawdata[1] == (byte)0x58) {
+				length = rawdata[0] & 0xF;
+				if((rawdata[1]&0xFF) == 0x59 || (rawdata[1]&0xFF) == 0x58) {
 					if(trigger.lastLength == 0) {
 						trigger.lastLength = length;
 						if(length > 3) {
@@ -414,8 +415,8 @@ public class TriggerParser {
 					}
 				}
 			}else if(frameType == 1) {
-				length = (rawdata[0] & (byte)0xF) * 256 + (rawdata[1] & 0xFF);
-				if(rawdata[2] == (byte)0x59 || rawdata[2] == (byte)0x58) {
+				length = (rawdata[0] & 0xF) * 256 + (rawdata[1] & 0xFF);
+				if((rawdata[2]&0xFF) == 0x59 || (rawdata[2]&0xFF) == 0x58) {
 					if(trigger.lastLength != length) {
 						trigger.status = true;
 						trigger.lastLength = length;
@@ -439,5 +440,8 @@ public class TriggerParser {
 		byte[] x = {(byte)0x00,(byte)0xff,(byte)0xde,(byte)0x6c,(byte)0xf9,(byte)0xff,(byte)0xff,(byte)0xff};
 		long rawvalue = TriggerParser.GetRawValue("Little", x, "unsigned", 16, 24);
 		System.out.println("rawvalue:" + rawvalue);
+//		if(rawdata[5] == (byte)0xCA && rawdata[6] == (byte)0xFE) {
+//
+//		}
 	}
 }
