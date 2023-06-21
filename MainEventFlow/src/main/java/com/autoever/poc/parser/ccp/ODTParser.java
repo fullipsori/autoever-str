@@ -19,7 +19,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import com.autoever.poc.parser.Parseable;
+import com.streambase.sb.NullValueException;
 import com.streambase.sb.Tuple;
+import com.streambase.sb.TupleException;
 import com.streambase.sb.util.Pair;
 
 
@@ -31,7 +33,6 @@ public class ODTParser implements Parseable {
 	
 	private int rootCount = 0;
 	public List<Pair<Double, Tuple>> prevTuples= new ArrayList<>();
-	private final double maxInterval = 5.0;
 	
 	private List<Pair<String,String>> measurement_list;
 	public List<Object[]> odt_map = new ArrayList<>();
@@ -63,17 +64,39 @@ public class ODTParser implements Parseable {
 		return true;
 	}
 	
-	public Tuple getMatchedTupleByInterval(Tuple dataTuple, double realTime, double minInterval) {
+	public Tuple getMatchedTupleByInterval(Tuple dataTuple, double realTime, double minInterval, double maxInterval) {
 		// removed over maxInterval
 		final double removeTime = realTime - maxInterval;
 		final double searchTime = realTime - minInterval;
 		prevTuples.removeIf(p -> p.first <= removeTime);
 		//search matched tuple
-		Tuple matched = prevTuples.stream().filter(p -> p.first <= searchTime).findFirst().map(Pair::getSecond).orElse(null);
-		//add current tuple
-		prevTuples.add(0, new Pair<Double, Tuple>(realTime, dataTuple));
+//		Tuple matched = prevTuples.stream().filter(p -> p.first <= searchTime).findFirst().map(Pair::getSecond).orElse(null);
+		Tuple matched = null;
+		if(!prevTuples.isEmpty()) {
+			matched = prevTuples.get(0).second;
+		}
+		//add current tuple at first index.
+
+		if(prevTuples.isEmpty() || prevTuples.get(0).first != realTime) {
+			prevTuples.add(0, new Pair<Double, Tuple>(realTime, dataTuple));
+		}
 		return matched;
 	}
+	
+	public List<Long> getCellDiff(List<Tuple> curCells, List<Tuple> prevCells) {
+		if(prevCells == null) return null;
+		return IntStream.range(0, curCells.size()).mapToObj(d -> {
+			try {
+				long prev = prevCells.get(d).getLong(1);
+				long cur = curCells.get(d).getLong(1);
+				return prev-cur;
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				return (long)0;
+			}
+		}).collect(Collectors.toList());
+	}
+
 
 	@Override
 	public void parse() {

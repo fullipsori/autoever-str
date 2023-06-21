@@ -10,11 +10,11 @@
     <memory-model-settings/>
     <named-schemas>
         <schema name="VDMSBaseRaw">
-            <field name="DataChannel" type="int"/>
+            <field name="DLC" type="int"/>
             <field name="DeltaTime" type="double"/>
             <field name="MSGInfo" type="int"/>
+            <field name="DataChannel" type="int"/>
             <field name="DataID" type="int"/>
-            <field name="DLC" type="int"/>
             <field name="DATA" type="string"/>
             <field name="BaseTime" type="long"/>
         </schema>

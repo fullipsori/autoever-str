@@ -261,11 +261,11 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 				dataTuple.setInt(RawParserDataField.MSGIdx.index, msgIdx);
 				{
 					Tuple headerTuple = rawHeaderSchema.createTuple();
-					headerTuple.setInt(RawDataField.DataChannel.getIndex(), dataChannel);
+					headerTuple.setInt(RawDataField.DLC.getIndex(), dlcIndex);
 					headerTuple.setDouble(RawDataField.DeltaTime.getIndex(), deltaTime);
 					headerTuple.setInt(RawDataField.MSGInfo.getIndex(), dataFlag);
+					headerTuple.setInt(RawDataField.DataChannel.getIndex(), dataChannel);
 					headerTuple.setInt(RawDataField.DataID.getIndex(), dataId);
-					headerTuple.setInt(RawDataField.DLC.getIndex(), dlcIndex);
 					if(rawData != null) headerTuple.setString(RawDataField.DATA.getIndex(), Base64.encodeBytes(rawData));
 					headerTuple.setLong(RawDataField.BaseTime.getIndex(), baseTime);
 					dataTuple.setTuple(RawParserDataField.RawHeader.index, headerTuple);

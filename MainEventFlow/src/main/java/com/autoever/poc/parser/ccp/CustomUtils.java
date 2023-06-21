@@ -1,11 +1,16 @@
 package com.autoever.poc.parser.ccp;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import com.streambase.sb.CompleteDataType;
+import com.streambase.sb.NullValueException;
+import com.streambase.sb.Schema;
 import com.streambase.sb.Tuple;
+import com.streambase.sb.TupleException;
 import com.streambase.sb.client.CustomFunctionResolver;
 
 public class CustomUtils {
@@ -19,17 +24,37 @@ public class CustomUtils {
 		}
 	}
 
-	@CustomFunctionResolver("GetDeltaVolCustomUtilsResolver0")
-	public static long GetDeltaVol(List<Tuple> cellDatas){
-		if(cellDatas == null) return 0;
-		return cellDatas.stream().map(tuple -> CustomUtils.GetFieldValue(tuple, 1)).mapToLong(v->v).max().getAsLong()
-				- cellDatas.stream().map(tuple -> CustomUtils.GetFieldValue(tuple, 1)).mapToLong(v-> v).min().getAsLong();
+	@CustomFunctionResolver("GetDeltaValueCustomUtilsResolver0")
+	public static long GetDeltaValue(List<Tuple> datas){
+		if(datas == null) return 0;
+		return datas.stream().map(tuple -> CustomUtils.GetFieldValue(tuple, 1)).mapToLong(v->v).max().getAsLong()
+				- datas.stream().map(tuple -> CustomUtils.GetFieldValue(tuple, 1)).mapToLong(v-> v).min().getAsLong();
 	}
 
-	public static CompleteDataType GetDeltaVolCustomUtilsResolver0(CompleteDataType cellDatas) {
+	public static CompleteDataType GetDeltaValueCustomUtilsResolver0(CompleteDataType datas) {
 		return CompleteDataType.forLong();
 	}
 	
+	@CustomFunctionResolver("GetMaxValueCustomUtilsResolver0")
+	public static long GetMaxValue(List<Tuple> datas){
+		if(datas == null) return 0;
+		return datas.stream().map(tuple -> CustomUtils.GetFieldValue(tuple, 1)).mapToLong(v->v).max().getAsLong();
+	}
+
+	public static CompleteDataType GetMaxValueCustomUtilsResolver0(CompleteDataType datas) {
+		return CompleteDataType.forLong();
+	}
+
+	@CustomFunctionResolver("GetMinValueCustomUtilsResolver0")
+	public static long GetMinValue(List<Tuple> datas){
+		if(datas == null) return 0;
+		return datas.stream().map(tuple -> CustomUtils.GetFieldValue(tuple, 1)).mapToLong(v->v).min().getAsLong();
+	}
+
+	public static CompleteDataType GetMinValueCustomUtilsResolver0(CompleteDataType datas) {
+		return CompleteDataType.forLong();
+	}
+
 	@CustomFunctionResolver("GetDVolCustomUtilsResolver0")
 	public static List<Double> GetDVol(List<Tuple> cellDatas){
 		// TODO Implement function here
@@ -49,6 +74,30 @@ public class CustomUtils {
 	
 	public static CompleteDataType GetDVolCustomUtilsResolver0(CompleteDataType cellDatas) {
 		return CompleteDataType.forList(CompleteDataType.forDouble());
+	}
+
+	public static final Schema FieldDoubleSchema = new Schema(null, List.of(
+			new Schema.Field("field", CompleteDataType.forString()), 
+			new Schema.Field("value", CompleteDataType.forDouble())));
+
+	@CustomFunctionResolver("GetMaxDVolCustomUtilsResolver0")
+	public static Tuple GetMaxDVol(List<Double> dVols){
+		// TODO Implement function here
+		if(dVols == null) return null;
+		Tuple volTuple = FieldDoubleSchema.createTuple();
+		int maxIndex = IntStream.range(0, dVols.size()).boxed().max(Comparator.comparingDouble(i -> Math.abs(dVols.get(i)))).get();
+		try {
+			volTuple.setString(0, "cell_"+ (maxIndex+1));
+			volTuple.setDouble(1, dVols.get(maxIndex));
+			return volTuple;
+		}catch(Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public static CompleteDataType GetMaxDVolCustomUtilsResolver0(CompleteDataType cellDatas) {
+		return CompleteDataType.forTuple(FieldDoubleSchema);
 	}
 
 	@CustomFunctionResolver("JoinFromCellTuplesCustomUtilsResolver0")
@@ -103,17 +152,46 @@ public class CustomUtils {
 	
 	
 	@CustomFunctionResolver("getMatchedTupleByIntervalCustomUtilsResolver0")
-	public static Tuple getMatchedTupleByInterval(Tuple kafkaMessage, Tuple dataTuple, double realTime, double minInterval) {
+	public static Tuple getMatchedTupleByInterval(Tuple kafkaMessage, Tuple dataTuple, double realTime, double minInterval, double maxInterval) {
 		ODTParser odtParser = ODTRepository.getInstance().getMapper(kafkaMessage);
-		if(odtParser != null) return odtParser.getMatchedTupleByInterval(dataTuple, realTime, minInterval);
+		if(odtParser != null) return odtParser.getMatchedTupleByInterval(dataTuple, realTime, minInterval, maxInterval);
 		return null;
 	}
 	
-	public static CompleteDataType getMatchedTupleByIntervalCustomUtilsResolver0(CompleteDataType kafkaMessage, CompleteDataType dataTuple, CompleteDataType realTime, CompleteDataType minInterval) {
+	public static CompleteDataType getMatchedTupleByIntervalCustomUtilsResolver0(CompleteDataType kafkaMessage, CompleteDataType dataTuple, CompleteDataType realTime, CompleteDataType minInterval, CompleteDataType maxInterval) {
 		return CompleteDataType.forTuple(CCPPreProcessor.RawParsed);
 	}
 	
+	@CustomFunctionResolver("printDataCustomUtilsResolver0")
+	public static boolean printData(String type, List<Tuple> cells) {
+		if(cells != null) {
+			System.out.println("");
+			cells.stream().forEach(f -> {
+				try {
+					System.out.printf("%d", f.getLong(1));
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+				}
+			});
+			System.out.println("");
+		}
+		return true;
+	}
+	public static CompleteDataType printDataCustomUtilsResolver0(CompleteDataType type, CompleteDataType cells) {
+		return CompleteDataType.forBoolean();
+	}
+
+	@CustomFunctionResolver("getCellDiffCustomUtilsResolver0")
+	public static List<Long> getCellDiff(Tuple kafkaMessage, List<Tuple> curCells, List<Tuple> prevCells) {
+		ODTParser odtParser = ODTRepository.getInstance().getMapper(kafkaMessage);
+		if(odtParser != null) return odtParser.getCellDiff(curCells, prevCells);
+		return null;
+	}
 	
+	public static CompleteDataType getCellDiffCustomUtilsResolver0(CompleteDataType kafkaMessage, CompleteDataType curCells, CompleteDataType prevCells) {
+		return CompleteDataType.forList(CompleteDataType.forLong());
+	}
+
 	public static List<Double> checkDVol(List<Integer> cellDatas){
 		// TODO Implement function here
 		if(cellDatas == null) return null;

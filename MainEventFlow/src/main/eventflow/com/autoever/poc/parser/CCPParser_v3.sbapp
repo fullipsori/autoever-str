@@ -97,41 +97,37 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="POST_OP" type="map">
+        <box name="PREFIX" type="map">
             <input port="1" stream="out:FilterMarker_3"/>
-            <output port="1" stream="out:POST_OP_1"/>
+            <output port="1" stream="out:PREFIX_1"/>
             <target-list>
                 <item name="input" selection="all"/>
                 <expressions>
-                    <replace field="RawParsed.deltaVol">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetDeltaVol', RawParsed.cellData)</replace>
-                    <replace field="RawParsed.dVols">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetDVol', RawParsed.cellData)</replace>
+                    <replace field="RawParsed.msrTBData">sublist(RawParsed.msrTBData, 0, 7)</replace>
+                    <include field="matchedTuple">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'getMatchedTupleByInterval', kafkaMessage, RawParsed, RawHeader.BaseTime + RawHeader.DeltaTime, 0.0, 2.0)</include>
                 </expressions>
             </target-list>
         </box>
-        <box name="gen_seq_id" type="seqnum">
-            <input port="1" stream="out:POST_OP_1"/>
-            <output port="1" stream="out:gen_seq_id_1"/>
-            <param name="output-field" value="seq_id"/>
-            <param name="sequence-id" value="sequenceid"/>
-            <param name="update-expression" value="sequenceid + 1"/>
+        <box name="ADDElem" type="map">
+            <input port="1" stream="out:PREFIX_1"/>
+            <output port="1" stream="out:ADDElem_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="deltaVol">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetDeltaValue', RawParsed.cellData)</include>
+                    <include field="dVols">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetDVol', RawParsed.cellData)</include>
+                    <include field="RESs">emptylist(double(null))</include>
+                    <include field="deltaTB">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetDeltaValue', RawParsed.msrTBData)</include>
+                    <include field="maxTB">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetMaxValue', RawParsed.msrTBData)</include>
+                    <include field="cellDiffs">if(!isnull(matchedTuple)) then maplist(function(f1 FieldType, f2 FieldType){f2.fieldValue-f1.fieldValue}, RawParsed.cellData , matchedTuple.cellData) else emptylist(long(null))</include>
+                </expressions>
+            </target-list>
         </box>
         <box name="MarkerUnion" type="union">
             <input port="1" stream="out:MarkerStarted_1"/>
             <input port="2" stream="out:MarkerEnded_1"/>
             <output port="1" stream="out:MarkerUnion_1"/>
             <param name="strict" value="false"/>
-        </box>
-        <box name="addSeqId" type="map">
-            <input port="1" stream="out:gen_seq_id_1"/>
-            <output port="1" stream="out:addSeqId_1"/>
-            <target-list>
-                <item name="input" selection="all">
-                    <remove field="seq_id"/>
-                </item>
-                <expressions>
-                    <replace field="messageID">messageID + '_' + seq_id</replace>
-                </expressions>
-            </target-list>
         </box>
         <box name="AGGToHCP" type="aggregate">
             <input port="1" stream="out:MarkerUnion_1"/>
@@ -151,15 +147,22 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="CheckMatching" type="map">
-            <input port="1" stream="out:addSeqId_1"/>
-            <output port="1" stream="out:CheckMatching_1"/>
+        <box name="gen_seq_id" type="seqnum">
+            <input port="1" stream="out:ADDElem_1"/>
+            <output port="1" stream="out:gen_seq_id_1"/>
+            <param name="output-field" value="seq_id"/>
+            <param name="sequence-id" value="sequenceid"/>
+            <param name="update-expression" value="sequenceid + 1"/>
+        </box>
+        <box name="addSeqId" type="map">
+            <input port="1" stream="out:gen_seq_id_1"/>
+            <output port="1" stream="out:addSeqId_1"/>
             <target-list>
                 <item name="input" selection="all">
-                    <declare field="matchedTuple">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'getMatchedTupleByInterval', kafkaMessage, RawParsed, RawHeader.BaseTime + RawHeader.DeltaTime, 1.0)</declare>
+                    <remove field="seq_id"/>
                 </item>
                 <expressions>
-                    <replace field="RawParsed.RESs">if(!isnull(matchedTuple)) then list(matchedTuple.IBM-RawParsed.IBM) else emptylist(double(null))</replace>
+                    <replace field="messageID">messageID + '_' + seq_id</replace>
                 </expressions>
             </target-list>
         </box>
@@ -175,26 +178,21 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="FilterCopy" type="filter">
-            <input port="1" stream="out:EndedCCPProc_1"/>
-            <output port="1" stream="out:FilterCopy_1"/>
-            <output port="2" stream="out:FilterCopy_2"/>
-            <param name="autogen-nomatch-port" value="true"/>
-            <param name="expression.0" value="true"/>
-            <param name="expression.1" value="true"/>
-        </box>
-        <box name="MapToCCPTable" type="map">
-            <input port="1" stream="out:CheckMatching_1"/>
-            <output port="1" stream="out:MapToCCPTable_1"/>
+        <box name="AssignTableFields" type="map">
+            <input port="1" stream="out:addSeqId_1"/>
+            <output port="1" stream="out:AssignTableFields_1"/>
             <target-list>
-                <item name="input" selection="all">
-                    <remove field="kafkaMessage"/>
-                    <remove field="perfData"/>
-                    <remove field="RawHeader"/>
-                    <remove field="RawParsed"/>
-                    <remove field="IsEnded"/>
-                    <remove field="IsStarted"/>
-                    <remove field="MSGIdx"/>
+                <item name="input" selection="none">
+                    <include field="cellDiffs"/>
+                    <include field="deltaTB"/>
+                    <include field="deltaVol"/>
+                    <include field="dVols"/>
+                    <include field="maxTB"/>
+                    <include field="messageID"/>
+                    <include field="mgmtNO"/>
+                    <include field="RawParsed"/>
+                    <include field="RESs"/>
+                    <declare field="dVolMaxField">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetMaxDVol', dVols)</declare>
                 </item>
                 <expressions>
                     <include field="terminalID">kafkaMessage.TerminalID</include>
@@ -204,21 +202,24 @@
                     <include field="realTime">long(GetLocalTime(kafkaMessage.BaseTime + long(RawHeader.DeltaTime), ''))</include>
                     <include field="rootCount">kafkaMessage.RootCount</include>
                     <include field="*">RawParsed.*</include>
-                    <remove field="dVols"/>
-                    <replace field="RESs">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromNumberList', RawParsed.RESs)</replace>
+                    <replace field="RESs">"NA"</replace>
                     <replace field="cellData">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromCellTuples', RawParsed.cellData)</replace>
+                    <include field="cellDiffData">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromNumberList', cellDiffs)</include>
                     <replace field="msrTBData">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromMsrTBTuples', RawParsed.msrTBData)</replace>
-                    <include field="dVol">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromNumberList', RawParsed.dVols)</include>
+                    <include field="dVol">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromNumberList', dVols)</include>
+                    <include field="maxDVolCell">if((RawParsed.chargingNow==0) &amp;&amp; !isnull(dVolMaxField)) then dVolMaxField.field else string(null)</include>
+                    <include field="maxDVolVal">if((RawParsed.chargingNow==0) &amp;&amp; !isnull(dVolMaxField)) then dVolMaxField.value else double(null)</include>
                     <replace field="SOC">round(RawParsed.SOC * 1.0)/10.0</replace>
                     <replace field="IBM">round(RawParsed.IBM * 1.0)/10.0</replace>
-                    <replace field="ISOL">round(RawParsed.ISOL * 1.0)/10.0</replace>
+                    <replace field="deltaTB">deltaTB/10.0</replace>
+                    <replace field="maxTB">maxTB/10.0</replace>
                 </expressions>
             </target-list>
         </box>
-        <box name="Filter" type="filter">
-            <input port="1" stream="out:MapToCCPTable_1"/>
-            <output port="1" stream="out:Filter_1"/>
-            <output port="2" stream="out:Filter_2"/>
+        <box name="FilterCopy" type="filter">
+            <input port="1" stream="out:EndedCCPProc_1"/>
+            <output port="1" stream="out:FilterCopy_1"/>
+            <output port="2" stream="out:FilterCopy_2"/>
             <param name="autogen-nomatch-port" value="true"/>
             <param name="expression.0" value="true"/>
             <param name="expression.1" value="true"/>
@@ -233,6 +234,112 @@
                 <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
             </parameter-bindings>
         </module-reference>
+        <box name="Split" type="split">
+            <input port="1" stream="out:AssignTableFields_1"/>
+            <output port="1" stream="out:Split_1"/>
+            <output port="2" stream="out:Split_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <box name="FilterToCCPTrig" type="filter">
+            <input port="1" stream="out:Split_2"/>
+            <output port="1" stream="out:FilterToCCPTrig_1"/>
+            <output port="2" stream="out:FilterToCCPTrig_2"/>
+            <output port="3" stream="out:FilterToCCPTrig_3"/>
+            <output port="4" stream="out:FilterToCCPTrig_4"/>
+            <output port="5" stream="out:FilterToCCPTrig_5"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="SOC &gt;= 50 &amp;&amp; !isempty(cellDiffs) &amp;&amp; !isempty(filterlist(cellDiffs, function(d long){ d &gt; 150 }))"/>
+            <param name="expression.1" value="SOC &gt;= 50 &amp;&amp; deltaVol &gt;= 150"/>
+            <param name="expression.2" value="deltaTB &gt; 15"/>
+            <param name="expression.3" value="ISOL &lt;= 1500"/>
+            <param name="expression.4" value="maxTB &gt;= 45"/>
+        </box>
+        <box name="MapToCCP" type="map">
+            <input port="1" stream="out:Split_1"/>
+            <output port="1" stream="out:MapToCCP_1"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="baseTime"/>
+                    <include field="cellData"/>
+                    <include field="cellDiffData"/>
+                    <include field="chargingNow"/>
+                    <include field="deltaTB"/>
+                    <include field="deltaTime"/>
+                    <include field="deltaVol"/>
+                    <include field="dVol"/>
+                    <include field="IBM"/>
+                    <include field="ISOL"/>
+                    <include field="maxTB"/>
+                    <include field="messageID"/>
+                    <include field="mgmtNO"/>
+                    <include field="msrTBData"/>
+                    <include field="realTime"/>
+                    <include field="RESs"/>
+                    <include field="rootCount"/>
+                    <include field="SOC"/>
+                    <include field="terminalID"/>
+                    <include field="vehicleKeyID"/>
+                </item>
+            </target-list>
+        </box>
+        <box name="Filter" type="filter">
+            <input port="1" stream="out:MapToCCP_1"/>
+            <output port="1" stream="out:Filter_1"/>
+            <output port="2" stream="out:Filter_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="true"/>
+            <param name="expression.1" value="true"/>
+        </box>
+        <box name="MapCellDiff" type="map">
+            <input port="1" stream="out:FilterToCCPTrig_1"/>
+            <output port="1" stream="out:MapCellDiff_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="matchFlag">'cellDiffs'</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="MapDeltaTB" type="map">
+            <input port="1" stream="out:FilterToCCPTrig_3"/>
+            <output port="1" stream="out:MapDeltaTB_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="matchFlag">"deltaTB"</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="MapDeltaVol" type="map">
+            <input port="1" stream="out:FilterToCCPTrig_2"/>
+            <output port="1" stream="out:MapDeltaVol_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="matchFlag">'deltaVol'</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="MapISOL" type="map">
+            <input port="1" stream="out:FilterToCCPTrig_4"/>
+            <output port="1" stream="out:MapISOL_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="matchFlag">"ISOL"</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="MapMaxTB" type="map">
+            <input port="1" stream="out:FilterToCCPTrig_5"/>
+            <output port="1" stream="out:MapMaxTB_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="matchFlag">"maxTB"</include>
+                </expressions>
+            </target-list>
+        </box>
         <box name="PublishCCP" type="outputadapter">
             <input port="1" stream="out:Filter_1"/>
             <output port="1" stream="out:PublishCCP_1"/>
@@ -259,11 +366,73 @@
             <param name="uri" value="${LV_SERVER_URI}"/>
             <param name="useRuntimeURI" value="false"/>
         </box>
+        <box name="Union2" type="union">
+            <input port="1" stream="out:MapCellDiff_1"/>
+            <input port="2" stream="out:MapDeltaVol_1"/>
+            <input port="3" stream="out:MapDeltaTB_1"/>
+            <input port="4" stream="out:MapISOL_1"/>
+            <input port="5" stream="out:MapMaxTB_1"/>
+            <output port="1" stream="out:Union2_1"/>
+            <param name="strict" value="false"/>
+        </box>
+        <box name="MapToCCPTrig" type="map">
+            <input port="1" stream="out:Union2_1"/>
+            <output port="1" stream="out:MapToCCPTrig_1"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="cellData"/>
+                    <include field="cellDiffData"/>
+                    <include field="chargingNow"/>
+                    <include field="deltaTB"/>
+                    <include field="deltaVol"/>
+                    <include field="dVol"/>
+                    <include field="IBM"/>
+                    <include field="ISOL"/>
+                    <include field="matchFlag"/>
+                    <include field="maxTB"/>
+                    <include field="messageID"/>
+                    <include field="mgmtNO"/>
+                    <include field="msrTBData"/>
+                    <include field="realTime"/>
+                    <include field="rootCount"/>
+                    <include field="SOC"/>
+                    <include field="terminalID"/>
+                    <include field="vehicleKeyID"/>
+                </item>
+            </target-list>
+        </box>
+        <box name="PublishCCPTrig" type="outputadapter">
+            <input port="1" stream="out:MapToCCPTrig_1"/>
+            <output port="1" stream="out:PublishCCPTrig_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.liveview.LiveViewPublish"/>
+            <param name="ackPeriod" value="0"/>
+            <param name="adHoc" value="false"/>
+            <param name="bufferSize" value="1024"/>
+            <param name="connectInline" value="false"/>
+            <param name="connectionKey" value=""/>
+            <param name="deleteField" value=""/>
+            <param name="dynamicTableName" value="false"/>
+            <param name="enableCompressedConnection" value="false"/>
+            <param name="encapsulatingLV" value="false"/>
+            <param name="flushInterval" value="250"/>
+            <param name="logLevel" value="INFO"/>
+            <param name="lvTableName" value="AutoCCPTrigDataTable"/>
+            <param name="pubName" value=""/>
+            <param name="reliablePub" value="false"/>
+            <param name="seqField" value=""/>
+            <param name="shareConnection" value="true"/>
+            <param name="strictSchema" value="false"/>
+            <param name="throughPort" value="false"/>
+            <param name="uri" value="${LV_SERVER_URI}"/>
+            <param name="useRuntimeURI" value="false"/>
+        </box>
         <box name="Union" type="union">
             <input port="1" stream="out:PublishPerf_1"/>
             <input port="2" stream="out:PublishCCP_1"/>
             <input port="3" stream="out:Filter_2"/>
             <input port="4" stream="out:FilterCopy_2"/>
+            <input port="5" stream="out:PublishCCPTrig_1"/>
             <output port="1" stream="ccpOutputStream"/>
             <param name="strict" value="false"/>
         </box>

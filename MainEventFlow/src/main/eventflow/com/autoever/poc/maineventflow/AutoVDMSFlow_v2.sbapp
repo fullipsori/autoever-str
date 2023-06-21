@@ -73,7 +73,7 @@
         </parameter-definitions>
         <dynamic-variables>
             <dynamic-variable initial-expression="emptylist(string())" name="CCPVIDs" setter-expression="newCCPVIDs" setter-stream="UpdateMetaOutputStream"/>
-            <dynamic-variable initial-expression="true" name="allowCan" setter-expression="if (!isnull(input.allowCan)) then input.allowCan else allowCan" setter-stream="ControlFilterMessage"/>
+            <dynamic-variable initial-expression="false" name="allowCan" setter-expression="if (!isnull(input.allowCan)) then input.allowCan else allowCan" setter-stream="ControlFilterMessage"/>
             <dynamic-variable initial-expression="true" name="allowCcp" setter-expression="if (!isnull(input.allowCcp)) then input.allowCcp else allowCcp" setter-stream="ControlFilterMessage"/>
             <dynamic-variable initial-expression="false" name="allowDiag" setter-expression="if (!isnull(input.allowDiag)) then input.allowDiag else allowDiag" setter-stream="ControlFilterMessage"/>
             <dynamic-variable initial-expression="false" name="allowGps" setter-expression="if (!isnull(input.allowGps)) then input.allowGps else allowGps" setter-stream="ControlFilterMessage"/>
@@ -548,7 +548,7 @@
         </box>
         <box name="Distribute" type="filter">
             <input port="1" stream="out:InitDataField_1"/>
-            <output port="1" stream="OutputStream"/>
+            <output port="1" stream="CanStream"/>
             <output port="2" stream="DIAGStream"/>
             <output port="3" stream="GPSStream"/>
             <output port="4" stream="CCPStream"/>
@@ -558,6 +558,9 @@
             <param name="expression.2" value="kafkaMessage.MessageType==6"/>
             <param name="expression.3" value="kafkaMessage.MessageType==2"/>
         </box>
+        <output-stream name="CanStream">
+            <param name="connection" value="'canflow.InputStream'"/>
+        </output-stream>
         <output-stream name="CCPStream">
             <param name="connection" value="'ccpflow.InputStream'"/>
         </output-stream>
@@ -566,9 +569,6 @@
         </output-stream>
         <output-stream name="GPSStream">
             <param name="connection" value="'gpsflow.InputStream'"/>
-        </output-stream>
-        <output-stream name="OutputStream">
-            <param name="connection" value="'canflow.InputStream'"/>
         </output-stream>
     </add>
 </modify>

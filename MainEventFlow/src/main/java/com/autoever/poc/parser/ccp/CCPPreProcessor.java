@@ -21,6 +21,8 @@ public class CCPPreProcessor implements PreProcessable {
 	public static final int ccpStartCmd = 0x0a;
 	public static final int ccpEndCmd = 0x3b;
 	private RawParsedData rawParsedData = null;
+	private final int sizeCellData = 90;
+	private final int sizeMsrTBData = 9;
 
 	private class RawParsedData {
 		private List<Tuple> cellData = new ArrayList<>();
@@ -28,11 +30,11 @@ public class CCPPreProcessor implements PreProcessable {
 		private Double SOC = null;
 		private Double IBM = null;
 		private Long chargingNow = null;
-		private Double ISOL = null;
+		private Long ISOL = null;
 		
 		private boolean validate() {
-			if(cellData.size() != 90) return false;
-			if(msrTBData.size() != 9) return false;
+			if(cellData.size() != sizeCellData) return false;
+			if(msrTBData.size() != sizeMsrTBData) return false;
 			if(SOC == null) return false;
 			if(IBM == null) return false;
 			if(chargingNow == null) return false;
@@ -59,7 +61,7 @@ public class CCPPreProcessor implements PreProcessable {
 				}else if("chg_charging_now".equals(data.first)) {
 					chargingNow = data.second;
 				}else if("msr_data.r_isol".equals(data.first)) {
-					ISOL =  data.second * 1.0;
+					ISOL =  data.second;
 				}
 			}catch(Exception e) {
 				e.printStackTrace();
@@ -75,7 +77,7 @@ public class CCPPreProcessor implements PreProcessable {
 					ccpTuple.setDouble("SOC", SOC);
 					ccpTuple.setDouble("IBM", IBM);
 					ccpTuple.setLong("chargingNow", chargingNow);
-					ccpTuple.setDouble("ISOL", ISOL);
+					ccpTuple.setLong("ISOL", ISOL);
 					return ccpTuple;
 				}
 				return null;
@@ -86,8 +88,8 @@ public class CCPPreProcessor implements PreProcessable {
 	}
 
 	public final static Schema FieldType = new Schema("FieldType", List.of(
-			new Schema.Field("ODTField", CompleteDataType.forString()),
-			new Schema.Field("ODTValue", CompleteDataType.forLong())));
+			new Schema.Field("fieldName", CompleteDataType.forString()),
+			new Schema.Field("fieldValue", CompleteDataType.forLong())));
 
 	public final static Schema RawParsed = new Schema("RawParsed", 
 		List.of(
@@ -96,10 +98,7 @@ public class CCPPreProcessor implements PreProcessable {
 			new Schema.Field("SOC", CompleteDataType.forDouble()),
 			new Schema.Field("IBM", CompleteDataType.forDouble()),
 			new Schema.Field("chargingNow", CompleteDataType.forLong()),
-			new Schema.Field("ISOL", CompleteDataType.forDouble()),
-			new Schema.Field("deltaVol", CompleteDataType.forLong()),
-			new Schema.Field("dVols", CompleteDataType.forList(CompleteDataType.forDouble())),
-			new Schema.Field("RESs", CompleteDataType.forList(CompleteDataType.forDouble()))
+			new Schema.Field("ISOL", CompleteDataType.forLong())
 		));
 	
 	public static void addSchemaField(List<Schema.Field> outputSchemaField) {
