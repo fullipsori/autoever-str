@@ -26,11 +26,15 @@
         <stream name="ControlStream">
             <schema>
                 <field name="command" type="string"/>
-                <field name="newThresholdValue" type="double"/>
                 <field name="evtFolder" type="string"/>
             </schema>
         </stream>
         <stream name="InputStream" schema="MainOutputSchema"/>
+        <stream name="UpdateVarStream">
+            <schema>
+                <field name="newThresholdValue" type="double"/>
+            </schema>
+        </stream>
         <box name="Initialize" type="inputadapter">
             <output port="1" stream="out:Initialize_1"/>
             <param name="start:state" value="true"/>
@@ -45,6 +49,7 @@
                 <expressions>
                     <include field="command">'Load'</include>
                     <include field="evtFolder">"${RESOURCE_ROOT}/evt"</include>
+                    <include field="newThresholdValue">double(null)</include>
                 </expressions>
             </target-list>
         </box>
@@ -62,11 +67,11 @@
             <param name="waitForStartCommand" value="true"/>
         </box>
         <output-stream name="FeedStatusStream"/>
-        <box name="Union" type="union">
-            <input port="1" stream="ControlStream"/>
-            <input port="2" stream="out:InitMeta_1"/>
-            <output port="1" stream="out:Union_1"/>
-            <param name="strict" value="false"/>
+        <box name="Split" type="split">
+            <input port="1" stream="out:InitMeta_1"/>
+            <output port="1" stream="out:Split_1"/>
+            <output port="2" stream="out:Split_2"/>
+            <param name="output-count" value="2"/>
         </box>
         <box name="Union2" type="union">
             <input port="1" stream="out:InputAdapter_2"/>
@@ -74,17 +79,43 @@
             <output port="1" stream="out:Union2_1"/>
             <param name="strict" value="false"/>
         </box>
-        <box name="Split" type="split">
-            <input port="1" stream="out:Union_1"/>
-            <output port="1" stream="out:Split_1"/>
-            <output port="2" stream="out:Split_2"/>
-            <param name="output-count" value="2"/>
+        <box name="Union" type="union">
+            <input port="1" stream="ControlStream"/>
+            <input port="2" stream="out:Split_1"/>
+            <output port="1" stream="out:Union_1"/>
+            <param name="strict" value="false"/>
         </box>
+        <box name="Union3" type="union">
+            <input port="1" stream="out:Split_2"/>
+            <input port="2" stream="UpdateVarStream"/>
+            <output port="1" stream="out:Union3_1"/>
+            <param name="strict" value="false"/>
+        </box>
+        <box name="LoadEVT" type="map">
+            <input port="1" stream="out:Union_1"/>
+            <output port="1" stream="OutputEVTLoadStream"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="evtResult">if(!isempty(evtFolder)) then InitODTRepository(evtFolder) else InitODTRepository("${RESOURCE_ROOT}/evt")</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="RemoveUnused" type="map">
+            <input port="1" stream="out:Union3_1"/>
+            <output port="1" stream="out:RemoveUnused_1"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="newThresholdValue"/>
+                </item>
+            </target-list>
+        </box>
+        <output-stream name="OutputEVTLoadStream"/>
         <module-reference name="CCPParserModule">
-            <input dispatch="broadcast" name="ControlStream" port="1" stream="out:Split_2"/>
+            <input dispatch="broadcast" name="ControlStream" port="1" stream="out:RemoveUnused_1"/>
             <input dispatch="numerical" key="int(kafkaMessage.VehicleKeyID)" name="InputStream" port="2" stream="out:Union2_1"/>
-            <output name="ccpOutputStream" port="1" stream="ccpOutputStream"/>
-            <output name="StatusOutput" port="2" stream="StatusStream"/>
+            <output name="OutputParserStream" port="1" stream="OutputParserStream"/>
+            <output name="OutputRawDataStream" port="2" stream="OutputRawDataStream"/>
             <param name="parallel" value="true"/>
             <param name="parallel-region-queue-max-processing-batch-size" value="5"/>
             <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
@@ -95,18 +126,7 @@
                 <binding name="RESOURCE_ROOT" value="${RESOURCE_ROOT}"/>
             </parameter-bindings>
         </module-reference>
-        <box name="LoadEVT" type="map">
-            <input port="1" stream="out:Split_1"/>
-            <output port="1" stream="EVTLoadOutputStream"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="evtResult">if(!isempty(evtFolder)) then InitODTRepository(evtFolder) else InitODTRepository("${RESOURCE_ROOT}/evt")</include>
-                </expressions>
-            </target-list>
-        </box>
-        <output-stream name="ccpOutputStream"/>
-        <output-stream name="EVTLoadOutputStream"/>
-        <output-stream name="StatusStream"/>
+        <output-stream name="OutputParserStream"/>
+        <output-stream name="OutputRawDataStream"/>
     </add>
 </modify>

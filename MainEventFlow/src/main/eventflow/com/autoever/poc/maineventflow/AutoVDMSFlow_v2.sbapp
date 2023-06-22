@@ -72,12 +72,12 @@
             <parameter default="memory" name="downloadMode"/>
         </parameter-definitions>
         <dynamic-variables>
-            <dynamic-variable initial-expression="emptylist(string())" name="CCPVIDs" setter-expression="newCCPVIDs" setter-stream="UpdateMetaOutputStream"/>
-            <dynamic-variable initial-expression="false" name="allowCan" setter-expression="if (!isnull(input.allowCan)) then input.allowCan else allowCan" setter-stream="ControlFilterMessage"/>
-            <dynamic-variable initial-expression="true" name="allowCcp" setter-expression="if (!isnull(input.allowCcp)) then input.allowCcp else allowCcp" setter-stream="ControlFilterMessage"/>
-            <dynamic-variable initial-expression="false" name="allowDiag" setter-expression="if (!isnull(input.allowDiag)) then input.allowDiag else allowDiag" setter-stream="ControlFilterMessage"/>
-            <dynamic-variable initial-expression="false" name="allowGps" setter-expression="if (!isnull(input.allowGps)) then input.allowGps else allowGps" setter-stream="ControlFilterMessage"/>
-            <dynamic-variable initial-expression="emptylist(string())" name="policyFiles" setter-expression="newPolicyFiles" setter-stream="UpdateMetaOutputStream"/>
+            <dynamic-variable initial-expression="emptylist(string())" name="CCPVIDs" setter-expression="if(!isnull(input.CCPVIDs)) then input.CCPVIDs else CCPVIDs" setter-stream="UpdateKeyStream"/>
+            <dynamic-variable initial-expression="true" name="allowCan" setter-expression="if (!isnull(input.allowCan)) then input.allowCan else allowCan" setter-stream="UpdateFilterStream"/>
+            <dynamic-variable initial-expression="true" name="allowCcp" setter-expression="if (!isnull(input.allowCcp)) then input.allowCcp else allowCcp" setter-stream="UpdateFilterStream"/>
+            <dynamic-variable initial-expression="false" name="allowDiag" setter-expression="if (!isnull(input.allowDiag)) then input.allowDiag else allowDiag" setter-stream="UpdateFilterStream"/>
+            <dynamic-variable initial-expression="false" name="allowGps" setter-expression="if (!isnull(input.allowGps)) then input.allowGps else allowGps" setter-stream="UpdateFilterStream"/>
+            <dynamic-variable initial-expression="emptylist(string())" name="policyFiles" setter-expression="if(!isnull(input.policyFiles)) then input.policyFiles else policyFiles" setter-stream="UpdateKeyStream"/>
         </dynamic-variables>
         <data name="MGMTQueryTable" shared="false" source="concrete" type="querytable">
             <param name="storage-method" value="heap"/>
@@ -86,15 +86,7 @@
             <param name="truncate" value="false"/>
             <preload format="csv" mode="empty"/>
         </data>
-        <stream name="ControlFilterMessage">
-            <schema>
-                <field name="allowCan" type="bool"/>
-                <field name="allowDiag" type="bool"/>
-                <field name="allowGps" type="bool"/>
-                <field name="allowCcp" type="bool"/>
-            </schema>
-        </stream>
-        <stream name="FullControl" schema="HttpClientControlSchema"/>
+        <stream name="FullHTTPControl" schema="HttpClientControlSchema"/>
         <stream name="KafkaConsumerControl">
             <schema>
                 <parent-schemas>
@@ -103,11 +95,17 @@
                 <field name="FetchFromDateTime" type="timestamp"/>
             </schema>
         </stream>
-        <stream name="ReloadMetaStream">
+        <stream name="UpdateFilterStream">
             <schema>
-                <field name="policyFolder" type="string"/>
-                <field name="evtFolder" type="string"/>
-                <field name="thresholdValue" type="string"/>
+                <field name="allowCan" type="bool"/>
+                <field name="allowDiag" type="bool"/>
+                <field name="allowGps" type="bool"/>
+                <field name="allowCcp" type="bool"/>
+            </schema>
+        </stream>
+        <stream name="UpdateVarStream">
+            <schema>
+                <field name="command" type="string"/>
             </schema>
         </stream>
         <box name="Start" type="inputadapter">
@@ -126,17 +124,13 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="ReloadMeta" type="map">
-            <input port="1" stream="ReloadMetaStream"/>
-            <output port="1" stream="out:ReloadMeta_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="command">"Reload"</include>
-                    <replace field="policyFolder">if isempty(policyFolder) then '' else trim(policyFolder)</replace>
-                    <replace field="evtFolder">if isempty(evtFolder) then '' else trim(evtFolder)</replace>
-                </expressions>
-            </target-list>
+        <box name="Filter" type="filter">
+            <input port="1" stream="UpdateVarStream"/>
+            <output port="1" stream="out:Filter_1"/>
+            <output port="2" stream="out:Filter_2"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="upper(command) == 'UPDATE_POLICY'"/>
+            <param name="expression.1" value="upper(command) == 'UPDATE_EVT'"/>
         </box>
         <box name="StartSplit" type="split">
             <input port="1" stream="out:Start_1"/>
@@ -145,15 +139,33 @@
             <output port="3" stream="out:StartSplit_3"/>
             <param name="output-count" value="3"/>
         </box>
-        <box name="LoadMeta" type="map">
+        <box name="InitLoad" type="map">
             <input port="1" stream="out:StartSplit_2"/>
-            <output port="1" stream="out:LoadMeta_1"/>
+            <output port="1" stream="out:InitLoad_1"/>
             <target-list>
                 <item name="input" selection="none"/>
                 <expressions>
                     <include field="command">'Load'</include>
-                    <include field="policyFolder">"${RESOURCE_ROOT}/policy"</include>
-                    <include field="evtFolder">"${RESOURCE_ROOT}/evt"</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="ReloadEVT" type="map">
+            <input port="1" stream="out:Filter_2"/>
+            <output port="1" stream="out:ReloadEVT_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="command">'RELOAD'</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="ReloadPOLICY" type="map">
+            <input port="1" stream="out:Filter_1"/>
+            <output port="1" stream="out:ReloadPOLICY_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="command">'RELOAD'</include>
                 </expressions>
             </target-list>
         </box>
@@ -223,22 +235,11 @@
             <param name="tailMode" value="false"/>
             <param name="tailUpdateInterval" value="1000"/>
         </box>
-        <box name="Union4" type="union">
-            <input port="1" stream="out:LoadMeta_1"/>
-            <input port="2" stream="out:ReloadMeta_1"/>
-            <output port="1" stream="out:Union4_1"/>
-            <param name="strict" value="false"/>
-        </box>
-        <box name="GenerateKeys" type="map">
-            <input port="1" stream="out:Union4_1"/>
-            <output port="1" stream="out:GenerateKeys_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="newPolicyFiles">GetFilenameListInPath(policyFolder, 'xml')</include>
-                    <include field="newCCPVIDs">GetFilenameListInPath(evtFolder, 'evt')</include>
-                </expressions>
-            </target-list>
+        <box name="Split2" type="split">
+            <input port="1" stream="out:InitLoad_1"/>
+            <output port="1" stream="out:Split2_1"/>
+            <output port="2" stream="out:Split2_2"/>
+            <param name="output-count" value="2"/>
         </box>
         <box name="InsertMGMT" type="query">
             <input port="1" stream="out:LoadMGMT_1"/>
@@ -276,6 +277,18 @@
             <output port="1" stream="out:Union2_1"/>
             <param name="strict" value="false"/>
         </box>
+        <box name="Union3" type="union">
+            <input port="1" stream="out:Split2_1"/>
+            <input port="2" stream="out:ReloadPOLICY_1"/>
+            <output port="1" stream="out:Union3_1"/>
+            <param name="strict" value="false"/>
+        </box>
+        <box name="Union4" type="union">
+            <input port="1" stream="out:Split2_2"/>
+            <input port="2" stream="out:ReloadEVT_1"/>
+            <output port="1" stream="out:Union4_1"/>
+            <param name="strict" value="false"/>
+        </box>
         <box name="DefaultGroup" type="map">
             <input port="1" stream="out:Union2_1"/>
             <output port="1" stream="out:DefaultGroup_1"/>
@@ -286,25 +299,45 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="Split" type="split">
-            <input port="1" stream="out:GenerateKeys_1"/>
-            <output port="1" stream="UpdateMetaOutputStream"/>
-            <output port="2" stream="out:Split_2"/>
-            <output port="3" stream="out:Split_3"/>
-            <param name="output-count" value="3"/>
+        <box name="LoadEVT" type="map">
+            <input port="1" stream="out:Union4_1"/>
+            <output port="1" stream="out:LoadEVT_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="evtFolder">"${RESOURCE_ROOT}/evt"</include>
+                </expressions>
+            </target-list>
         </box>
-        <output-stream name="UpdateMetaOutputStream"/>
-        <box name="CheckCan" type="filter">
-            <input port="1" stream="out:Split_2"/>
-            <output port="1" stream="out:CheckCan_1"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="upper(command) == 'RELOAD' &amp;&amp; !isempty(policyFolder)"/>
+        <box name="LoadPolicy" type="map">
+            <input port="1" stream="out:Union3_1"/>
+            <output port="1" stream="out:LoadPolicy_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="policyFolder">"${RESOURCE_ROOT}/policy"</include>
+                </expressions>
+            </target-list>
         </box>
-        <box name="CheckCCP" type="filter">
-            <input port="1" stream="out:Split_3"/>
-            <output port="1" stream="out:CheckCCP_1"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="upper(command) == 'RELOAD' &amp;&amp; (!isempty(evtFolder) || !isempty(thresholdValue))"/>
+        <box name="GenEVTKeys" type="map">
+            <input port="1" stream="out:LoadEVT_1"/>
+            <output port="1" stream="out:GenEVTKeys_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="CCPVIDs">GetFilenameListInPath(evtFolder, 'evt')</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="GenPolicyKeys" type="map">
+            <input port="1" stream="out:LoadPolicy_1"/>
+            <output port="1" stream="out:GenPolicyKeys_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="policyFiles">GetFilenameListInPath(policyFolder, 'xml')</include>
+                </expressions>
+            </target-list>
         </box>
         <box name="InputAdapter" type="inputadapter">
             <input port="1" stream="out:DefaultGroup_1"/>
@@ -338,41 +371,36 @@
             <param name="userKeyDeserializerClass" value=""/>
         </box>
         <output-stream name="KafkaStatus"/>
-        <box name="MapForCan" type="map">
-            <input port="1" stream="out:CheckCan_1"/>
-            <output port="1" stream="CanPolicyOutputStream"/>
-            <target-list>
-                <item name="input" selection="none">
-                    <include field="command"/>
-                    <include field="policyFolder"/>
-                </item>
-            </target-list>
-        </box>
-        <box name="MapForCCP" type="map">
-            <input port="1" stream="out:CheckCCP_1"/>
-            <output port="1" stream="CCPControlOutputStream"/>
-            <target-list>
-                <item name="input" selection="none">
-                    <include field="command"/>
-                    <include field="evtFolder"/>
-                </item>
-                <expressions>
-                    <include field="newThresholdValue">if isempty(thresholdValue) then double(null) else double(thresholdValue)</include>
-                </expressions>
-            </target-list>
-        </box>
         <box name="NotNull" type="filter">
             <input port="1" stream="out:InputAdapter_1"/>
             <output port="1" stream="out:NotNull_1"/>
             <param name="autogen-nomatch-port" value="false"/>
             <param name="expression.0" value="!isnull(message)"/>
         </box>
-        <output-stream name="CanPolicyOutputStream">
-            <param name="connection" value="'canflow.LoadPolicyStream'"/>
-        </output-stream>
-        <output-stream name="CCPControlOutputStream">
-            <param name="connection" value="'ccpflow.ControlStream'"/>
-        </output-stream>
+        <box name="Split" type="split">
+            <input port="1" stream="out:GenPolicyKeys_1"/>
+            <output port="1" stream="out:Split_1"/>
+            <output port="2" stream="out:Split_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <box name="Split3" type="split">
+            <input port="1" stream="out:GenEVTKeys_1"/>
+            <output port="1" stream="out:Split3_1"/>
+            <output port="2" stream="out:Split3_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <box name="Filter2" type="filter">
+            <input port="1" stream="out:Split_2"/>
+            <output port="1" stream="out:Filter2_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="command=='RELOAD'"/>
+        </box>
+        <box name="Filter3" type="filter">
+            <input port="1" stream="out:Split3_2"/>
+            <output port="1" stream="out:Filter3_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="command=='RELOAD'"/>
+        </box>
         <box name="FilterMessage" type="filter">
             <input port="1" stream="out:NotNull_1"/>
             <output port="1" stream="out:FilterMessage_1"/>
@@ -385,6 +413,31 @@
             <param name="expression.2" value="allowGps &amp;&amp; message.MessageType==6"/>
             <param name="expression.3" value="allowCcp &amp;&amp; message.MessageType==2"/>
         </box>
+        <box name="Union6" type="union">
+            <input port="1" stream="out:Split_1"/>
+            <input port="2" stream="out:Split3_1"/>
+            <output port="1" stream="UpdateKeyStream"/>
+            <param name="strict" value="false"/>
+        </box>
+        <output-stream name="UpdateKeyStream"/>
+        <box name="Map" type="map">
+            <input port="1" stream="out:Filter2_1"/>
+            <output port="1" stream="ToCanControlStream"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <remove field="policyFiles"/>
+                </item>
+            </target-list>
+        </box>
+        <box name="Map2" type="map">
+            <input port="1" stream="out:Filter3_1"/>
+            <output port="1" stream="ToCCPControlStream"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <remove field="CCPVIDs"/>
+                </item>
+            </target-list>
+        </box>
         <box name="UnionFilter" type="union">
             <input port="1" stream="out:FilterMessage_1"/>
             <input port="2" stream="out:FilterMessage_2"/>
@@ -393,6 +446,12 @@
             <output port="1" stream="out:UnionFilter_1"/>
             <param name="strict" value="false"/>
         </box>
+        <output-stream name="ToCanControlStream">
+            <param name="connection" value="'canflow.ControlStream'"/>
+        </output-stream>
+        <output-stream name="ToCCPControlStream">
+            <param name="connection" value="'ccpflow.ControlStream'"/>
+        </output-stream>
         <box name="InitializeData" type="map">
             <input port="1" stream="out:UnionFilter_1"/>
             <output port="1" stream="out:InitializeData_1"/>
@@ -486,7 +545,7 @@
             </target-list>
         </box>
         <box name="Union" type="union">
-            <input port="1" stream="FullControl"/>
+            <input port="1" stream="FullHTTPControl"/>
             <input port="2" stream="out:AddUrl_1"/>
             <output port="1" stream="out:Union_1"/>
             <param name="strict" value="false"/>

@@ -1,70 +1,81 @@
 <?xml version="1.0" encoding="UTF-8"?><application-layout>
     <component name="ControlStream">
-        <param name="gui:x" value="-269"/>
-        <param name="gui:y" value="-128"/>
+        <param name="gui:x" value="-208"/>
+        <param name="gui:y" value="-82"/>
     </component>
     <component name="InputStream">
-        <param name="gui:x" value="-155"/>
-        <param name="gui:y" value="167"/>
+        <param name="gui:x" value="-103"/>
+        <param name="gui:y" value="301"/>
+    </component>
+    <component name="UpdateVarStream">
+        <param name="gui:x" value="-208"/>
+        <param name="gui:y" value="106"/>
     </component>
     <component name="controlFeedSB">
-        <param name="gui:x" value="-269"/>
-        <param name="gui:y" value="60"/>
+        <param name="gui:x" value="-208"/>
+        <param name="gui:y" value="207"/>
     </component>
     <component name="CCPParserModule">
-        <param name="gui:x" value="141"/>
-        <param name="gui:y" value="134"/>
-        <param name="gui:bends:1" value="76,-11;116,154"/>
-        <param name="gui:bends:2" value="95,187;97,174"/>
+        <param name="gui:x" value="176"/>
+        <param name="gui:y" value="181"/>
+        <param name="gui:bends:1" value="122,126;140,201"/>
+        <param name="gui:bends:2" value="106,321;130,221"/>
     </component>
     <component name="InitMeta">
-        <param name="gui:x" value="-269"/>
-        <param name="gui:y" value="-34"/>
+        <param name="gui:x" value="-288"/>
+        <param name="gui:y" value="12"/>
     </component>
     <component name="Initialize">
-        <param name="gui:x" value="-374"/>
-        <param name="gui:y" value="-34"/>
+        <param name="gui:x" value="-393"/>
+        <param name="gui:y" value="12"/>
     </component>
     <component name="InputAdapter">
-        <param name="gui:x" value="-155"/>
-        <param name="gui:y" value="60"/>
+        <param name="gui:x" value="-103"/>
+        <param name="gui:y" value="207"/>
     </component>
     <component name="LoadEVT">
-        <param name="gui:x" value="141"/>
-        <param name="gui:y" value="-61"/>
+        <param name="gui:x" value="23"/>
+        <param name="gui:y" value="-72"/>
+    </component>
+    <component name="RemoveUnused">
+        <param name="gui:x" value="23"/>
+        <param name="gui:y" value="96"/>
     </component>
     <component name="Split">
-        <param name="gui:x" value="-29"/>
-        <param name="gui:y" value="-51"/>
+        <param name="gui:x" value="-208"/>
+        <param name="gui:y" value="12"/>
     </component>
     <component name="Union">
-        <param name="gui:x" value="-155"/>
-        <param name="gui:y" value="-51"/>
-        <param name="gui:bends:1" value="-193,-98;-177,-31"/>
-        <param name="gui:bends:2" value="-172,-4;-172,-11"/>
+        <param name="gui:x" value="-103"/>
+        <param name="gui:y" value="-72"/>
+        <param name="gui:bends:2" value="-132,32;-116,-32"/>
     </component>
     <component name="Union2">
-        <param name="gui:x" value="-29"/>
-        <param name="gui:y" value="157"/>
-        <param name="gui:bends:1" value="-75,100;-57,177"/>
+        <param name="gui:x" value="23"/>
+        <param name="gui:y" value="291"/>
+        <param name="gui:bends:1" value="-9,247;7,311"/>
     </component>
-    <component name="EVTLoadOutputStream">
-        <param name="gui:x" value="295"/>
-        <param name="gui:y" value="-61"/>
+    <component name="Union3">
+        <param name="gui:x" value="-103"/>
+        <param name="gui:y" value="96"/>
+        <param name="gui:bends:1" value="-132,52;-116,116"/>
     </component>
     <component name="FeedStatusStream">
-        <param name="gui:x" value="-29"/>
-        <param name="gui:y" value="63"/>
-        <param name="gui:bends:1" value="-54,80;-52,93"/>
+        <param name="gui:x" value="23"/>
+        <param name="gui:y" value="197"/>
     </component>
-    <component name="StatusStream">
-        <param name="gui:x" value="295"/>
-        <param name="gui:y" value="157"/>
-        <param name="gui:bends:1" value="245,174;247,187"/>
+    <component name="OutputEVTLoadStream">
+        <param name="gui:x" value="176"/>
+        <param name="gui:y" value="-72"/>
     </component>
-    <component name="ccpOutputStream">
-        <param name="gui:x" value="295"/>
-        <param name="gui:y" value="63"/>
-        <param name="gui:bends:1" value="239,154;253,93"/>
+    <component name="OutputParserStream">
+        <param name="gui:x" value="335"/>
+        <param name="gui:y" value="115"/>
+        <param name="gui:bends:1" value="274,201;288,145"/>
+    </component>
+    <component name="OutputRawDataStream">
+        <param name="gui:x" value="335"/>
+        <param name="gui:y" value="209"/>
+        <param name="gui:bends:1" value="279,221;283,239"/>
     </component>
 </application-layout>

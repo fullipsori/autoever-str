@@ -10,13 +10,10 @@
         </type-metadata>
         <memory-model-settings/>
         <import alias="MainOutputSchema" from="com.autoever.poc.maineventflow.AutoVDMSFlow_v2" item="MainOutputSchema"/>
-        <import from="com.autoever.poc.maineventflow.BaseRawData"/>
         <import from="com.autoever.poc.maineventflow.LiveViewTable"/>
         <import from="com.autoever.poc.maineventflow.kafkaSchemas"/>
         <named-schemas>
             <schema name="ControlCANSchema">
-                <field name="command" type="string"/>
-                <field name="policyFolder" type="string"/>
                 <field name="nameFilter" type="string"/>
                 <field name="baseValue" type="string"/>
             </schema>
@@ -35,9 +32,9 @@
             <parameter default="d:/projects/vdms/resources" name="RESOURCE_ROOT"/>
         </parameter-definitions>
         <dynamic-variables>
-            <dynamic-variable initial-expression="string(null)" name="compEvent" setter-expression="if !isempty(input.eventName) then input.eventName else compEvent" setter-stream="UpdateEventStatus"/>
-            <dynamic-variable initial-expression="string(null)" name="compTerminalID" setter-expression="if !isempty(input.terminalID) then input.terminalID else compTerminalID" setter-stream="UpdateEventStatus"/>
-            <dynamic-variable initial-expression="string(null)" name="compValue" setter-expression="input.eventValue" setter-stream="UpdateEventStatus"/>
+            <dynamic-variable initial-expression="string(null)" name="compEvent" setter-expression="if !isempty(input.eventName) then input.eventName else compEvent" setter-stream="UpdateVarStream"/>
+            <dynamic-variable initial-expression="string(null)" name="compTerminalID" setter-expression="if !isempty(input.terminalID) then input.terminalID else compTerminalID" setter-stream="UpdateVarStream"/>
+            <dynamic-variable initial-expression="string(null)" name="compValue" setter-expression="input.eventValue" setter-stream="UpdateVarStream"/>
         </dynamic-variables>
         <table-schemas>
             <table-schema name="EventStatus">
@@ -59,9 +56,9 @@
             <preload format="csv" mode="empty"/>
         </data>
         <stream name="InputStream" schema="MainOutputSchema"/>
-        <stream name="ParamInputStream" schema="ControlCANSchema"/>
+        <stream name="InputVarStream" schema="ControlCANSchema"/>
         <box name="MapInputParam" type="map">
-            <input port="1" stream="ParamInputStream"/>
+            <input port="1" stream="InputVarStream"/>
             <output port="1" stream="out:MapInputParam_1"/>
             <target-list>
                 <item name="input" selection="all"/>
@@ -176,12 +173,12 @@
         <box name="CANRawParser" type="java">
             <input port="1" stream="out:RemoveUnnecessary_1"/>
             <output port="1" stream="out:CANRawParser_1"/>
-            <output port="2" stream="StatusOutputStream"/>
+            <output port="2" stream="OutputRawDataStream"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.autoever.poc.adapters.VdmsRawParser"/>
             <param name="parserType" value="CAN"/>
         </box>
-        <output-stream name="StatusOutputStream"/>
+        <output-stream name="OutputRawDataStream"/>
         <box name="Organize" type="map">
             <input port="1" stream="out:CANRawParser_1"/>
             <output port="1" stream="out:Organize_1"/>
@@ -396,7 +393,7 @@
             <input port="1" stream="out:DataFromTable_1"/>
             <input port="2" stream="out:MapCompParams_1"/>
             <input port="3" stream="out:MapInputParam_1"/>
-            <output port="1" stream="UpdateEventStatus"/>
+            <output port="1" stream="UpdateVarStream"/>
             <param name="strict" value="false"/>
         </box>
         <box name="PublishCan" type="outputadapter">
@@ -425,7 +422,7 @@
             <param name="uri" value="${LV_SERVER_URI}"/>
             <param name="useRuntimeURI" value="false"/>
         </box>
-        <output-stream name="UpdateEventStatus"/>
+        <output-stream name="UpdateVarStream"/>
         <box name="PublishRaw" type="outputadapter">
             <input port="1" stream="out:ADD_seq2id_1"/>
             <output port="1" stream="out:PublishRaw_1"/>
@@ -456,9 +453,9 @@
             <input port="1" stream="out:PublishPerf_1"/>
             <input port="2" stream="out:PublishCan_1"/>
             <input port="3" stream="out:PublishRaw_1"/>
-            <output port="1" stream="CanOutputStream"/>
+            <output port="1" stream="OutputParserStream"/>
             <param name="strict" value="false"/>
         </box>
-        <output-stream name="CanOutputStream"/>
+        <output-stream name="OutputParserStream"/>
     </add>
 </modify>

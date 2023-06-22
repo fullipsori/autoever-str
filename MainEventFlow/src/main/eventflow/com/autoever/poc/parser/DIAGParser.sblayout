@@ -151,7 +151,7 @@
         <param name="gui:x" value="-598"/>
         <param name="gui:y" value="-259"/>
     </component>
-    <component name="ToMainStream">
+    <component name="OutputParserStream">
         <param name="gui:x" value="752"/>
         <param name="gui:y" value="-137"/>
     </component>

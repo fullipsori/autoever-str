@@ -24,8 +24,8 @@
         <module-reference name="GPSParser">
             <input dispatch="round_robin" name="InputStream" port="1" stream="InputStream"/>
             <input dispatch="broadcast" name="ControlStream" port="2" stream="ConstrolStream"/>
-            <output name="ToMainStream" port="1" stream="ParserOutputStream"/>
-            <output name="StatusOutputStream" port="2" stream="StatusOutputStream"/>
+            <output name="OutputParserStream" port="1" stream="OutputParserStream"/>
+            <output name="OutputRawDataStream" port="2" stream="OutputRawDataStream"/>
             <param name="parallel" value="true"/>
             <param name="parallel-region-queue-max-processing-batch-size" value="2"/>
             <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
@@ -36,7 +36,7 @@
                 <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
             </parameter-bindings>
         </module-reference>
-        <output-stream name="ParserOutputStream"/>
-        <output-stream name="StatusOutputStream"/>
+        <output-stream name="OutputParserStream"/>
+        <output-stream name="OutputRawDataStream"/>
     </add>
 </modify>

@@ -12,7 +12,6 @@
         <implements module-reference="com.autoever.poc.maineventflow.LiveViewTable"/>
         <implements module-reference="com.autoever.poc.maineventflow.kafkaSchemas"/>
         <import alias="MainOutputSchema" from="com.autoever.poc.maineventflow.AutoVDMSFlow_v2" item="MainOutputSchema"/>
-        <import alias="VDMSBaseRaw" from="com.autoever.poc.maineventflow.BaseRawData" item="VDMSBaseRaw"/>
         <import from="com.autoever.poc.maineventflow.LiveViewTable"/>
         <import alias="KafkaVDMSDataSchema" from="com.autoever.poc.maineventflow.kafkaSchemas" item="KafkaVDMSDataSchema"/>
         <parameter-definitions>
@@ -31,12 +30,12 @@
         <box name="GPSRawParser" type="java">
             <input port="1" stream="InputStream"/>
             <output port="1" stream="out:GPSRawParser_1"/>
-            <output port="2" stream="StatusOutputStream"/>
+            <output port="2" stream="OutputRawDataStream"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.autoever.poc.adapters.VdmsRawParser"/>
             <param name="parserType" value="GPS"/>
         </box>
-        <output-stream name="StatusOutputStream"/>
+        <output-stream name="OutputRawDataStream"/>
         <box name="Map" type="map">
             <input port="1" stream="out:GPSRawParser_1"/>
             <output port="1" stream="out:Map_1"/>
@@ -197,9 +196,9 @@
         <box name="Union" type="union">
             <input port="1" stream="out:PublishPerf_1"/>
             <input port="2" stream="out:PublishGPS_1"/>
-            <output port="1" stream="ToMainStream"/>
+            <output port="1" stream="OutputParserStream"/>
             <param name="strict" value="false"/>
         </box>
-        <output-stream name="ToMainStream"/>
+        <output-stream name="OutputParserStream"/>
     </add>
 </modify>

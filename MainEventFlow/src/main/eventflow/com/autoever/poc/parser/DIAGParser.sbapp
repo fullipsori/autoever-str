@@ -466,9 +466,9 @@
             <input port="1" stream="out:PublishDiagData_1"/>
             <input port="2" stream="out:PublishPerf_1"/>
             <input port="3" stream="out:PublishDiagDTC_1"/>
-            <output port="1" stream="ToMainStream"/>
+            <output port="1" stream="OutputParserStream"/>
             <param name="strict" value="false"/>
         </box>
-        <output-stream name="ToMainStream"/>
+        <output-stream name="OutputParserStream"/>
     </add>
 </modify>

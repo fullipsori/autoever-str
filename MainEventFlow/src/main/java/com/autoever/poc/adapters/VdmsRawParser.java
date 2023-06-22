@@ -116,7 +116,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 			inputSchema.getField("filePath").checkType(CompleteDataType.forString());
 
 			ArrayList<Schema.Field> outputSchemaField = new ArrayList<>();
-			rawHeaderSchema = getNamedSchema("VDMSBaseRaw");
+			rawHeaderSchema = RawDataField.RawDataSchema;
 
 			outputSchemaField.add(new Schema.Field("IsStarted", CompleteDataType.forBoolean()));
 			outputSchemaField.add(new Schema.Field("IsEnded", CompleteDataType.forBoolean()));

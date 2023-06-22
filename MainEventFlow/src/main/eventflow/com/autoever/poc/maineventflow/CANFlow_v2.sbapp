@@ -39,14 +39,14 @@
             <param name="truncate" value="false"/>
             <preload format="csv" mode="empty"/>
         </data>
-        <stream name="InputStream" schema="MainOutputSchema"/>
-        <stream name="LoadPolicyStream">
+        <stream name="ControlStream">
             <schema>
                 <field name="command" type="string"/>
                 <field name="policyFolder" type="string"/>
             </schema>
         </stream>
-        <stream name="UpdateParamStream">
+        <stream name="InputStream" schema="MainOutputSchema"/>
+        <stream name="UpdateVarStream">
             <schema>
                 <field name="nameFilter" type="string"/>
                 <field name="baseValue" type="string"/>
@@ -57,12 +57,6 @@
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.streambase.sb.adapter.once.Once"/>
             <param name="OutputField" value="time"/>
-        </box>
-        <box name="Filter_command" type="filter">
-            <input port="1" stream="LoadPolicyStream"/>
-            <output port="1" stream="out:Filter_command_1"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="!isempty(command)"/>
         </box>
         <box name="LoadInitMeta" type="map">
             <input port="1" stream="out:Initialize_1"/>
@@ -77,57 +71,33 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="Map" type="map">
-            <input port="1" stream="UpdateParamStream"/>
-            <output port="1" stream="out:Map_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="command">'FILTER'</include>
-                </expressions>
-            </target-list>
-        </box>
         <box name="Split" type="split">
             <input port="1" stream="out:LoadInitMeta_1"/>
             <output port="1" stream="out:Split_1"/>
             <output port="2" stream="out:Split_2"/>
             <param name="output-count" value="2"/>
         </box>
-        <box name="Union2" type="union">
-            <input port="1" stream="out:Filter_command_1"/>
-            <input port="2" stream="out:Map_1"/>
-            <output port="1" stream="out:Union2_1"/>
-            <param name="strict" value="false"/>
-        </box>
-        <box name="Filter2" type="filter">
-            <input port="1" stream="out:Union2_1"/>
-            <output port="1" stream="out:Filter2_1"/>
-            <output port="2" stream="out:Filter2_2"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="contains(upper(command), &quot;POLICY&quot;)"/>
-            <param name="expression.1" value="contains(upper(command), &quot;FILTER&quot;)"/>
-        </box>
         <box name="Union" type="union">
-            <input port="1" stream="out:Filter2_1"/>
+            <input port="1" stream="ControlStream"/>
             <input port="2" stream="out:Split_1"/>
             <output port="1" stream="out:Union_1"/>
             <param name="strict" value="false"/>
         </box>
         <box name="Union3" type="union">
-            <input port="1" stream="out:Filter2_2"/>
-            <input port="2" stream="out:Split_2"/>
+            <input port="1" stream="out:Split_2"/>
+            <input port="2" stream="UpdateVarStream"/>
             <output port="1" stream="out:Union3_1"/>
             <param name="strict" value="false"/>
         </box>
-        <box name="Filter" type="filter">
+        <box name="CheckNull" type="filter">
             <input port="1" stream="out:Union3_1"/>
-            <output port="1" stream="out:Filter_1"/>
+            <output port="1" stream="out:CheckNull_1"/>
             <param name="autogen-nomatch-port" value="false"/>
             <param name="expression.0" value="!isempty(nameFilter)"/>
         </box>
         <box name="InitPolicy" type="map">
             <input port="1" stream="out:Union_1"/>
-            <output port="1" stream="PolicyOutputStream"/>
+            <output port="1" stream="OutputPolicyStream"/>
             <target-list>
                 <item name="input" selection="all"/>
                 <expressions>
@@ -135,13 +105,23 @@
                 </expressions>
             </target-list>
         </box>
-        <output-stream name="PolicyOutputStream"/>
+        <output-stream name="OutputPolicyStream"/>
+        <box name="RemoveUnused" type="map">
+            <input port="1" stream="out:CheckNull_1"/>
+            <output port="1" stream="out:RemoveUnused_1"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="baseValue"/>
+                    <include field="nameFilter"/>
+                </item>
+            </target-list>
+        </box>
         <module-reference name="CANParser_v3">
-            <input dispatch="broadcast" name="ParamInputStream" port="1" stream="out:Filter_1"/>
+            <input dispatch="broadcast" name="InputVarStream" port="1" stream="out:RemoveUnused_1"/>
             <input dispatch="numerical" key="int(kafkaMessage.VehicleKeyID)" name="InputStream" port="2" stream="InputStream"/>
-            <output name="CanOutputStream" port="1" stream="ParserOutputStream"/>
-            <output name="StatusOutputStream" port="2" stream="StatusOutputStream"/>
-            <output name="UpdateEventStatus" port="3" stream="UpdateStatusOutputStream"/>
+            <output name="OutputParserStream" port="1" stream="OutputParserStream"/>
+            <output name="UpdateVarStream" port="2" stream="OutputVarStream"/>
+            <output name="OutputRawDataStream" port="3" stream="OutputRawDataStream"/>
             <param name="parallel" value="true"/>
             <param name="parallel-region-queue-max-processing-batch-size" value="5"/>
             <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
@@ -153,8 +133,8 @@
                 <binding name="RESOURCE_ROOT" value="${RESOURCE_ROOT}"/>
             </parameter-bindings>
         </module-reference>
-        <output-stream name="ParserOutputStream"/>
-        <output-stream name="StatusOutputStream"/>
-        <output-stream name="UpdateStatusOutputStream"/>
+        <output-stream name="OutputParserStream"/>
+        <output-stream name="OutputRawDataStream"/>
+        <output-stream name="OutputVarStream"/>
     </add>
 </modify>
