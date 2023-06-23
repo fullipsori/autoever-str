@@ -2,6 +2,7 @@ package com.autoever.poc.parser.can;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,6 +52,7 @@ public class PolicyParser implements Parseable {
 	public long minPreTime = 0;
 				
 	public Map<Integer, Map<Integer, List<Evaluable>>> msgFilter;
+	public List<Evaluable> evalList;
 
 	public String GetFileName() {
 		return this.filename;
@@ -78,16 +80,24 @@ public class PolicyParser implements Parseable {
 					.map(ta -> (List<Object>)ta)
 					.flatMap(ta -> (ta.size() > 3)?
 						Stream.of(
-							List.of(ta.get(0), ta.get(1), ta.get(2)), 
-							List.of(ta.get(0), ta.get(3), ta.get(2)))
+							List.of(ta.get(0), ta.get(1), ta.get(2)),  //(ch,id,parseCAN)
+							List.of(ta.get(0), ta.get(3), ta.get(2)))  //(ch,tpdtID, parseDM1)
 						:
 						Stream.of( List.of(ta.get(0), ta.get(1), ta.get(2)))
 					)
-					.filter(ta -> ta.get(1) != null)
-					.collect(Collectors.groupingBy(ta -> (int)ta.get(0), 
-								Collectors.groupingBy(ta->(int)ta.get(1), 
-									Collectors.mapping(ta -> (Evaluable)ta.get(2), Collectors.toList())  )));
+					.filter(el -> el.get(1) != null)
+					.collect(Collectors.groupingBy(el -> (int)el.get(0), 
+								Collectors.groupingBy(el->(int)el.get(1), 
+									Collectors.mapping(el -> (Evaluable)el.get(2), Collectors.toList())  )));
 
+			evalList = msgFilter.values().stream()
+					.map(e -> (Map<Integer, List<Evaluable>>)e)
+					.flatMap(e -> e.values().stream())
+					.filter(o -> o != null)
+					.map(o -> (List<Evaluable>)o)
+					.flatMap(o -> o.stream())
+					.filter(ev -> ev != null)
+					.collect(Collectors.toList());
 
 		} catch (Exception e) {
 			System.out.println("Parse Exception:" + "filename:" + this.filename +  e.getMessage());
@@ -185,21 +195,6 @@ public class PolicyParser implements Parseable {
 		return true;
 	}
 	
-	public boolean IsAvailable(Tuple dataTuple) {
-		try {
-			int dataChannel = dataTuple.getInt(RawDataField.DataChannel.getIndex());
-			int dataID = dataTuple.getInt(RawDataField.DataID.getIndex()) & 0x00FFFFFF;
-			if(!"ON".equals(KeyStatus) || (dataID == KeyTrig.id && dataChannel == KeyTrig.ch)) {
-				return true;
-			}
-			return Optional.ofNullable((Map<Integer,List<Evaluable>>)msgFilter.get(dataChannel)).map(m -> m.containsKey(dataID)).orElse(false);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return false;
-		}
-	}
-
 	/**
 	 * KeyTrig 를 체크 않하거나, 체크하는 경우 id/ch 가 있는 경우에만 메세지를 배출한다.
 	 */

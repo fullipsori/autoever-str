@@ -70,13 +70,8 @@ public class ODTParser implements Parseable {
 		final double searchTime = realTime - minInterval;
 		prevTuples.removeIf(p -> p.first <= removeTime);
 		//search matched tuple
-//		Tuple matched = prevTuples.stream().filter(p -> p.first <= searchTime).findFirst().map(Pair::getSecond).orElse(null);
-		Tuple matched = null;
-		if(!prevTuples.isEmpty()) {
-			matched = prevTuples.get(0).second;
-		}
+		Tuple matched = prevTuples.stream().filter(p -> p.first <= searchTime).findFirst().map(Pair::getSecond).orElse(null);
 		//add current tuple at first index.
-
 		if(prevTuples.isEmpty() || prevTuples.get(0).first != realTime) {
 			prevTuples.add(0, new Pair<Double, Tuple>(realTime, dataTuple));
 		}

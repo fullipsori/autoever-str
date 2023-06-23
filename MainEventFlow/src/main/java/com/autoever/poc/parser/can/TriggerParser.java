@@ -25,7 +25,7 @@ public class TriggerParser {
 	public Integer ch;
 	public Integer id;
 	public String msgType;
-	public String type;
+	public String rootType;
 
 	/* Signal */
 	public int sigstartbit;
@@ -86,9 +86,9 @@ public class TriggerParser {
 			}
 		});
 		
-		type = mNode.getAttribute("type");
+		rootType = mNode.getAttribute("type");
 		
-		if(type.equals("CAN")) {
+		if(rootType.equals("CAN")) {
 			Optional<Element> sigxml = PolicyParser.GetElement.apply(nodeList, "Siganl");
 			sigxml.ifPresent(e -> {
 				sigstartbit = Integer.parseInt(e.getAttribute("Startbit"));
@@ -108,11 +108,11 @@ public class TriggerParser {
 			
 			callback = new CanEvaluable(this);
 			returnVal = Arrays.asList(ch,id,callback);
-		}else if(type.equals("UDS")) {
+		}else if(rootType.equals("UDS")) {
 			callback = new UdsEvaluable(this);
 			lastLength = 0;
 			returnVal = Arrays.asList(ch,id,callback);
-		}else if(type.equals("DM1")) {
+		}else if(rootType.equals("DM1")) {
 			callback = new Dm1Evaluable(this);
 			lastDmSize = 0;
 			nowDmSize = 0;

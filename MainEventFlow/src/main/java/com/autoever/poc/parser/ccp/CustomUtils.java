@@ -27,8 +27,8 @@ public class CustomUtils {
 	@CustomFunctionResolver("GetDeltaValueCustomUtilsResolver0")
 	public static long GetDeltaValue(List<Tuple> datas){
 		if(datas == null) return 0;
-		return datas.stream().map(tuple -> CustomUtils.GetFieldValue(tuple, 1)).mapToLong(v->v).max().getAsLong()
-				- datas.stream().map(tuple -> CustomUtils.GetFieldValue(tuple, 1)).mapToLong(v-> v).min().getAsLong();
+		return datas.stream().mapToLong(tuple -> CustomUtils.GetFieldValue(tuple, 1)).max().getAsLong()
+				- datas.stream().mapToLong(tuple -> CustomUtils.GetFieldValue(tuple, 1)).min().getAsLong();
 	}
 
 	public static CompleteDataType GetDeltaValueCustomUtilsResolver0(CompleteDataType datas) {
@@ -38,7 +38,7 @@ public class CustomUtils {
 	@CustomFunctionResolver("GetMaxValueCustomUtilsResolver0")
 	public static long GetMaxValue(List<Tuple> datas){
 		if(datas == null) return 0;
-		return datas.stream().map(tuple -> CustomUtils.GetFieldValue(tuple, 1)).mapToLong(v->v).max().getAsLong();
+		return datas.stream().mapToLong(tuple -> CustomUtils.GetFieldValue(tuple, 1)).max().getAsLong();
 	}
 
 	public static CompleteDataType GetMaxValueCustomUtilsResolver0(CompleteDataType datas) {
@@ -48,7 +48,7 @@ public class CustomUtils {
 	@CustomFunctionResolver("GetMinValueCustomUtilsResolver0")
 	public static long GetMinValue(List<Tuple> datas){
 		if(datas == null) return 0;
-		return datas.stream().map(tuple -> CustomUtils.GetFieldValue(tuple, 1)).mapToLong(v->v).min().getAsLong();
+		return datas.stream().mapToLong(tuple -> CustomUtils.GetFieldValue(tuple, 1)).min().getAsLong();
 	}
 
 	public static CompleteDataType GetMinValueCustomUtilsResolver0(CompleteDataType datas) {

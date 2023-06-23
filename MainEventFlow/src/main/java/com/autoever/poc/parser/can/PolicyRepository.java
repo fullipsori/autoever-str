@@ -49,7 +49,7 @@ public class PolicyRepository {
 		
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder documentBuilder;
-
+		
 		try {
 			documentBuilder = factory.newDocumentBuilder();
 			mPolicyMap = Files.list(Paths.get(dirPath))

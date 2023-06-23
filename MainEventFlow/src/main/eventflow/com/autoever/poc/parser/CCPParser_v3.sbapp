@@ -204,8 +204,8 @@
                     <include field="cellDiffData">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromNumberList', cellDiffs)</include>
                     <replace field="msrTBData">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromMsrTBTuples', RawParsed.msrTBData)</replace>
                     <include field="dVol">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromNumberList', dVols)</include>
-                    <include field="maxDVolCell">if((RawParsed.chargingNow==0) &amp;&amp; !isnull(dVolMaxField)) then dVolMaxField.field else string(null)</include>
-                    <include field="maxDVolVal">if((RawParsed.chargingNow==0) &amp;&amp; !isnull(dVolMaxField)) then dVolMaxField.value else double(null)</include>
+                    <include field="maxDVolCell">if(!isnull(dVolMaxField)) then dVolMaxField.field else string(null)</include>
+                    <include field="maxDVolVal">if(!isnull(dVolMaxField)) then dVolMaxField.value else double(null)</include>
                     <replace field="SOC">round(RawParsed.SOC * 1.0)/10.0</replace>
                     <replace field="IBM">round(RawParsed.IBM * 1.0)/10.0</replace>
                     <replace field="deltaTB">deltaTB/10.0</replace>
@@ -276,6 +276,8 @@
                     <include field="SOC"/>
                     <include field="terminalID"/>
                     <include field="vehicleKeyID"/>
+                    <include field="maxDVolCell"/>
+                    <include field="maxDVolVal"/>
                 </item>
             </target-list>
         </box>
@@ -395,6 +397,8 @@
                     <include field="SOC"/>
                     <include field="terminalID"/>
                     <include field="vehicleKeyID"/>
+                    <include field="maxDVolCell"/>
+                    <include field="maxDVolVal"/>
                 </item>
             </target-list>
         </box>
