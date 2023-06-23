@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.autoever.poc.parser.can.PolicyParser;
 import com.autoever.poc.parser.can.PolicyRepository;
+import com.autoever.poc.parser.ccp.ODTParser;
 import com.autoever.poc.parser.ccp.ODTRepository;
 import com.streambase.sb.CompleteDataType;
 import com.streambase.sb.Tuple;
@@ -57,4 +58,45 @@ public class ParseUtil {
 		return ODTRepository.getInstance().LoadEVT(dirPath, "evt");
 	}
 
+	@CustomFunctionResolver("GetPolicyParamsCustomFunctionResolver0")
+	public static Tuple GetPolicyParams(String policy) {
+		PolicyParser policyParser = PolicyRepository.getInstance().mPolicyMap.get(policy);
+		return (Tuple)policyParser.toSave();
+	}
+	
+	public static CompleteDataType GetPolicyParamsCustomFunctionResolver0(CompleteDataType policy) {
+		return CompleteDataType.forTuple(PolicyParser.saveSchema);
+	}
+
+	@CustomFunctionResolver("PutPolicyParamsCustomFunctionResolver0")
+	public static boolean PutPolicyParams(String policy, Tuple tuple) {
+		PolicyParser policyParser = PolicyRepository.getInstance().mPolicyMap.get(policy);
+		policyParser.fromSave(tuple);
+		return true;
+	}
+	
+	public static CompleteDataType PutPolicyParamsCustomFunctionResolver0(CompleteDataType policy, CompleteDataType tuple) {
+		return CompleteDataType.forBoolean();
+	}
+
+	@CustomFunctionResolver("GetODTParamsCustomFunctionResolver0")
+	public static Tuple GetODTParams(long vehicleKeyID) {
+		ODTParser odtParser = ODTRepository.getInstance().mODTMap.get(String.valueOf(vehicleKeyID));
+		return (Tuple)odtParser.toSave();
+	}
+	
+	public static CompleteDataType GetODTParamsCustomFunctionResolver0(CompleteDataType vehicleKeyID) {
+		return CompleteDataType.forTuple(ODTParser.saveSchema);
+	}
+
+	@CustomFunctionResolver("PutODTParamsCustomFunctionResolver0")
+	public static boolean PutODTParams(long vehicleKeyID, Tuple tuple) {
+		ODTParser odtParser = ODTRepository.getInstance().mODTMap.get(String.valueOf(vehicleKeyID));
+		odtParser.fromSave(tuple);
+		return true;
+	}
+	
+	public static CompleteDataType PutODTParamsCustomFunctionResolver0(CompleteDataType vehicleKeyID, CompleteDataType tuple) {
+		return CompleteDataType.forBoolean();
+	}
 }

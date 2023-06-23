@@ -18,14 +18,17 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import com.autoever.poc.parser.DataSavable;
 import com.autoever.poc.parser.Parseable;
+import com.streambase.sb.CompleteDataType;
 import com.streambase.sb.NullValueException;
+import com.streambase.sb.Schema;
 import com.streambase.sb.Tuple;
 import com.streambase.sb.TupleException;
 import com.streambase.sb.util.Pair;
 
 
-public class ODTParser implements Parseable {
+public class ODTParser implements Parseable, DataSavable {
 	
 	private String filename;
 	private Path filePath;
@@ -57,8 +60,7 @@ public class ODTParser implements Parseable {
 	public boolean InitParams(int rootCount) {
 
 		if(this.rootCount != rootCount) { 
-			this.rootCount = rootCount;
-			prevTuples.clear();
+			initData(rootCount);
 			return true;
 		}
 		return true;
@@ -186,4 +188,74 @@ public class ODTParser implements Parseable {
 		}
 	}
 
+	private static Schema prevTupleSchema = new Schema("", List.of(
+			new Schema.Field("realTime", CompleteDataType.forDouble()),
+			new Schema.Field("rawParsed", CompleteDataType.forTuple(CCPPreProcessor.RawParsed))));
+
+	public static Schema saveSchema = new Schema("", List.of(
+			new Schema.Field("params", CompleteDataType.forString()),
+			new Schema.Field("prevTuples", CompleteDataType.forList(CompleteDataType.forTuple(prevTupleSchema)))
+	));
+
+	@Override
+	public void initData(int param) {
+		// TODO Auto-generated method stub
+		this.rootCount = param;
+		prevTuples.clear();
+	}
+
+	@Override
+	public Object toSave() {
+		// TODO Auto-generated method stub
+		try {
+			String params = String.format("%d", rootCount);
+			List<Tuple> prevs = prevTuples.stream().map(pair -> {
+					try {
+						Tuple dTuple = prevTupleSchema.createTuple();
+						dTuple.setDouble(0, pair.first);
+						dTuple.setTuple(1, pair.second);
+						return dTuple;
+					}catch(Exception e) {
+						return null;
+					}
+				}).filter(t -> t != null).collect(Collectors.toList());
+			
+			Tuple saveTuple = saveSchema.createTuple();
+			saveTuple.setString(0, params);
+			saveTuple.setList(1, prevs);
+
+			return saveTuple;
+		}catch(Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public void fromSave(Object saved) {
+		// TODO Auto-generated method stub
+		try {
+			if(saved == null) return;
+			String params = ((Tuple)saved).getString(0);
+			List<Tuple> prevs = (List<Tuple>)((Tuple)saved).getList(1);
+			this.rootCount = Integer.parseInt(params);
+			this.prevTuples = prevs.stream().map(prev -> {
+					try {
+						return new Pair<Double, Tuple>(prev.getDouble(0), prev.getTuple(1));
+					}catch(Exception e) {
+						return null;
+					}
+				}).filter(pair -> pair != null).collect(Collectors.toList());
+
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public Schema getSaveSchema() {
+		// TODO Auto-generated method stub
+		return saveSchema;
+	}
 }

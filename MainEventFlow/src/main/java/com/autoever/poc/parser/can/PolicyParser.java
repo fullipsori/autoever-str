@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -18,10 +19,14 @@ import org.w3c.dom.NodeList;
 
 import com.autoever.poc.adapters.VdmsRawParser.RawParserDataField;
 import com.autoever.poc.common.RawDataField;
+import com.autoever.poc.parser.DataSavable;
 import com.autoever.poc.parser.Parseable;
+import com.streambase.sb.CompleteDataType;
+import com.streambase.sb.Schema;
 import com.streambase.sb.Tuple;
+import com.streambase.sb.operator.Operator;
 
-public class PolicyParser implements Parseable {
+public class PolicyParser implements Parseable, DataSavable {
 
 	private String filename;
 	private Path xmlFilePath;
@@ -176,20 +181,7 @@ public class PolicyParser implements Parseable {
 	public boolean InitParams(int rootCount) { //check kafka.RootCount(trip number)
 
 		if(this.rootCount != rootCount) { 
-			this.rootCount = rootCount;
-
-			KeyTrig.initData();
-			msgFilter.values().stream()
-				.map(e -> (Map<Integer, List<Evaluable>>)e)
-				.flatMap(e -> e.values().stream())
-				.filter(o -> o != null)
-				.map(o -> (List<Evaluable>)o)
-				.flatMap(o -> o.stream())
-				.filter(ev -> ev != null)
-				.forEach(ev -> {
-					ev.trigger.initData();
-				});
-
+			initData(rootCount);
 			return true;
 		}
 		return true;
@@ -230,6 +222,58 @@ public class PolicyParser implements Parseable {
 		}catch(Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * rootCount 단위로 파라미터를 저장하여 동작에 연속성을 주기 위한 목적으로, 해당 파라미터들은 QueryTable에 저장한다.
+	 */
+	public static Schema saveSchema = new Schema("", List.of(new Schema.Field("params", CompleteDataType.forString())));
+
+	@Override
+	public void initData(int param) {
+		// TODO Auto-generated method stub
+		rootCount = param;
+		KeyTrig.initData(param);
+		evalList.stream().map(e -> (DataSavable)e).forEach(eval -> eval.initData(param));
+	}
+
+	@Override
+	public Object toSave() {
+		// TODO Auto-generated method stub
+		try {
+			String params = String.format("%d;%s;%s", rootCount, KeyTrig.toSave(), 
+					evalList.stream().map(e -> e.trigger).map(DataSavable::toSave).map(o -> (String)o).collect(Collectors.joining(":"))  );
+			Tuple saveTuple = saveSchema.createTuple();
+			saveTuple.setString(0, params);
+			return saveTuple;
+		}catch(Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	@Override
+	public void fromSave(Object saved) {
+		// TODO Auto-generated method stub
+		try {
+			if(saved == null) return;
+			String savedData = ((Tuple)saved).getString(0);
+			if(savedData == null || savedData.isEmpty()) return;
+			String[] tokens = savedData.split(";", -1);
+			rootCount = Integer.parseInt(tokens[0]);
+			KeyTrig.fromSave(tokens[1]);
+			if(tokens[2] == null) return;
+			String[] triggerData = tokens[2].split(":", -1);
+			IntStream.range(0, triggerData.length).forEach(d -> evalList.get(d).trigger.fromSave(triggerData[d]));
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public Schema getSaveSchema() {
+		// TODO Auto-generated method stub
+		return saveSchema;
 	}
 
 }

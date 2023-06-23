@@ -17,6 +17,18 @@
                 <field name="fieldName" type="string"/>
                 <field name="fieldValue" type="long"/>
             </schema>
+            <schema name="CCPRawParsedSchema">
+                <field name="cellData" type="list">
+                    <element-type type="tuple" value="FieldType"/>
+                </field>
+                <field name="msrTBData" type="list">
+                    <element-type type="tuple" value="FieldType"/>
+                </field>
+                <field name="SOC" type="double"/>
+                <field name="IBM" type="double"/>
+                <field name="chargingNow" type="long"/>
+                <field name="ISOL" type="long"/>
+            </schema>
         </named-schemas>
         <parameter-definitions>
             <parameter default="lv://localhost:11080" name="LV_SERVER_URI"/>
@@ -25,14 +37,76 @@
         <dynamic-variables>
             <dynamic-variable initial-expression="0.0" name="thresholdValue" setter-expression="newThresholdValue" setter-stream="ControlStream"/>
         </dynamic-variables>
+        <table-schemas>
+            <table-schema name="CCPParamsSchema">
+                <schema>
+                    <field name="vehicleKeyID" type="long"/>
+                    <field name="prevData" type="tuple">
+                        <schema>
+                            <field name="params" type="string"/>
+                            <field name="prevTuples" type="list">
+                                <element-type type="tuple">
+                                    <schema>
+                                        <field name="realTime" type="double"/>
+                                        <field name="rawParsed" type="tuple" value="CCPRawParsedSchema"/>
+                                    </schema>
+                                </element-type>
+                            </field>
+                        </schema>
+                    </field>
+                </schema>
+                <primary-index type="btree">
+                    <field name="vehicleKeyID"/>
+                </primary-index>
+            </table-schema>
+        </table-schemas>
+        <data name="CCPParamsTable" shared="false" source="input" type="querytable">
+            <param name="storage-method" value="heap"/>
+            <param name="replicated" value="false"/>
+            <param name="table-schema" value="CCPParamsSchema"/>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+        </data>
         <stream name="ControlStream">
             <schema>
                 <field name="newThresholdValue" type="double"/>
             </schema>
         </stream>
         <stream name="InputStream" schema="MainOutputSchema"/>
-        <box name="CCPRawParser" type="java">
+        <box name="LoadParams" type="query">
             <input port="1" stream="InputStream"/>
+            <output port="1" stream="out:LoadParams_1"/>
+            <dataref id="querytable" name="CCPParamsTable"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="primary-key"/>
+            <param name="limit" value="1"/>
+            <param name="key-field.0" value="vehicleKeyID"/>
+            <param name="key-lowerbound-value.0" value="kafkaMessage.VehicleKeyID"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-upperbound-operation.0" value="none"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="current" selection="none"/>
+                <expressions>
+                    <include field="result">PutODTParams(kafkaMessage.VehicleKeyID, prevData)</include>
+                </expressions>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="CCPRawParser" type="java">
+            <input port="1" stream="out:LoadParams_1"/>
             <output port="1" stream="out:CCPRawParser_1"/>
             <output port="2" stream="OutputRawDataStream"/>
             <param name="start:state" value="true"/>
@@ -73,6 +147,7 @@
                     <include field="IsEnded"/>
                     <include field="IsStarted"/>
                     <include field="MSGIdx"/>
+                    <include field="kafkaMessage"/>
                 </item>
                 <expressions>
                     <replace field="perfData.t3_time">to_milliseconds(now())</replace>
@@ -120,11 +195,60 @@
                 </expressions>
             </target-list>
         </box>
+        <box name="SaveParams" type="query">
+            <input port="1" stream="out:MarkerEnded_1"/>
+            <output port="1" stream="out:SaveParams_1"/>
+            <dataref id="querytable" name="CCPParamsTable"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="vehicleKeyID"/>
+            <param name="key-value.0" value="kafkaMessage.VehicleKeyID"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="force"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="prevData">GetODTParams(kafkaMessage.VehicleKeyID)</set>
+                </expressions>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="gen_seq_id" type="seqnum">
+            <input port="1" stream="out:ADDElem_1"/>
+            <output port="1" stream="out:gen_seq_id_1"/>
+            <param name="output-field" value="seq_id"/>
+            <param name="sequence-id" value="sequenceid"/>
+            <param name="update-expression" value="sequenceid + 1"/>
+        </box>
         <box name="MarkerUnion" type="union">
             <input port="1" stream="out:MarkerStarted_1"/>
-            <input port="2" stream="out:MarkerEnded_1"/>
+            <input port="2" stream="out:SaveParams_1"/>
             <output port="1" stream="out:MarkerUnion_1"/>
             <param name="strict" value="false"/>
+        </box>
+        <box name="addSeqId" type="map">
+            <input port="1" stream="out:gen_seq_id_1"/>
+            <output port="1" stream="out:addSeqId_1"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <remove field="seq_id"/>
+                </item>
+                <expressions>
+                    <replace field="messageID">messageID + '_' + seq_id</replace>
+                </expressions>
+            </target-list>
         </box>
         <box name="AGGToHCP" type="aggregate">
             <input port="1" stream="out:MarkerUnion_1"/>
@@ -141,37 +265,6 @@
                     <include field="*">lastval(*)</include>
                     <replace field="perfData.t2_time">firstval(perfData.t2_time)</replace>
                     <replace field="perfData.t3_time">lastval(perfData.t3_time)</replace>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="gen_seq_id" type="seqnum">
-            <input port="1" stream="out:ADDElem_1"/>
-            <output port="1" stream="out:gen_seq_id_1"/>
-            <param name="output-field" value="seq_id"/>
-            <param name="sequence-id" value="sequenceid"/>
-            <param name="update-expression" value="sequenceid + 1"/>
-        </box>
-        <box name="addSeqId" type="map">
-            <input port="1" stream="out:gen_seq_id_1"/>
-            <output port="1" stream="out:addSeqId_1"/>
-            <target-list>
-                <item name="input" selection="all">
-                    <remove field="seq_id"/>
-                </item>
-                <expressions>
-                    <replace field="messageID">messageID + '_' + seq_id</replace>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="EndedCCPProc" type="map">
-            <input port="1" stream="out:AGGToHCP_1"/>
-            <output port="1" stream="out:EndedCCPProc_1"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="perfData">input1.perfData</include>
-                    <replace field="perfData.kafka_msg_id">input1.perfData.kafka_msg_id + "_CCP"</replace>
-                    <replace field="perfData.data_count">MSGIdx-2</replace>
                 </expressions>
             </target-list>
         </box>
@@ -213,6 +306,18 @@
                 </expressions>
             </target-list>
         </box>
+        <box name="EndedCCPProc" type="map">
+            <input port="1" stream="out:AGGToHCP_1"/>
+            <output port="1" stream="out:EndedCCPProc_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="perfData">input1.perfData</include>
+                    <replace field="perfData.kafka_msg_id">input1.perfData.kafka_msg_id + "_CCP"</replace>
+                    <replace field="perfData.data_count">MSGIdx-2</replace>
+                </expressions>
+            </target-list>
+        </box>
         <box name="FilterCopy" type="filter">
             <input port="1" stream="out:EndedCCPProc_1"/>
             <output port="1" stream="out:FilterCopy_1"/>
@@ -221,16 +326,6 @@
             <param name="expression.0" value="true"/>
             <param name="expression.1" value="true"/>
         </box>
-        <module-reference name="PublishPerf">
-            <input name="InputStream" port="1" stream="out:FilterCopy_1"/>
-            <output name="OutputStream" port="1" stream="out:PublishPerf_1"/>
-            <param name="parallel" value="true"/>
-            <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
-            <param name="file" value="com.autoever.poc.maineventflow.PerfFlow"/>
-            <parameter-bindings>
-                <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
-            </parameter-bindings>
-        </module-reference>
         <box name="Split" type="split">
             <input port="1" stream="out:AssignTableFields_1"/>
             <output port="1" stream="out:Split_1"/>
@@ -281,6 +376,16 @@
                 </item>
             </target-list>
         </box>
+        <module-reference name="PublishPerf">
+            <input name="InputStream" port="1" stream="out:FilterCopy_1"/>
+            <output name="OutputStream" port="1" stream="out:PublishPerf_1"/>
+            <param name="parallel" value="true"/>
+            <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
+            <param name="file" value="com.autoever.poc.maineventflow.PerfFlow"/>
+            <parameter-bindings>
+                <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
+            </parameter-bindings>
+        </module-reference>
         <box name="Filter" type="filter">
             <input port="1" stream="out:MapToCCP_1"/>
             <output port="1" stream="out:Filter_1"/>

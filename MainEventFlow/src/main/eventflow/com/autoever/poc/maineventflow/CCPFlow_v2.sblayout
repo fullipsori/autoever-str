@@ -21,6 +21,12 @@
         <param name="gui:bends:1" value="122,126;140,201"/>
         <param name="gui:bends:2" value="106,321;130,221"/>
     </component>
+    <component name="CCPParamsTable">
+        <param name="gui:x" value="166"/>
+        <param name="gui:y" value="315"/>
+        <param name="gui:width" value="80"/>
+        <param name="gui:height" value="56"/>
+    </component>
     <component name="InitMeta">
         <param name="gui:x" value="-288"/>
         <param name="gui:y" value="12"/>

@@ -13,6 +13,7 @@
         <implements module-reference="com.autoever.poc.maineventflow.kafkaSchemas"/>
         <import alias="MainOutputSchema" from="com.autoever.poc.maineventflow.AutoVDMSFlow_v2" item="MainOutputSchema"/>
         <import from="com.autoever.poc.maineventflow.LiveViewTable"/>
+        <import alias="CanParamsSchema" from="com.autoever.poc.parser.CANParser_v3" item="CanParamsSchema"/>
         <import alias="ControlCANSchema" from="com.autoever.poc.parser.CANParser_v3" item="ControlCANSchema"/>
         <parameter-definitions>
             <parameter default="D:/projects/vdms_env/Scripts/python.exe" name="PYTHON_EXECUTABLE"/>
@@ -20,22 +21,10 @@
             <parameter default="lv://localhost:11080" name="LV_SERVER_URI"/>
         </parameter-definitions>
         <dynamic-variables/>
-        <table-schemas>
-            <table-schema name="EventStatus">
-                <schema>
-                    <field name="terminalID" type="string"/>
-                    <field name="eventName" type="string"/>
-                    <field name="eventValue" type="string"/>
-                </schema>
-                <primary-index type="btree">
-                    <field name="terminalID"/>
-                </primary-index>
-            </table-schema>
-        </table-schemas>
-        <data name="EventStatusMon" shared="false" source="concrete" type="querytable">
+        <data name="CanParamsTable" shared="false" source="concrete" type="querytable">
             <param name="storage-method" value="heap"/>
             <param name="replicated" value="false"/>
-            <param name="table-schema" value="EventStatus"/>
+            <param name="table-schema" value="CanParamsSchema"/>
             <param name="truncate" value="false"/>
             <preload format="csv" mode="empty"/>
         </data>
@@ -127,7 +116,7 @@
             <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
             <multiplicity number="2" type="concrete"/>
             <param name="file" value="com.autoever.poc.parser.CANParser_v3"/>
-            <input-dataref name="EventStatusMon" table="EventStatusMon"/>
+            <input-dataref name="CanParamsTable" table="CanParamsTable"/>
             <parameter-bindings>
                 <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
                 <binding name="RESOURCE_ROOT" value="${RESOURCE_ROOT}"/>

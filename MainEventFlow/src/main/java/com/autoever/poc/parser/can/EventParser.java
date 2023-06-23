@@ -7,9 +7,11 @@ import java.util.stream.Collectors;
 
 import org.w3c.dom.Element;
 
+import com.autoever.poc.parser.DataSavable;
 import com.autoever.poc.parser.Parseable;
+import com.streambase.sb.Schema;
 
-public class EventParser implements EventCallback {
+public class EventParser implements EventCallback, DataSavable {
 
 	private Element mNode;
 	public String category;
@@ -36,10 +38,6 @@ public class EventParser implements EventCallback {
 			.stream().map(e -> new TriggerParser(e, this))
 			.peek(e -> msgTable.add(e.returnVal))
 			.collect(Collectors.toList());
-	}
-
-	public void initData() {
-		preTriggerCondition = null;
 	}
 
 	@Override
@@ -100,6 +98,32 @@ public class EventParser implements EventCallback {
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void initData(int param) {
+		// TODO Auto-generated method stub
+		preTriggerCondition = null;
+	}
+
+	@Override
+	public Object toSave() {
+		// TODO Auto-generated method stub
+		return String.format("%s", (preTriggerCondition==null)? "" : preTriggerCondition.toString());
+	}
+
+	@Override
+	public void fromSave(Object saved) {
+		// TODO Auto-generated method stub
+		String savedData = (String)saved;
+		if(savedData == null || savedData.isEmpty()) preTriggerCondition = null;
+		preTriggerCondition = Boolean.parseBoolean(savedData);
+	}
+
+	@Override
+	public Schema getSaveSchema() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

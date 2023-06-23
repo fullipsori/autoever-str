@@ -33,57 +33,38 @@
         </parameter-definitions>
         <dynamic-variables>
             <dynamic-variable initial-expression="string(null)" name="compEvent" setter-expression="if !isempty(input.eventName) then input.eventName else compEvent" setter-stream="UpdateVarStream"/>
-            <dynamic-variable initial-expression="string(null)" name="compTerminalID" setter-expression="if !isempty(input.terminalID) then input.terminalID else compTerminalID" setter-stream="UpdateVarStream"/>
             <dynamic-variable initial-expression="string(null)" name="compValue" setter-expression="input.eventValue" setter-stream="UpdateVarStream"/>
         </dynamic-variables>
         <table-schemas>
-            <table-schema name="EventStatus">
+            <table-schema name="CanParamsSchema">
                 <schema>
                     <field name="terminalID" type="string"/>
                     <field name="eventName" type="string"/>
                     <field name="eventValue" type="string"/>
+                    <field name="prevData" type="tuple">
+                        <schema>
+                            <field name="params" type="string"/>
+                        </schema>
+                    </field>
                 </schema>
                 <primary-index type="btree">
                     <field name="terminalID"/>
                 </primary-index>
             </table-schema>
         </table-schemas>
-        <data name="EventStatusMon" shared="false" source="input" type="querytable">
+        <data name="CanParamsTable" shared="false" source="input" type="querytable">
             <param name="storage-method" value="heap"/>
             <param name="replicated" value="false"/>
-            <param name="table-schema" value="EventStatus"/>
+            <param name="table-schema" value="CanParamsSchema"/>
             <param name="truncate" value="false"/>
             <preload format="csv" mode="empty"/>
         </data>
         <stream name="InputStream" schema="MainOutputSchema"/>
         <stream name="InputVarStream" schema="ControlCANSchema"/>
-        <box name="MapInputParam" type="map">
-            <input port="1" stream="InputVarStream"/>
-            <output port="1" stream="out:MapInputParam_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="eventName">nameFilter</include>
-                    <include field="eventValue">baseValue</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="Split5" type="split">
+        <box name="GetPrevData" type="query">
             <input port="1" stream="InputStream"/>
-            <output port="1" stream="out:Split5_1"/>
-            <output port="2" stream="out:Split5_2"/>
-            <param name="output-count" value="2"/>
-        </box>
-        <box name="Filter5" type="filter">
-            <input port="1" stream="out:Split5_1"/>
-            <output port="1" stream="out:Filter5_1"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="!isempty(compTerminalID) &amp;&amp; !isempty(compEvent) &amp;&amp; !isempty(compValue)"/>
-        </box>
-        <box name="GetPrevCompValue" type="query">
-            <input port="1" stream="out:Split5_2"/>
-            <output port="1" stream="out:GetPrevCompValue_1"/>
-            <dataref id="querytable" name="EventStatusMon"/>
+            <output port="1" stream="out:GetPrevData_1"/>
+            <dataref id="querytable" name="CanParamsTable"/>
             <param name="operation" value="read"/>
             <param name="where" value="primary-key"/>
             <param name="limit" value="1"/>
@@ -98,8 +79,6 @@
             <target-list>
                 <item name="input" selection="all"/>
                 <item name="current" selection="all"/>
-                <item name="old" selection="none"/>
-                <item name="new" selection="none"/>
             </target-list>
             <target-list name="insert">
                 <item name="input" selection="all"/>
@@ -111,52 +90,34 @@
                 <item name="input" selection="all"/>
             </target-list>
         </box>
+        <box name="MapInputParam" type="map">
+            <input port="1" stream="InputVarStream"/>
+            <output port="1" stream="out:MapInputParam_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="eventName">nameFilter</include>
+                    <include field="eventValue">baseValue</include>
+                </expressions>
+            </target-list>
+        </box>
         <box name="Split4" type="split">
-            <input port="1" stream="out:GetPrevCompValue_1"/>
+            <input port="1" stream="out:GetPrevData_1"/>
             <output port="1" stream="out:Split4_1"/>
             <output port="2" stream="out:Split4_2"/>
             <param name="output-count" value="2"/>
         </box>
-        <box name="UpdatePrevValue" type="query">
-            <input port="1" stream="out:Filter5_1"/>
-            <dataref id="querytable" name="EventStatusMon"/>
-            <param name="operation" value="write"/>
-            <param name="where" value="primary-key"/>
-            <param name="key-field.0" value="terminalID"/>
-            <param name="key-value.0" value="compTerminalID"/>
-            <param name="write-type" value="insert"/>
-            <param name="if-write-fails" value="ignore"/>
-            <param name="no-match-mode" value="output-no-match-null"/>
-            <param name="order-by-direction" value="none"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <item name="old" selection="none"/>
-                <item name="new" selection="none"/>
-                <item name="current" selection="none"/>
-            </target-list>
-            <target-list name="insert">
-                <item name="input" selection="all"/>
-                <expressions>
-                    <set field="eventName">compEvent</set>
-                    <set field="eventValue">compValue</set>
-                </expressions>
-            </target-list>
-            <target-list name="update">
-                <item name="input" selection="all"/>
-            </target-list>
-            <target-list name="no-match">
-                <item name="input" selection="all"/>
-            </target-list>
-        </box>
-        <box name="DataFromTable" type="map">
+        <box name="LoadDatas" type="map">
             <input port="1" stream="out:Split4_1"/>
-            <output port="1" stream="out:DataFromTable_1"/>
+            <output port="1" stream="out:LoadDatas_1"/>
             <target-list>
                 <item name="input" selection="none">
                     <include field="eventName"/>
                     <include field="eventValue"/>
-                    <include field="terminalID"/>
                 </item>
+                <expressions>
+                    <include field="result">PutPolicyParams(kafkaMessage.TerminalID, prevData)</include>
+                </expressions>
             </target-list>
         </box>
         <box name="RemoveUnnecessary" type="map">
@@ -167,6 +128,7 @@
                     <remove field="eventName"/>
                     <remove field="eventValue"/>
                     <remove field="terminalID"/>
+                    <remove field="prevData"/>
                 </item>
             </target-list>
         </box>
@@ -218,6 +180,7 @@
                     <include field="IsEnded"/>
                     <include field="IsStarted"/>
                     <include field="MSGIdx"/>
+                    <include field="kafkaMessage"/>
                 </item>
                 <expressions>
                     <replace field="perfData.t3_time">to_milliseconds(now())</replace>
@@ -249,9 +212,47 @@
                 </expressions>
             </target-list>
         </box>
+        <box name="PutCurrentData" type="query">
+            <input port="1" stream="out:MarkerEnded_1"/>
+            <output port="1" stream="out:PutCurrentData_1"/>
+            <dataref id="querytable" name="CanParamsTable"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="terminalID"/>
+            <param name="key-value.0" value="kafkaMessage.TerminalID"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="eventName">compEvent</set>
+                    <set field="eventValue">compValue</set>
+                    <set field="prevData">GetPolicyParams(kafkaMessage.TerminalID)</set>
+                </expressions>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="FilterTrigData" type="filter">
+            <input port="1" stream="out:GetTrigData_1"/>
+            <output port="1" stream="out:FilterTrigData_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="!isempty(trigDataList)"/>
+        </box>
         <box name="MarkerUnion" type="union">
             <input port="1" stream="out:MarkerStarted_1"/>
-            <input port="2" stream="out:MarkerEnded_1"/>
+            <input port="2" stream="out:PutCurrentData_1"/>
             <output port="1" stream="out:MarkerUnion_1"/>
             <param name="strict" value="false"/>
         </box>
@@ -273,24 +274,6 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="FilterTrigData" type="filter">
-            <input port="1" stream="out:GetTrigData_1"/>
-            <output port="1" stream="out:FilterTrigData_1"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="!isempty(trigDataList)"/>
-        </box>
-        <box name="EndedCanProc" type="map">
-            <input port="1" stream="out:AGGToHCP_1"/>
-            <output port="1" stream="out:EndedCanProc_1"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="perfData">input1.perfData</include>
-                    <replace field="perfData.kafka_msg_id">input1.perfData.kafka_msg_id + "_CAN"</replace>
-                    <replace field="perfData.data_count">MSGIdx-2</replace>
-                </expressions>
-            </target-list>
-        </box>
         <box name="Iter_TrigData" type="iterate">
             <input port="1" stream="out:FilterTrigData_1"/>
             <output port="1" stream="out:Iter_TrigData_1"/>
@@ -309,16 +292,18 @@
                 </expressions>
             </target-list>
         </box>
-        <module-reference name="PublishPerf">
-            <input name="InputStream" port="1" stream="out:EndedCanProc_1"/>
-            <output name="OutputStream" port="1" stream="out:PublishPerf_1"/>
-            <param name="parallel" value="true"/>
-            <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
-            <param name="file" value="com.autoever.poc.maineventflow.PerfFlow"/>
-            <parameter-bindings>
-                <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
-            </parameter-bindings>
-        </module-reference>
+        <box name="EndedCanProc" type="map">
+            <input port="1" stream="out:AGGToHCP_1"/>
+            <output port="1" stream="out:EndedCanProc_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="perfData">input1.perfData</include>
+                    <replace field="perfData.kafka_msg_id">input1.perfData.kafka_msg_id + "_CAN"</replace>
+                    <replace field="perfData.data_count">MSGIdx-2</replace>
+                </expressions>
+            </target-list>
+        </box>
         <box name="Split_status" type="split">
             <input port="1" stream="out:Iter_TrigData_1"/>
             <output port="1" stream="out:Split_status_1"/>
@@ -337,6 +322,16 @@
             <param name="autogen-nomatch-port" value="false"/>
             <param name="expression.0" value="!isempty(value) &amp;&amp; (eventName == compEvent) &amp;&amp; (isempty(compValue) || value !=compValue)"/>
         </box>
+        <module-reference name="PublishPerf">
+            <input name="InputStream" port="1" stream="out:EndedCanProc_1"/>
+            <output name="OutputStream" port="1" stream="out:PublishPerf_1"/>
+            <param name="parallel" value="true"/>
+            <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
+            <param name="file" value="com.autoever.poc.maineventflow.PerfFlow"/>
+            <parameter-bindings>
+                <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
+            </parameter-bindings>
+        </module-reference>
         <box name="Sequence" type="seqnum">
             <input port="1" stream="out:Filter_NotTrig_1"/>
             <output port="1" stream="out:Sequence_1"/>
@@ -375,7 +370,6 @@
                 <expressions>
                     <include field="eventName">input.eventName</include>
                     <include field="eventValue">input.value</include>
-                    <include field="terminalID">input.terminalID</include>
                 </expressions>
             </target-list>
         </box>
@@ -390,7 +384,7 @@
             </target-list>
         </box>
         <box name="CompUpdateUnion" type="union">
-            <input port="1" stream="out:DataFromTable_1"/>
+            <input port="1" stream="out:LoadDatas_1"/>
             <input port="2" stream="out:MapCompParams_1"/>
             <input port="3" stream="out:MapInputParam_1"/>
             <output port="1" stream="UpdateVarStream"/>

@@ -13,11 +13,13 @@ import org.w3c.dom.NodeList;
 
 import com.autoever.poc.common.RawDataField;
 import com.autoever.poc.common.StringUtils;
+import com.autoever.poc.parser.DataSavable;
 import com.autoever.poc.parser.Parseable;
+import com.streambase.sb.Schema;
 import com.streambase.sb.Tuple;
 import com.streambase.sb.util.Base64;
 
-public class TriggerParser {
+public class TriggerParser implements DataSavable {
 
 	public Evaluable callback = null;
 	public List<Object> returnVal = new ArrayList<>();
@@ -137,23 +139,6 @@ public class TriggerParser {
 		if((eventCallback) != null && eventCallback instanceof EventParser)
 			return (EventParser)eventCallback;
 		return null;
-	}
-
-	public void initData() {
-		status = false;
-
-		time = 0;
-		lastLength = 0;
-		lastvalue = null;
-		conditionTime = 0.0;
-
-		lastDmSize = 0;
-		nowDmSize = 0;
-		dm1Data = null;
-		lastDm1=null;
-
-		// initialize Event Node
-		Optional.ofNullable(getEventParser()).ifPresent(EventParser::initData);
 	}
 
 	public static long GetRawValue(String sigendian, byte[] rawdata, String sigtype, int sigstartbit, int siglength) {
@@ -441,8 +426,68 @@ public class TriggerParser {
 		byte[] x = {(byte)0x00,(byte)0xff,(byte)0xde,(byte)0x6c,(byte)0xf9,(byte)0xff,(byte)0xff,(byte)0xff};
 		long rawvalue = TriggerParser.GetRawValue("Little", x, "unsigned", 16, 24);
 		System.out.println("rawvalue:" + rawvalue);
-//		if(rawdata[5] == (byte)0xCA && rawdata[6] == (byte)0xFE) {
-//
-//		}
+		String t = "1,,2,";
+		if(t.split(",",-1)[3].isEmpty()) {
+			System.out.println("ok");
+		}
+	}
+
+	@Override
+	public void initData(int param) {
+		// TODO Auto-generated method stub
+		
+		status = false;
+
+		time = 0.0;
+		lastLength = 0;
+		lastvalue = null;
+		conditionTime = 0.0;
+
+		lastDmSize = 0;
+		nowDmSize = 0;
+		dm1Data = null;
+		lastDm1=null;
+
+
+		Optional.ofNullable(getEventParser()).ifPresent(evParser -> evParser.initData(param));
+	}
+
+	@Override
+	public Object toSave() {
+		// TODO Auto-generated method stub
+		return String.format("%b,%f,%d,%s,%f,%d,%d,%s,%s,%s", 
+				status, time, lastLength, 
+				((lastvalue==null)? "" : lastvalue.toString()), 
+				conditionTime, lastDmSize, nowDmSize, 
+				((dm1Data==null)? "": Base64.encodeBytes(dm1Data)), 
+				((lastDm1==null)? "" :Base64.encodeBytes(lastDm1)),
+				((getEventParser() == null)? "" : getEventParser().toSave())
+			);
+	}
+
+	@Override
+	public void fromSave(Object saved) {
+		// TODO Auto-generated method stub
+		String savedData = (String)saved;
+		if(savedData == null || savedData.isEmpty()) return;
+		String[] tokens = savedData.split(",", -1);
+		status = Boolean.parseBoolean(tokens[0]);
+		time = Double.parseDouble(tokens[1]);
+		lastLength = Integer.parseInt(tokens[2]);
+		lastvalue = (tokens[3].isEmpty())? null: Double.parseDouble(tokens[3]);
+		conditionTime = Double.parseDouble(tokens[4]);
+		lastDmSize = Integer.parseInt(tokens[5]);
+		nowDmSize = Integer.parseInt(tokens[6]);
+		dm1Data = (tokens[7].isEmpty())? null : Base64.decode(tokens[7]);
+		lastDm1 = (tokens[8].isEmpty())? null : Base64.decode(tokens[8]);
+		if(getEventParser() != null) {
+			getEventParser().fromSave(tokens[9]);
+		}
+	}
+
+	@Override
+	public Schema getSaveSchema() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
