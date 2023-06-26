@@ -109,9 +109,9 @@
             <output port="2" stream="out:Split4_2"/>
             <param name="output-count" value="2"/>
         </box>
-        <box name="LoadDatas" type="map">
+        <box name="LoadParams" type="map">
             <input port="1" stream="out:Split4_1"/>
-            <output port="1" stream="out:LoadDatas_1"/>
+            <output port="1" stream="out:LoadParams_1"/>
             <target-list>
                 <item name="input" selection="none">
                     <include field="eventName"/>
@@ -122,9 +122,9 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="RemoveUnnecessary" type="map">
+        <box name="RemoveUnused" type="map">
             <input port="1" stream="out:Split4_2"/>
-            <output port="1" stream="out:RemoveUnnecessary_1"/>
+            <output port="1" stream="out:RemoveUnused_1"/>
             <target-list>
                 <item name="input" selection="all">
                     <remove field="eventName"/>
@@ -135,7 +135,7 @@
             </target-list>
         </box>
         <box name="CANRawParser" type="java">
-            <input port="1" stream="out:RemoveUnnecessary_1"/>
+            <input port="1" stream="out:RemoveUnused_1"/>
             <output port="1" stream="out:CANRawParser_1"/>
             <output port="2" stream="OutputRawDataStream"/>
             <param name="start:state" value="true"/>
@@ -204,6 +204,16 @@
                 </expressions>
             </target-list>
         </box>
+        <box name="GetParamsToSave" type="map">
+            <input port="1" stream="out:MarkerEnded_1"/>
+            <output port="1" stream="out:GetParamsToSave_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="prevData">GetPolicyParams(kafkaMessage.TerminalID)</include>
+                </expressions>
+            </target-list>
+        </box>
         <box name="GetTrigData" type="map">
             <input port="1" stream="out:FilterKeyFlag_1"/>
             <output port="1" stream="out:GetTrigData_1"/>
@@ -214,18 +224,6 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="Split" type="split">
-            <input port="1" stream="out:MarkerEnded_1"/>
-            <output port="1" stream="out:Split_1"/>
-            <output port="2" stream="out:Split_2"/>
-            <param name="output-count" value="2"/>
-        </box>
-        <box name="Filter" type="filter">
-            <input port="1" stream="out:Split_2"/>
-            <output port="1" stream="DebugStream"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="kafkaMessage.TerminalID='BM-15C-0083'"/>
-        </box>
         <box name="FilterTrigData" type="filter">
             <input port="1" stream="out:GetTrigData_1"/>
             <output port="1" stream="out:FilterTrigData_1"/>
@@ -233,7 +231,7 @@
             <param name="expression.0" value="!isempty(trigDataList)"/>
         </box>
         <box name="PutCurrentData" type="query">
-            <input port="1" stream="out:Split_1"/>
+            <input port="1" stream="out:GetParamsToSave_1"/>
             <output port="1" stream="out:PutCurrentData_1"/>
             <dataref id="querytable" name="CanParamsTable"/>
             <param name="operation" value="write"/>
@@ -248,14 +246,13 @@
                 <item name="input" selection="all"/>
                 <item name="old" selection="none"/>
                 <item name="new" selection="none"/>
-                <item name="current" selection="none"/>
             </target-list>
             <target-list name="insert">
                 <item name="input" selection="all"/>
                 <expressions>
                     <set field="eventName">compEvent</set>
                     <set field="eventValue">compValue</set>
-                    <set field="prevData">GetPolicyParams(kafkaMessage.TerminalID)</set>
+                    <set field="prevData">input.prevData</set>
                 </expressions>
             </target-list>
             <target-list name="update">
@@ -265,7 +262,6 @@
                 <item name="input" selection="all"/>
             </target-list>
         </box>
-        <output-stream name="DebugStream"/>
         <box name="Iter_TrigData" type="iterate">
             <input port="1" stream="out:FilterTrigData_1"/>
             <output port="1" stream="out:Iter_TrigData_1"/>
@@ -400,7 +396,7 @@
             </target-list>
         </box>
         <box name="CompUpdateUnion" type="union">
-            <input port="1" stream="out:LoadDatas_1"/>
+            <input port="1" stream="out:LoadParams_1"/>
             <input port="2" stream="out:MapCompParams_1"/>
             <input port="3" stream="out:MapInputParam_1"/>
             <output port="1" stream="UpdateVarStream"/>

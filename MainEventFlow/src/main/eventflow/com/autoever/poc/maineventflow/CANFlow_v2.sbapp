@@ -113,7 +113,7 @@
             <input dispatch="broadcast" name="InputVarStream" port="1" stream="out:RemoveUnused_1"/>
             <input dispatch="numerical" key="int(kafkaMessage.VehicleKeyID)" name="InputStream" port="2" stream="InputStream"/>
             <output name="OutputParserStream" port="1" stream="OutputParserStream"/>
-            <output name="DebugStream" port="2" stream="OutputVarStream"/>
+            <output name="UpdateVarStream" port="2" stream="OutputVarStream"/>
             <output name="OutputRawDataStream" port="3" stream="OutputRawDataStream"/>
             <param name="parallel" value="true"/>
             <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>

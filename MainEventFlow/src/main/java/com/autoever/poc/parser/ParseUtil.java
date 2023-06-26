@@ -70,12 +70,8 @@ public class ParseUtil {
 
 	@CustomFunctionResolver("AssignPolicyParamsCustomFunctionResolver0")
 	public static boolean AssignPolicyParams(String policy, Tuple tuple) {
-		if(policy.equals("BM-15C-0083")) {
-		System.err.println("AssignPolicy:"+ policy);
-		}
 		PolicyParser policyParser = PolicyRepository.getInstance().mPolicyMap.get(policy);
 		policyParser.fromSave(tuple);
-
 		return true;
 	}
 	

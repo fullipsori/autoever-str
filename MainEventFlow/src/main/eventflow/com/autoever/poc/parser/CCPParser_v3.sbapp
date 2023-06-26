@@ -73,9 +73,9 @@
             </schema>
         </stream>
         <stream name="InputStream" schema="MainOutputSchema"/>
-        <box name="LoadParams" type="query">
+        <box name="GetPrevDatas" type="query">
             <input port="1" stream="InputStream"/>
-            <output port="1" stream="out:LoadParams_1"/>
+            <output port="1" stream="out:GetPrevDatas_1"/>
             <dataref id="querytable" name="CCPParamsTable"/>
             <param name="operation" value="read"/>
             <param name="where" value="primary-key"/>
@@ -90,10 +90,7 @@
             <param name="order-by-direction" value="none"/>
             <target-list>
                 <item name="input" selection="all"/>
-                <item name="current" selection="none"/>
-                <expressions>
-                    <include field="result">AssignODTParams(kafkaMessage.VehicleKeyID, prevData)</include>
-                </expressions>
+                <item name="current" selection="all"/>
             </target-list>
             <target-list name="insert">
                 <item name="input" selection="all"/>
@@ -105,8 +102,34 @@
                 <item name="input" selection="all"/>
             </target-list>
         </box>
+        <box name="Split2" type="split">
+            <input port="1" stream="out:GetPrevDatas_1"/>
+            <output port="1" stream="out:Split2_1"/>
+            <output port="2" stream="out:Split2_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <box name="LoadParams" type="map">
+            <input port="1" stream="out:Split2_1"/>
+            <output port="1" stream="UpdateVarStream"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="result">AssignODTParams(kafkaMessage.VehicleKeyID, prevData)</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="RemoveUnused" type="map">
+            <input port="1" stream="out:Split2_2"/>
+            <output port="1" stream="out:RemoveUnused_1"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <remove field="prevData"/>
+                </item>
+            </target-list>
+        </box>
+        <output-stream name="UpdateVarStream"/>
         <box name="CCPRawParser" type="java">
-            <input port="1" stream="out:LoadParams_1"/>
+            <input port="1" stream="out:RemoveUnused_1"/>
             <output port="1" stream="out:CCPRawParser_1"/>
             <output port="2" stream="OutputRawDataStream"/>
             <param name="start:state" value="true"/>
@@ -195,8 +218,25 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="SaveParams" type="query">
+        <box name="GetParamsToSave" type="map">
             <input port="1" stream="out:MarkerEnded_1"/>
+            <output port="1" stream="out:GetParamsToSave_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="prevData">GetODTParams(kafkaMessage.VehicleKeyID)</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="gen_seq_id" type="seqnum">
+            <input port="1" stream="out:ADDElem_1"/>
+            <output port="1" stream="out:gen_seq_id_1"/>
+            <param name="output-field" value="seq_id"/>
+            <param name="sequence-id" value="sequenceid"/>
+            <param name="update-expression" value="sequenceid + 1"/>
+        </box>
+        <box name="SaveParams" type="query">
+            <input port="1" stream="out:GetParamsToSave_1"/>
             <output port="1" stream="out:SaveParams_1"/>
             <dataref id="querytable" name="CCPParamsTable"/>
             <param name="operation" value="write"/>
@@ -215,7 +255,7 @@
             <target-list name="insert">
                 <item name="input" selection="all"/>
                 <expressions>
-                    <set field="prevData">GetODTParams(kafkaMessage.VehicleKeyID)</set>
+                    <set field="prevData">input.prevData</set>
                 </expressions>
             </target-list>
             <target-list name="update">
@@ -224,19 +264,6 @@
             <target-list name="no-match">
                 <item name="input" selection="all"/>
             </target-list>
-        </box>
-        <box name="gen_seq_id" type="seqnum">
-            <input port="1" stream="out:ADDElem_1"/>
-            <output port="1" stream="out:gen_seq_id_1"/>
-            <param name="output-field" value="seq_id"/>
-            <param name="sequence-id" value="sequenceid"/>
-            <param name="update-expression" value="sequenceid + 1"/>
-        </box>
-        <box name="MarkerUnion" type="union">
-            <input port="1" stream="out:MarkerStarted_1"/>
-            <input port="2" stream="out:SaveParams_1"/>
-            <output port="1" stream="out:MarkerUnion_1"/>
-            <param name="strict" value="false"/>
         </box>
         <box name="addSeqId" type="map">
             <input port="1" stream="out:gen_seq_id_1"/>
@@ -247,8 +274,15 @@
                 </item>
                 <expressions>
                     <replace field="messageID">messageID + '_' + seq_id</replace>
+                    <include field="dVolMaxField">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetMaxDVol', dVols)</include>
                 </expressions>
             </target-list>
+        </box>
+        <box name="MarkerUnion" type="union">
+            <input port="1" stream="out:MarkerStarted_1"/>
+            <input port="2" stream="out:SaveParams_1"/>
+            <output port="1" stream="out:MarkerUnion_1"/>
+            <param name="strict" value="false"/>
         </box>
         <box name="AGGToHCP" type="aggregate">
             <input port="1" stream="out:MarkerUnion_1"/>
@@ -282,7 +316,6 @@
                     <include field="mgmtNO"/>
                     <include field="RawParsed"/>
                     <include field="RESs"/>
-                    <declare field="dVolMaxField">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetMaxDVol', dVols)</declare>
                 </item>
                 <expressions>
                     <include field="terminalID">kafkaMessage.TerminalID</include>
@@ -318,6 +351,12 @@
                 </expressions>
             </target-list>
         </box>
+        <box name="Split" type="split">
+            <input port="1" stream="out:AssignTableFields_1"/>
+            <output port="1" stream="out:Split_1"/>
+            <output port="2" stream="out:Split_2"/>
+            <param name="output-count" value="2"/>
+        </box>
         <box name="FilterCopy" type="filter">
             <input port="1" stream="out:EndedCCPProc_1"/>
             <output port="1" stream="out:FilterCopy_1"/>
@@ -325,12 +364,6 @@
             <param name="autogen-nomatch-port" value="true"/>
             <param name="expression.0" value="true"/>
             <param name="expression.1" value="true"/>
-        </box>
-        <box name="Split" type="split">
-            <input port="1" stream="out:AssignTableFields_1"/>
-            <output port="1" stream="out:Split_1"/>
-            <output port="2" stream="out:Split_2"/>
-            <param name="output-count" value="2"/>
         </box>
         <box name="FilterToCCPTrig" type="filter">
             <input port="1" stream="out:Split_2"/>
@@ -376,16 +409,6 @@
                 </item>
             </target-list>
         </box>
-        <module-reference name="PublishPerf">
-            <input name="InputStream" port="1" stream="out:FilterCopy_1"/>
-            <output name="OutputStream" port="1" stream="out:PublishPerf_1"/>
-            <param name="parallel" value="true"/>
-            <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
-            <param name="file" value="com.autoever.poc.maineventflow.PerfFlow"/>
-            <parameter-bindings>
-                <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
-            </parameter-bindings>
-        </module-reference>
         <box name="Filter" type="filter">
             <input port="1" stream="out:MapToCCP_1"/>
             <output port="1" stream="out:Filter_1"/>
@@ -444,6 +467,16 @@
                 </expressions>
             </target-list>
         </box>
+        <module-reference name="PublishPerf">
+            <input name="InputStream" port="1" stream="out:FilterCopy_1"/>
+            <output name="OutputStream" port="1" stream="out:PublishPerf_1"/>
+            <param name="parallel" value="true"/>
+            <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
+            <param name="file" value="com.autoever.poc.maineventflow.PerfFlow"/>
+            <parameter-bindings>
+                <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
+            </parameter-bindings>
+        </module-reference>
         <box name="PublishCCP" type="outputadapter">
             <input port="1" stream="out:Filter_1"/>
             <output port="1" stream="out:PublishCCP_1"/>
