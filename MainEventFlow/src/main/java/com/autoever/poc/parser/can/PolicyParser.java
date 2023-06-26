@@ -241,6 +241,8 @@ public class PolicyParser implements Parseable, DataSavable {
 	public Object toSave() {
 		// TODO Auto-generated method stub
 		try {
+			if(filename.equals("BM-15C-0083")) System.err.println("toSave");
+
 			String params = String.format("%d;%s;%s", rootCount, KeyTrig.toSave(), 
 					evalList.stream().map(e -> e.trigger).map(DataSavable::toSave).map(o -> (String)o).collect(Collectors.joining(":"))  );
 			Tuple saveTuple = saveSchema.createTuple();
@@ -256,6 +258,7 @@ public class PolicyParser implements Parseable, DataSavable {
 	public void fromSave(Object saved) {
 		// TODO Auto-generated method stub
 		try {
+			if(filename.equals("BM-15C-0083")) System.err.println("fromSave");
 			if(saved == null) return;
 			String savedData = ((Tuple)saved).getString(0);
 			if(savedData == null || savedData.isEmpty()) return;

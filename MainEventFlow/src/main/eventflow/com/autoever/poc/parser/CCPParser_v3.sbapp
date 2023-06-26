@@ -61,7 +61,7 @@
             </table-schema>
         </table-schemas>
         <data name="CCPParamsTable" shared="false" source="input" type="querytable">
-            <param name="storage-method" value="heap"/>
+            <param name="storage-method" value="transactional_memory"/>
             <param name="replicated" value="false"/>
             <param name="table-schema" value="CCPParamsSchema"/>
             <param name="truncate" value="false"/>
@@ -92,7 +92,7 @@
                 <item name="input" selection="all"/>
                 <item name="current" selection="none"/>
                 <expressions>
-                    <include field="result">PutODTParams(kafkaMessage.VehicleKeyID, prevData)</include>
+                    <include field="result">AssignODTParams(kafkaMessage.VehicleKeyID, prevData)</include>
                 </expressions>
             </target-list>
             <target-list name="insert">

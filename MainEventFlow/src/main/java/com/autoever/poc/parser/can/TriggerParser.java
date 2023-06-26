@@ -217,7 +217,7 @@ public class TriggerParser implements DataSavable {
 			int startbyte = trigger.sigstartbit >> 3;
 			int lastbyte = (trigger.sigstartbit + trigger.siglength -1) >> 3;
 			
-			trigger.time = canmsg.getDouble("DeltaTime");
+			trigger.time = canmsg.getDouble(RawDataField.DeltaTime.getIndex());
 
 			rawvalue = GetRawValue(trigger.sigendian, rawdata, trigger.sigtype, trigger.sigstartbit, trigger.siglength); 
 
@@ -377,7 +377,7 @@ public class TriggerParser implements DataSavable {
 			int frameType = (rawdata[0] & 0xff) >> 4;;
 			int length;
 
-			trigger.time = udsmsg.getDouble("DeltaTime");
+			trigger.time = udsmsg.getDouble(RawDataField.DeltaTime.getIndex());
 			
 			if(frameType == 0) {
 				length = rawdata[0] & 0xF;

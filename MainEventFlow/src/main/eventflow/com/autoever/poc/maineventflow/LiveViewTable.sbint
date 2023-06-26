@@ -33,7 +33,7 @@
             <field description="절연 저항값" name="ISOL" type="long"/>
             <field description="Cell 저항값(1초 변화량)" name="RESs" type="string"/>
         </schema>
-        <schema name="CCPTrigDataTable">
+        <schema name="CCPTrigDataSchema">
             <field description="sb 에서 생성한 메시지 ID(CCP table 과 동일한 ID)" name="messageID" type="string"/>
             <field description="단말기 ID (KafkaMessage)" name="terminalID" type="string"/>
             <field description="차량번호 (KafkaMessage)" name="vehicleKeyID" type="long"/>

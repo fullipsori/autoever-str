@@ -34,26 +34,26 @@
             <field description="Cell 저항값(1초 변화량)" name="RESs" type="string"/>
         </schema>
         <schema name="CCPTrigDataSchema">
-            <field name="messageID" type="string"/>
-            <field name="terminalID" type="string"/>
-            <field name="vehicleKeyID" type="long"/>
-            <field name="mgmtNO" type="string"/>
-            <field name="realTime" type="long"/>
-            <field name="rootCount" type="int"/>
-            <field name="matchFlag" type="string"/>
-            <field name="cellData" type="string"/>
-            <field name="cellDiffData" type="string"/>
-            <field name="chargingNow" type="long"/>
-            <field name="deltaTB" type="double"/>
-            <field name="deltaVol" type="long"/>
-            <field name="dVol" type="string"/>
-            <field name="maxDVolCell" type="string"/>
-            <field name="maxDVolVal" type="double"/>
-            <field name="IBM" type="double"/>
-            <field name="ISOL" type="long"/>
-            <field name="maxTB" type="double"/>
-            <field name="msrTBData" type="string"/>
-            <field name="SOC" type="double"/>
+            <field description="sb 에서 생성한 메시지 ID(CCP table 과 동일한 ID)" name="messageID" type="string"/>
+            <field description="단말기 ID (KafkaMessage)" name="terminalID" type="string"/>
+            <field description="차량번호 (KafkaMessage)" name="vehicleKeyID" type="long"/>
+            <field description="차량 관리 번호 (연구소 제공 자료)" name="mgmtNO" type="string"/>
+            <field description="event 발생 시간" name="realTime" type="long"/>
+            <field description="주행번호 (KafkaMessage)" name="rootCount" type="int"/>
+            <field description="Trig 타입('cellDiff', 'deltaVol', 'deltaTB', 'ISOL', 'maxTB')" name="matchFlag" type="string"/>
+            <field description="cell 데이터들(90 개)을 하나의 문자열로 조인" name="cellData" type="string"/>
+            <field description="이전과 현재 cell 데이터의 차이값들(90개)를 하나의 문자열로 조인" name="cellDiffData" type="string"/>
+            <field description="충전중/주행중" name="chargingNow" type="long"/>
+            <field description="최대-최소 온도" name="deltaTB" type="double"/>
+            <field description="최대 전압 - 최소 전압" name="deltaVol" type="long"/>
+            <field description="각 셀 전압 변화의 편차" name="dVol" type="string"/>
+            <field description="셀 전압 편차 최대인 셀" name="maxDVolCell" type="string"/>
+            <field description="셀 전압 편차 최대인 셀의 값" name="maxDVolVal" type="double"/>
+            <field description="배터리 전류값" name="IBM" type="double"/>
+            <field description="절연 저항값" name="ISOL" type="long"/>
+            <field description="최대 온도" name="maxTB" type="double"/>
+            <field description="배터리팩내 개별 온도 센서 정보들의 하나의 문자열로 조인" name="msrTBData" type="string"/>
+            <field description="배터리 SOC 상태" name="SOC" type="double"/>
         </schema>
         <schema name="CanDataTableSchema">
             <field description="sb 에서 생성한 message unique id (vehicleKeyID + timestamp + seq_num)" name="messageID" type="string"/>

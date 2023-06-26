@@ -68,14 +68,18 @@ public class ParseUtil {
 		return CompleteDataType.forTuple(PolicyParser.saveSchema);
 	}
 
-	@CustomFunctionResolver("PutPolicyParamsCustomFunctionResolver0")
-	public static boolean PutPolicyParams(String policy, Tuple tuple) {
+	@CustomFunctionResolver("AssignPolicyParamsCustomFunctionResolver0")
+	public static boolean AssignPolicyParams(String policy, Tuple tuple) {
+		if(policy.equals("BM-15C-0083")) {
+		System.err.println("AssignPolicy:"+ policy);
+		}
 		PolicyParser policyParser = PolicyRepository.getInstance().mPolicyMap.get(policy);
 		policyParser.fromSave(tuple);
+
 		return true;
 	}
 	
-	public static CompleteDataType PutPolicyParamsCustomFunctionResolver0(CompleteDataType policy, CompleteDataType tuple) {
+	public static CompleteDataType AssignPolicyParamsCustomFunctionResolver0(CompleteDataType policy, CompleteDataType tuple) {
 		return CompleteDataType.forBoolean();
 	}
 
@@ -89,14 +93,14 @@ public class ParseUtil {
 		return CompleteDataType.forTuple(ODTParser.saveSchema);
 	}
 
-	@CustomFunctionResolver("PutODTParamsCustomFunctionResolver0")
-	public static boolean PutODTParams(long vehicleKeyID, Tuple tuple) {
+	@CustomFunctionResolver("AssignODTParamsCustomFunctionResolver0")
+	public static boolean AssignODTParams(long vehicleKeyID, Tuple tuple) {
 		ODTParser odtParser = ODTRepository.getInstance().mODTMap.get(String.valueOf(vehicleKeyID));
 		odtParser.fromSave(tuple);
 		return true;
 	}
 	
-	public static CompleteDataType PutODTParamsCustomFunctionResolver0(CompleteDataType vehicleKeyID, CompleteDataType tuple) {
+	public static CompleteDataType AssignODTParamsCustomFunctionResolver0(CompleteDataType vehicleKeyID, CompleteDataType tuple) {
 		return CompleteDataType.forBoolean();
 	}
 }

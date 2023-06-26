@@ -21,11 +21,15 @@
         </parameter-definitions>
         <dynamic-variables/>
         <data name="CCPParamsTable" shared="false" source="concrete" type="querytable">
-            <param name="storage-method" value="heap"/>
+            <param name="storage-method" value="transactional_memory"/>
             <param name="replicated" value="false"/>
             <param name="table-schema" value="CCPParamsSchema"/>
             <param name="truncate" value="false"/>
             <preload format="csv" mode="empty"/>
+            <table-partitioning>
+                <param name="data-distribution-policy-name" value="default-dynamic-data-distribution-policy"/>
+                <param name="data-mapper-type" value="round-robin"/>
+            </table-partitioning>
         </data>
         <stream name="controlFeedSB">
             <schema>

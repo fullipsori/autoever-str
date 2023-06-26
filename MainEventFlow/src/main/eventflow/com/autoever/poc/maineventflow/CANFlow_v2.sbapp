@@ -22,11 +22,15 @@
         </parameter-definitions>
         <dynamic-variables/>
         <data name="CanParamsTable" shared="false" source="concrete" type="querytable">
-            <param name="storage-method" value="heap"/>
+            <param name="storage-method" value="transactional_memory"/>
             <param name="replicated" value="false"/>
             <param name="table-schema" value="CanParamsSchema"/>
             <param name="truncate" value="false"/>
             <preload format="csv" mode="empty"/>
+            <table-partitioning>
+                <param name="data-distribution-policy-name" value="default-dynamic-data-distribution-policy"/>
+                <param name="data-mapper-type" value="round-robin"/>
+            </table-partitioning>
         </data>
         <stream name="ControlStream">
             <schema>
@@ -109,17 +113,16 @@
             <input dispatch="broadcast" name="InputVarStream" port="1" stream="out:RemoveUnused_1"/>
             <input dispatch="numerical" key="int(kafkaMessage.VehicleKeyID)" name="InputStream" port="2" stream="InputStream"/>
             <output name="OutputParserStream" port="1" stream="OutputParserStream"/>
-            <output name="UpdateVarStream" port="2" stream="OutputVarStream"/>
+            <output name="DebugStream" port="2" stream="OutputVarStream"/>
             <output name="OutputRawDataStream" port="3" stream="OutputRawDataStream"/>
             <param name="parallel" value="true"/>
-            <param name="parallel-region-queue-max-processing-batch-size" value="5"/>
             <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
             <multiplicity number="2" type="concrete"/>
             <param name="file" value="com.autoever.poc.parser.CANParser_v3"/>
             <input-dataref name="CanParamsTable" table="CanParamsTable"/>
             <parameter-bindings>
-                <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
                 <binding name="RESOURCE_ROOT" value="${RESOURCE_ROOT}"/>
+                <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
             </parameter-bindings>
         </module-reference>
         <output-stream name="OutputParserStream"/>
