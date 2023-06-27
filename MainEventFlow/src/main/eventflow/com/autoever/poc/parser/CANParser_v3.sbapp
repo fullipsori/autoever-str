@@ -52,7 +52,7 @@
                 </primary-index>
             </table-schema>
         </table-schemas>
-        <data name="CanParamsTable" shared="false" source="input" type="querytable">
+        <data name="QueryTable" shared="false" source="input" type="querytable">
             <param name="storage-method" value="transactional_memory"/>
             <param name="replicated" value="false"/>
             <param name="table-schema" value="CanParamsSchema"/>
@@ -64,7 +64,7 @@
         <box name="GetPrevData" type="query">
             <input port="1" stream="InputStream"/>
             <output port="1" stream="out:GetPrevData_1"/>
-            <dataref id="querytable" name="CanParamsTable"/>
+            <dataref id="querytable" name="QueryTable"/>
             <param name="operation" value="read"/>
             <param name="where" value="primary-key"/>
             <param name="limit" value="1"/>
@@ -80,7 +80,6 @@
                 <item name="input" selection="all"/>
                 <item name="current" selection="all"/>
                 <item name="old" selection="none"/>
-                <item name="new" selection="none"/>
             </target-list>
             <target-list name="insert">
                 <item name="input" selection="all"/>
@@ -130,7 +129,6 @@
                     <remove field="eventName"/>
                     <remove field="eventValue"/>
                     <remove field="terminalID"/>
-                    <remove field="prevData"/>
                 </item>
             </target-list>
         </box>
@@ -204,16 +202,6 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="GetParamsToSave" type="map">
-            <input port="1" stream="out:MarkerEnded_1"/>
-            <output port="1" stream="out:GetParamsToSave_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="prevData">GetPolicyParams(kafkaMessage.TerminalID)</include>
-                </expressions>
-            </target-list>
-        </box>
         <box name="GetTrigData" type="map">
             <input port="1" stream="out:FilterKeyFlag_1"/>
             <output port="1" stream="out:GetTrigData_1"/>
@@ -224,16 +212,68 @@
                 </expressions>
             </target-list>
         </box>
+        <box name="MarkerUnion" type="union">
+            <input port="1" stream="out:MarkerStarted_1"/>
+            <input port="2" stream="out:MarkerEnded_1"/>
+            <output port="1" stream="out:MarkerUnion_1"/>
+            <param name="strict" value="false"/>
+        </box>
+        <box name="AGGToHCP" type="aggregate">
+            <input port="1" stream="out:MarkerUnion_1"/>
+            <output port="1" stream="out:AGGToHCP_1"/>
+            <param name="dimension-name.0" value="Dimension1"/>
+            <param name="dimension-type.0" value="Predicate"/>
+            <param name="dimension-partial.0" value="no"/>
+            <param name="dimension-open-predicate.0" value="IsStarted"/>
+            <param name="dimension-close-predicate.0" value="IsEnded"/>
+            <param name="dimension-emit-close-first.0" value="false"/>
+            <param name="output-group-by" value="true"/>
+            <target-list>
+                <expressions>
+                    <include field="*">lastval(*)</include>
+                    <replace field="perfData.t2_time">firstval(perfData.t2_time)</replace>
+                    <replace field="perfData.t3_time">lastval(perfData.t3_time)</replace>
+                </expressions>
+            </target-list>
+        </box>
         <box name="FilterTrigData" type="filter">
             <input port="1" stream="out:GetTrigData_1"/>
             <output port="1" stream="out:FilterTrigData_1"/>
             <param name="autogen-nomatch-port" value="false"/>
             <param name="expression.0" value="!isempty(trigDataList)"/>
         </box>
-        <box name="PutCurrentData" type="query">
+        <box name="GetParamsToSave" type="map">
+            <input port="1" stream="out:AGGToHCP_1"/>
+            <output port="1" stream="out:GetParamsToSave_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="prevData">GetPolicyParams(kafkaMessage.TerminalID)</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Iter_TrigData" type="iterate">
+            <input port="1" stream="out:FilterTrigData_1"/>
+            <output port="1" stream="out:Iter_TrigData_1"/>
+            <param name="iterate-expr" value="trigDataList"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="*">each.element.*</include>
+                    <include field="baseTime">kafkaMessage.BaseTime</include>
+                    <include field="messageID">messageID</include>
+                    <include field="realTime">long(GetLocalTime(kafkaMessage.BaseTime + long(each.element.deltaTime), ''))</include>
+                    <include field="rootCount">kafkaMessage.RootCount</include>
+                    <include field="terminalID">kafkaMessage.TerminalID</include>
+                    <include field="vehicleKeyID">kafkaMessage.VehicleKeyID</include>
+                    <include field="mgmtNO">mgmtNO</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Query" type="query">
             <input port="1" stream="out:GetParamsToSave_1"/>
-            <output port="1" stream="out:PutCurrentData_1"/>
-            <dataref id="querytable" name="CanParamsTable"/>
+            <output port="1" stream="out:Query_1"/>
+            <dataref id="querytable" name="QueryTable"/>
             <param name="operation" value="write"/>
             <param name="where" value="primary-key"/>
             <param name="key-field.0" value="terminalID"/>
@@ -262,48 +302,6 @@
                 <item name="input" selection="all"/>
             </target-list>
         </box>
-        <box name="Iter_TrigData" type="iterate">
-            <input port="1" stream="out:FilterTrigData_1"/>
-            <output port="1" stream="out:Iter_TrigData_1"/>
-            <param name="iterate-expr" value="trigDataList"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="*">each.element.*</include>
-                    <include field="baseTime">kafkaMessage.BaseTime</include>
-                    <include field="messageID">messageID</include>
-                    <include field="realTime">long(GetLocalTime(kafkaMessage.BaseTime + long(each.element.deltaTime), ''))</include>
-                    <include field="rootCount">kafkaMessage.RootCount</include>
-                    <include field="terminalID">kafkaMessage.TerminalID</include>
-                    <include field="vehicleKeyID">kafkaMessage.VehicleKeyID</include>
-                    <include field="mgmtNO">mgmtNO</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="MarkerUnion" type="union">
-            <input port="1" stream="out:MarkerStarted_1"/>
-            <input port="2" stream="out:PutCurrentData_1"/>
-            <output port="1" stream="out:MarkerUnion_1"/>
-            <param name="strict" value="false"/>
-        </box>
-        <box name="AGGToHCP" type="aggregate">
-            <input port="1" stream="out:MarkerUnion_1"/>
-            <output port="1" stream="out:AGGToHCP_1"/>
-            <param name="dimension-name.0" value="Dimension1"/>
-            <param name="dimension-type.0" value="Predicate"/>
-            <param name="dimension-partial.0" value="no"/>
-            <param name="dimension-open-predicate.0" value="IsStarted"/>
-            <param name="dimension-close-predicate.0" value="IsEnded"/>
-            <param name="dimension-emit-close-first.0" value="false"/>
-            <param name="output-group-by" value="true"/>
-            <target-list>
-                <expressions>
-                    <include field="*">lastval(*)</include>
-                    <replace field="perfData.t2_time">firstval(perfData.t2_time)</replace>
-                    <replace field="perfData.t3_time">lastval(perfData.t3_time)</replace>
-                </expressions>
-            </target-list>
-        </box>
         <box name="Split_status" type="split">
             <input port="1" stream="out:Iter_TrigData_1"/>
             <output port="1" stream="out:Split_status_1"/>
@@ -311,7 +309,7 @@
             <param name="output-count" value="2"/>
         </box>
         <box name="EndedCanProc" type="map">
-            <input port="1" stream="out:AGGToHCP_1"/>
+            <input port="1" stream="out:Query_1"/>
             <output port="1" stream="out:EndedCanProc_1"/>
             <target-list>
                 <item name="input" selection="none"/>

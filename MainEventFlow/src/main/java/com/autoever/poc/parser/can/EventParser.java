@@ -96,10 +96,6 @@ public class EventParser implements EventCallback, DataSavable {
 		return Arrays.asList(name, String.valueOf(preTime), String.valueOf(postTime), category, "RET", value);
 	}
 
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-	}
-
 	@Override
 	public void initData(int param) {
 		// TODO Auto-generated method stub
@@ -124,6 +120,10 @@ public class EventParser implements EventCallback, DataSavable {
 	public Schema getSaveSchema() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
 	}
 
 }

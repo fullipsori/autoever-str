@@ -91,7 +91,6 @@
             <target-list>
                 <item name="input" selection="all"/>
                 <item name="current" selection="all"/>
-                <item name="old" selection="none"/>
             </target-list>
             <target-list name="insert">
                 <item name="input" selection="all"/>
@@ -119,9 +118,9 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="RemoveUnused" type="map">
+        <box name="RemoveUnsused" type="map">
             <input port="1" stream="out:Split2_2"/>
-            <output port="1" stream="out:RemoveUnused_1"/>
+            <output port="1" stream="out:RemoveUnsused_1"/>
             <target-list>
                 <item name="input" selection="all">
                     <remove field="prevData"/>
@@ -130,7 +129,7 @@
         </box>
         <output-stream name="UpdateVarStream"/>
         <box name="CCPRawParser" type="java">
-            <input port="1" stream="out:RemoveUnused_1"/>
+            <input port="1" stream="out:RemoveUnsused_1"/>
             <output port="1" stream="out:CCPRawParser_1"/>
             <output port="2" stream="OutputRawDataStream"/>
             <param name="start:state" value="true"/>
@@ -219,70 +218,9 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="GetParamsToSave" type="map">
-            <input port="1" stream="out:MarkerEnded_1"/>
-            <output port="1" stream="out:GetParamsToSave_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="prevData">GetODTParams(kafkaMessage.VehicleKeyID)</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="gen_seq_id" type="seqnum">
-            <input port="1" stream="out:ADDElem_1"/>
-            <output port="1" stream="out:gen_seq_id_1"/>
-            <param name="output-field" value="seq_id"/>
-            <param name="sequence-id" value="sequenceid"/>
-            <param name="update-expression" value="sequenceid + 1"/>
-        </box>
-        <box name="SaveParams" type="query">
-            <input port="1" stream="out:GetParamsToSave_1"/>
-            <output port="1" stream="out:SaveParams_1"/>
-            <dataref id="querytable" name="CCPParamsTable"/>
-            <param name="operation" value="write"/>
-            <param name="where" value="primary-key"/>
-            <param name="key-field.0" value="vehicleKeyID"/>
-            <param name="key-value.0" value="kafkaMessage.VehicleKeyID"/>
-            <param name="write-type" value="insert"/>
-            <param name="if-write-fails" value="force"/>
-            <param name="no-match-mode" value="output-no-match-null"/>
-            <param name="order-by-direction" value="none"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <item name="old" selection="none"/>
-                <item name="new" selection="none"/>
-                <item name="current" selection="none"/>
-            </target-list>
-            <target-list name="insert">
-                <item name="input" selection="all"/>
-                <expressions>
-                    <set field="prevData">input.prevData</set>
-                </expressions>
-            </target-list>
-            <target-list name="update">
-                <item name="input" selection="all"/>
-            </target-list>
-            <target-list name="no-match">
-                <item name="input" selection="all"/>
-            </target-list>
-        </box>
-        <box name="addSeqId" type="map">
-            <input port="1" stream="out:gen_seq_id_1"/>
-            <output port="1" stream="out:addSeqId_1"/>
-            <target-list>
-                <item name="input" selection="all">
-                    <remove field="seq_id"/>
-                </item>
-                <expressions>
-                    <replace field="messageID">messageID + '_' + seq_id</replace>
-                    <include field="dVolMaxField">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetMaxDVol', dVols)</include>
-                </expressions>
-            </target-list>
-        </box>
         <box name="MarkerUnion" type="union">
             <input port="1" stream="out:MarkerStarted_1"/>
-            <input port="2" stream="out:SaveParams_1"/>
+            <input port="2" stream="out:MarkerEnded_1"/>
             <output port="1" stream="out:MarkerUnion_1"/>
             <param name="strict" value="false"/>
         </box>
@@ -301,6 +239,36 @@
                     <include field="*">lastval(*)</include>
                     <replace field="perfData.t2_time">firstval(perfData.t2_time)</replace>
                     <replace field="perfData.t3_time">lastval(perfData.t3_time)</replace>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="gen_seq_id" type="seqnum">
+            <input port="1" stream="out:ADDElem_1"/>
+            <output port="1" stream="out:gen_seq_id_1"/>
+            <param name="output-field" value="seq_id"/>
+            <param name="sequence-id" value="sequenceid"/>
+            <param name="update-expression" value="sequenceid + 1"/>
+        </box>
+        <box name="addSeqId" type="map">
+            <input port="1" stream="out:gen_seq_id_1"/>
+            <output port="1" stream="out:addSeqId_1"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <remove field="seq_id"/>
+                </item>
+                <expressions>
+                    <replace field="messageID">messageID + '_' + seq_id</replace>
+                    <include field="dVolMaxField">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetMaxDVol', dVols)</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="GetParamsToSave" type="map">
+            <input port="1" stream="out:AGGToHCP_1"/>
+            <output port="1" stream="out:GetParamsToSave_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="prevData">GetODTParams(kafkaMessage.VehicleKeyID)</include>
                 </expressions>
             </target-list>
         </box>
@@ -341,8 +309,38 @@
                 </expressions>
             </target-list>
         </box>
+        <box name="SaveParams" type="query">
+            <input port="1" stream="out:GetParamsToSave_1"/>
+            <output port="1" stream="out:SaveParams_1"/>
+            <dataref id="querytable" name="CCPParamsTable"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="vehicleKeyID"/>
+            <param name="key-value.0" value="kafkaMessage.VehicleKeyID"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="force"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="prevData">input.prevData</set>
+                </expressions>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
         <box name="EndedCCPProc" type="map">
-            <input port="1" stream="out:AGGToHCP_1"/>
+            <input port="1" stream="out:SaveParams_1"/>
             <output port="1" stream="out:EndedCCPProc_1"/>
             <target-list>
                 <item name="input" selection="none"/>

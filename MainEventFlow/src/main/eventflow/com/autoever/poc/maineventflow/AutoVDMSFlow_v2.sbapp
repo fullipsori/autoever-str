@@ -289,8 +289,58 @@
             <output port="1" stream="out:Union4_1"/>
             <param name="strict" value="false"/>
         </box>
-        <box name="InputAdapter" type="inputadapter">
+        <box name="DefaultGroup" type="map">
             <input port="1" stream="out:Union2_1"/>
+            <output port="1" stream="out:DefaultGroup_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <replace field="groupId">coalesce(input.groupId, "${KAFKA_GROUP_ID}")</replace>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="LoadEVT" type="map">
+            <input port="1" stream="out:Union4_1"/>
+            <output port="1" stream="out:LoadEVT_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="evtFolder">"${RESOURCE_ROOT}/evt"</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="LoadPolicy" type="map">
+            <input port="1" stream="out:Union3_1"/>
+            <output port="1" stream="out:LoadPolicy_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="policyFolder">"${RESOURCE_ROOT}/policy"</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="GenEVTKeys" type="map">
+            <input port="1" stream="out:LoadEVT_1"/>
+            <output port="1" stream="out:GenEVTKeys_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="CCPVIDs">GetFilenameListInPath(evtFolder, 'evt')</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="GenPolicyKeys" type="map">
+            <input port="1" stream="out:LoadPolicy_1"/>
+            <output port="1" stream="out:GenPolicyKeys_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="policyFiles">GetFilenameListInPath(policyFolder, 'xml')</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="InputAdapter" type="inputadapter">
+            <input port="1" stream="out:DefaultGroup_1"/>
             <output port="1" stream="out:InputAdapter_1"/>
             <output port="2" stream="KafkaStatus"/>
             <param name="start:state" value="true"/>
@@ -320,64 +370,12 @@
             <param name="userDeserializerClass" value="com.autoever.poc.adapters.KafkaDeserializer"/>
             <param name="userKeyDeserializerClass" value=""/>
         </box>
-        <box name="LoadEVT" type="map">
-            <input port="1" stream="out:Union4_1"/>
-            <output port="1" stream="out:LoadEVT_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="evtFolder">"${RESOURCE_ROOT}/evt"</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="LoadPolicy" type="map">
-            <input port="1" stream="out:Union3_1"/>
-            <output port="1" stream="out:LoadPolicy_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="policyFolder">"${RESOURCE_ROOT}/policy"</include>
-                </expressions>
-            </target-list>
-        </box>
         <output-stream name="KafkaStatus"/>
-        <box name="GenEVTKeys" type="map">
-            <input port="1" stream="out:LoadEVT_1"/>
-            <output port="1" stream="out:GenEVTKeys_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="CCPVIDs">GetFilenameListInPath(evtFolder, 'evt')</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="GenPolicyKeys" type="map">
-            <input port="1" stream="out:LoadPolicy_1"/>
-            <output port="1" stream="out:GenPolicyKeys_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="policyFiles">GetFilenameListInPath(policyFolder, 'xml')</include>
-                </expressions>
-            </target-list>
-        </box>
         <box name="NotNull" type="filter">
             <input port="1" stream="out:InputAdapter_1"/>
             <output port="1" stream="out:NotNull_1"/>
             <param name="autogen-nomatch-port" value="false"/>
             <param name="expression.0" value="!isnull(message)"/>
-        </box>
-        <box name="FilterMessage" type="filter">
-            <input port="1" stream="out:NotNull_1"/>
-            <output port="1" stream="out:FilterMessage_1"/>
-            <output port="2" stream="out:FilterMessage_2"/>
-            <output port="3" stream="out:FilterMessage_3"/>
-            <output port="4" stream="out:FilterMessage_4"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="allowCan &amp;&amp; message.MessageType==1"/>
-            <param name="expression.1" value="allowDiag &amp;&amp; message.MessageType==4"/>
-            <param name="expression.2" value="allowGps &amp;&amp; message.MessageType==6"/>
-            <param name="expression.3" value="allowCcp &amp;&amp; message.MessageType==2"/>
         </box>
         <box name="Split" type="split">
             <input port="1" stream="out:GenPolicyKeys_1"/>
@@ -403,35 +401,25 @@
             <param name="autogen-nomatch-port" value="false"/>
             <param name="expression.0" value="command=='RELOAD'"/>
         </box>
+        <box name="FilterMessage" type="filter">
+            <input port="1" stream="out:NotNull_1"/>
+            <output port="1" stream="out:FilterMessage_1"/>
+            <output port="2" stream="out:FilterMessage_2"/>
+            <output port="3" stream="out:FilterMessage_3"/>
+            <output port="4" stream="out:FilterMessage_4"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="allowCan &amp;&amp; message.MessageType==1"/>
+            <param name="expression.1" value="allowDiag &amp;&amp; message.MessageType==4"/>
+            <param name="expression.2" value="allowGps &amp;&amp; message.MessageType==6"/>
+            <param name="expression.3" value="allowCcp &amp;&amp; message.MessageType==2"/>
+        </box>
         <box name="Union6" type="union">
             <input port="1" stream="out:Split_1"/>
             <input port="2" stream="out:Split3_1"/>
             <output port="1" stream="UpdateKeyStream"/>
             <param name="strict" value="false"/>
         </box>
-        <box name="UnionFilter" type="union">
-            <input port="1" stream="out:FilterMessage_1"/>
-            <input port="2" stream="out:FilterMessage_2"/>
-            <input port="3" stream="out:FilterMessage_3"/>
-            <input port="4" stream="out:FilterMessage_4"/>
-            <output port="1" stream="out:UnionFilter_1"/>
-            <param name="strict" value="false"/>
-        </box>
         <output-stream name="UpdateKeyStream"/>
-        <box name="InitializeData" type="map">
-            <input port="1" stream="out:UnionFilter_1"/>
-            <output port="1" stream="out:InitializeData_1"/>
-            <target-list>
-                <item name="input" selection="none">
-                    <include field="message"/>
-                    <declare field="messageID">message.VehicleKeyID + '_' + strftime("%Y%m%d%H%M%S%f", now())</declare>
-                </item>
-                <expressions>
-                    <include field="perfData">tuple(messageID AS kafka_msg_id, to_milliseconds(now()) AS start_time, 0L AS t1_time, 0L AS t2_time, 0L AS t3_time, 0L AS t4_time, 0L AS t5_time, 0L AS end_time, 0L AS elapsed, 0 AS data_count, message.RecordCount AS msg_count)</include>
-                    <include field="messageID">messageID</include>
-                </expressions>
-            </target-list>
-        </box>
         <box name="Map" type="map">
             <input port="1" stream="out:Filter2_1"/>
             <output port="1" stream="ToCanControlStream"/>
@@ -450,12 +438,34 @@
                 </item>
             </target-list>
         </box>
+        <box name="UnionFilter" type="union">
+            <input port="1" stream="out:FilterMessage_1"/>
+            <input port="2" stream="out:FilterMessage_2"/>
+            <input port="3" stream="out:FilterMessage_3"/>
+            <input port="4" stream="out:FilterMessage_4"/>
+            <output port="1" stream="out:UnionFilter_1"/>
+            <param name="strict" value="false"/>
+        </box>
         <output-stream name="ToCanControlStream">
             <param name="connection" value="'canflow.ControlStream'"/>
         </output-stream>
         <output-stream name="ToCCPControlStream">
             <param name="connection" value="'ccpflow.ControlStream'"/>
         </output-stream>
+        <box name="InitializeData" type="map">
+            <input port="1" stream="out:UnionFilter_1"/>
+            <output port="1" stream="out:InitializeData_1"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="message"/>
+                    <declare field="messageID">message.VehicleKeyID + '_' + strftime("%Y%m%d%H%M%S%f", now())</declare>
+                </item>
+                <expressions>
+                    <include field="perfData">tuple(messageID AS kafka_msg_id, to_milliseconds(now()) AS start_time, 0L AS t1_time, 0L AS t2_time, 0L AS t3_time, 0L AS t4_time, 0L AS t5_time, 0L AS end_time, 0L AS elapsed, 0 AS data_count, message.RecordCount AS msg_count)</include>
+                    <include field="messageID">messageID</include>
+                </expressions>
+            </target-list>
+        </box>
         <box name="DistributeMessageType" type="filter">
             <input port="1" stream="out:InitializeData_1"/>
             <output port="1" stream="out:DistributeMessageType_1"/>

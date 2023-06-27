@@ -21,6 +21,18 @@
             <parameter default="lv://localhost:11080" name="LV_SERVER_URI"/>
         </parameter-definitions>
         <dynamic-variables/>
+        <table-schemas>
+            <table-schema name="EventStatus">
+                <schema>
+                    <field name="terminalID" type="string"/>
+                    <field name="eventName" type="string"/>
+                    <field name="eventValue" type="string"/>
+                </schema>
+                <primary-index type="btree">
+                    <field name="terminalID"/>
+                </primary-index>
+            </table-schema>
+        </table-schemas>
         <data name="CanParamsTable" shared="false" source="concrete" type="querytable">
             <param name="storage-method" value="transactional_memory"/>
             <param name="replicated" value="false"/>
@@ -120,10 +132,10 @@
             <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
             <multiplicity number="2" type="concrete"/>
             <param name="file" value="com.autoever.poc.parser.CANParser_v3"/>
-            <input-dataref name="CanParamsTable" table="CanParamsTable"/>
+            <input-dataref name="QueryTable" table="CanParamsTable"/>
             <parameter-bindings>
-                <binding name="RESOURCE_ROOT" value="${RESOURCE_ROOT}"/>
                 <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
+                <binding name="RESOURCE_ROOT" value="${RESOURCE_ROOT}"/>
             </parameter-bindings>
         </module-reference>
         <output-stream name="OutputParserStream"/>

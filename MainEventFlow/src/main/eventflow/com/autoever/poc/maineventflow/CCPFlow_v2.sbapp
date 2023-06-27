@@ -12,7 +12,6 @@
         <import from="com.autoever.poc.maineventflow.AutoVDMSFlow_v2"/>
         <import alias="CCPParamsSchema" from="com.autoever.poc.parser.CCPParser_v3" item="CCPParamsSchema"/>
         <import alias="CCPRawParsedSchema" from="com.autoever.poc.parser.CCPParser_v3" item="CCPRawParsedSchema"/>
-        <import alias="FieldType" from="com.autoever.poc.parser.CCPParser_v3" item="FieldType"/>
         <parameter-definitions>
             <parameter default="D:/projects/vdms_env/Scripts/python.exe" name="PYTHON_EXECUTABLE"/>
             <parameter default="d:/projects/vdms/resources" name="RESOURCE_ROOT"/>

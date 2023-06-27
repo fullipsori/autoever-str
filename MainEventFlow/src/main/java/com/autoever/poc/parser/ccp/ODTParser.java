@@ -21,10 +21,8 @@ import org.w3c.dom.Element;
 import com.autoever.poc.parser.DataSavable;
 import com.autoever.poc.parser.Parseable;
 import com.streambase.sb.CompleteDataType;
-import com.streambase.sb.NullValueException;
 import com.streambase.sb.Schema;
 import com.streambase.sb.Tuple;
-import com.streambase.sb.TupleException;
 import com.streambase.sb.util.Pair;
 
 
