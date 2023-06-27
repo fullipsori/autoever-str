@@ -46,7 +46,7 @@
             <field description="When set to true, means delete operation." name="CQSDelete" type="bool"/>
         </schema>
         <schema name="AutoCCPTrigDataTablePrimaryKeySchema">
-            <field name="messageID" type="string"/>
+            <field description="sb ?—?„œ ?ƒ?„±?•œ ë©”ì‹œì§? ID(CCP table ê³? ?™?¼?•œ ID)" name="messageID" type="string"/>
         </schema>
     </named-schemas>
 </application>

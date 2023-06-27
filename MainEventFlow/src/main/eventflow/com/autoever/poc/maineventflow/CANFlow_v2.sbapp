@@ -116,6 +116,7 @@
             <output name="UpdateVarStream" port="2" stream="OutputVarStream"/>
             <output name="OutputRawDataStream" port="3" stream="OutputRawDataStream"/>
             <param name="parallel" value="true"/>
+            <param name="parallel-region-queue-max-processing-batch-size" value="5"/>
             <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
             <multiplicity number="2" type="concrete"/>
             <param name="file" value="com.autoever.poc.parser.CANParser_v3"/>

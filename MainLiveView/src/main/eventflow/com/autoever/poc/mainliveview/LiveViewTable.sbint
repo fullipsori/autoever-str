@@ -47,8 +47,6 @@
             <field description="최대-최소 온도" name="deltaTB" type="double"/>
             <field description="최대 전압 - 최소 전압" name="deltaVol" type="long"/>
             <field description="각 셀 전압 변화의 편차" name="dVol" type="string"/>
-            <field description="셀 전압 편차 최대인 셀" name="maxDVolCell" type="string"/>
-            <field description="셀 전압 편차 최대인 셀의 값" name="maxDVolVal" type="double"/>
             <field description="배터리 전류값" name="IBM" type="double"/>
             <field description="절연 저항값" name="ISOL" type="long"/>
             <field description="최대 온도" name="maxTB" type="double"/>

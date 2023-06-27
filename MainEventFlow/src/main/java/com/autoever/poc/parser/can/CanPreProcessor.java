@@ -40,9 +40,7 @@ public class CanPreProcessor implements PreProcessable {
 	public void initialize(Tuple kafkaMessage) {
 		try {
 			int rootCount = kafkaMessage.getInt(AutoKafkaField.RootCount.getIndex());
-			String terminalId = kafkaMessage.getString(AutoKafkaField.TerminalID.getIndex());
 			PolicyParser policyParser = PolicyRepository.getInstance().getMapper(kafkaMessage);
-			System.err.println("called : " + terminalId);
 			if(policyParser != null) policyParser.InitParams(rootCount);
 		}catch(Exception e) {}
 	}
