@@ -74,7 +74,7 @@
         <dynamic-variables>
             <dynamic-variable initial-expression="emptylist(string())" name="CCPVIDs" setter-expression="if(!isnull(input.CCPVIDs)) then input.CCPVIDs else CCPVIDs" setter-stream="UpdateKeyStream"/>
             <dynamic-variable initial-expression="true" name="allowCan" setter-expression="if (!isnull(input.allowCan)) then input.allowCan else allowCan" setter-stream="UpdateFilterStream"/>
-            <dynamic-variable initial-expression="false" name="allowCcp" setter-expression="if (!isnull(input.allowCcp)) then input.allowCcp else allowCcp" setter-stream="UpdateFilterStream"/>
+            <dynamic-variable initial-expression="true" name="allowCcp" setter-expression="if (!isnull(input.allowCcp)) then input.allowCcp else allowCcp" setter-stream="UpdateFilterStream"/>
             <dynamic-variable initial-expression="false" name="allowDiag" setter-expression="if (!isnull(input.allowDiag)) then input.allowDiag else allowDiag" setter-stream="UpdateFilterStream"/>
             <dynamic-variable initial-expression="false" name="allowGps" setter-expression="if (!isnull(input.allowGps)) then input.allowGps else allowGps" setter-stream="UpdateFilterStream"/>
             <dynamic-variable initial-expression="emptylist(string())" name="policyFiles" setter-expression="if(!isnull(input.policyFiles)) then input.policyFiles else policyFiles" setter-stream="UpdateKeyStream"/>

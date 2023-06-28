@@ -2,7 +2,6 @@ package com.autoever.poc.parser.can;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -17,25 +16,23 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import com.autoever.poc.adapters.VdmsRawParser.RawParserDataField;
 import com.autoever.poc.common.RawDataField;
 import com.autoever.poc.parser.DataSavable;
 import com.autoever.poc.parser.Parseable;
 import com.streambase.sb.CompleteDataType;
 import com.streambase.sb.Schema;
 import com.streambase.sb.Tuple;
-import com.streambase.sb.operator.Operator;
 
 public class PolicyParser implements Parseable, DataSavable {
 
-	private String filename;
-	private Path xmlFilePath;
+	private final String filename;
+	private final Path xmlFilePath;
 	private Element rootNode;
 
 	public String KeyStatus = "ON";
 	public TriggerParser KeyTrig;
 
-	private static EventCallback eventCallback = (a,b,c) -> {
+	private final static EventCallback eventCallback = (a,b,c) -> {
 		return null;
 	};
 	
@@ -178,6 +175,12 @@ public class PolicyParser implements Parseable, DataSavable {
 		}
 	}
 	
+	/**
+	 * InitParams 는 CanPreProcessor 에서 호출된다. 
+	 * this.rootCount 는 prevData 로 부터 초기화가 먼저 이뤄지고 현재 들어온 kafka 메세지의 rootCount 를 비교해서 초기화가 필요한 경우 진행된다.
+	 * @param rootCount
+	 * @return
+	 */
 	public boolean InitParams(int rootCount) { //check kafka.RootCount(trip number)
 
 		if(this.rootCount != rootCount) { 

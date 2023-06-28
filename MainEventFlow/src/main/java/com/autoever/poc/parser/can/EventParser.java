@@ -13,12 +13,12 @@ import com.streambase.sb.Schema;
 
 public class EventParser implements EventCallback, DataSavable {
 
-	private Element mNode;
-	public String category;
-	public String name;
-	public String bitwise;
-	public int preTime;
-	public int postTime;
+	private final Element mNode;
+	public final String category;
+	public final String name;
+	public final String bitwise;
+	public final int preTime;
+	public final int postTime;
 
 	public List<TriggerParser> triggers;
 	public List<Object> msgTable = new ArrayList<Object>();

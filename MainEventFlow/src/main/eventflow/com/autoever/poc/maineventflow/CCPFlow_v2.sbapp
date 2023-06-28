@@ -26,7 +26,7 @@
             <param name="truncate" value="false"/>
             <preload format="csv" mode="empty"/>
             <table-partitioning>
-                <param name="data-distribution-policy-name" value="default-dynamic-data-distribution-policy"/>
+                <param name="data-distribution-policy-name" value="vdms-dynamic-data-distribution-policy"/>
                 <param name="data-mapper-type" value="round-robin"/>
             </table-partitioning>
         </data>

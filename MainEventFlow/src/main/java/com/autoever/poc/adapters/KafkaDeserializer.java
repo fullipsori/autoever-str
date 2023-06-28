@@ -14,7 +14,6 @@ import com.autoever.poc.parser.AutoKafkaField;
 import com.streambase.sb.Schema;
 import com.streambase.sb.StreamBaseException;
 import com.streambase.sb.Tuple;
-import com.streambase.sb.TupleException;
 import com.streambase.sb.util.Base64;
 
 public class KafkaDeserializer implements org.apache.kafka.common.serialization.Deserializer<Tuple> {

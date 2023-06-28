@@ -77,8 +77,7 @@ public class TriggerParser implements DataSavable {
 		returnVal.clear();
 		
 		NodeList nodeList = mNode.getChildNodes();
-		Optional<Element> msgxml = Parseable.GetElement.apply(nodeList, "Message");
-		msgxml.ifPresent(e -> {
+		Parseable.GetElement.apply(nodeList, "Message").ifPresent(e -> {
 			ch = Integer.parseInt(e.getAttribute("Channel"));
 			msgType = e.getAttribute("type");
 			if(msgType.equals("E")) {
@@ -91,8 +90,7 @@ public class TriggerParser implements DataSavable {
 		rootType = mNode.getAttribute("type");
 		
 		if(rootType.equals("CAN")) {
-			Optional<Element> sigxml = PolicyParser.GetElement.apply(nodeList, "Siganl");
-			sigxml.ifPresent(e -> {
+			PolicyParser.GetElement.apply(nodeList, "Siganl").ifPresent(e -> {
 				sigstartbit = Integer.parseInt(e.getAttribute("Startbit"));
 				siglength = Integer.parseInt(e.getAttribute("Length"));
 				sigendian = e.getAttribute("endian");
@@ -101,8 +99,7 @@ public class TriggerParser implements DataSavable {
 				sigoffset = Double.parseDouble(e.getAttribute("offset"));
 			});
 
-			Optional<Element> conditionxml = Parseable.GetElement.apply(nodeList, "condition");
-			conditionxml.ifPresent(e -> {
+			Parseable.GetElement.apply(nodeList, "condition").ifPresent(e -> {
 				conditionformula = e.getAttribute("compare");
 				conditionvalue = Double.parseDouble(e.getAttribute("value"));
 				conditionduration = Double.parseDouble(e.getAttribute("duration"));
@@ -122,8 +119,7 @@ public class TriggerParser implements DataSavable {
 			dm1Data = null;
 			dmFlag = false;
 			
-			Optional<Element> msgxml2 = Parseable.GetElement.apply(mNode.getChildNodes(), "TPDT");
-			msgxml2.ifPresent(e -> {
+			Parseable.GetElement.apply(mNode.getChildNodes(), "TPDT").ifPresent(e -> {
 				if("E".equals(msgType)) {
 					tpdtID = (int)Long.parseLong(e.getAttribute("ID").substring(2/*0x*/), 16) & 0x00FFFFFF;
 				}else {
