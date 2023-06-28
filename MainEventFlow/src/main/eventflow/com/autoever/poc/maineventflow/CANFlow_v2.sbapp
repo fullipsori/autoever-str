@@ -21,18 +21,6 @@
             <parameter default="lv://localhost:11080" name="LV_SERVER_URI"/>
         </parameter-definitions>
         <dynamic-variables/>
-        <table-schemas>
-            <table-schema name="EventStatus">
-                <schema>
-                    <field name="terminalID" type="string"/>
-                    <field name="eventName" type="string"/>
-                    <field name="eventValue" type="string"/>
-                </schema>
-                <primary-index type="btree">
-                    <field name="terminalID"/>
-                </primary-index>
-            </table-schema>
-        </table-schemas>
         <data name="CanParamsTable" shared="false" source="concrete" type="querytable">
             <param name="storage-method" value="transactional_memory"/>
             <param name="replicated" value="false"/>
@@ -51,12 +39,7 @@
             </schema>
         </stream>
         <stream name="InputStream" schema="MainOutputSchema"/>
-        <stream name="UpdateVarStream">
-            <schema>
-                <field name="nameFilter" type="string"/>
-                <field name="baseValue" type="string"/>
-            </schema>
-        </stream>
+        <stream name="UpdateVarStream" schema="ControlCANSchema"/>
         <box name="Initialize" type="inputadapter">
             <output port="1" stream="out:Initialize_1"/>
             <param name="start:state" value="true"/>

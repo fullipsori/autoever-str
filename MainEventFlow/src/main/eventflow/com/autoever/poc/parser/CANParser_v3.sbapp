@@ -38,10 +38,10 @@
         <table-schemas>
             <table-schema name="CanParamsSchema">
                 <schema>
-                    <field name="terminalID" type="string"/>
-                    <field name="eventName" type="string"/>
-                    <field name="eventValue" type="string"/>
-                    <field name="prevData" type="tuple">
+                    <field description="kafka terminalID" name="terminalID" type="string"/>
+                    <field description="값의 변경을 모니터링 하고자 하는 Event Name" name="eventName" type="string"/>
+                    <field description="Event Name 의 가장 최신값" name="eventValue" type="string"/>
+                    <field description="파싱중에 변경된 파라미터 정보들" name="prevData" type="tuple">
                         <schema>
                             <field name="params" type="string"/>
                         </schema>
@@ -80,6 +80,7 @@
                 <item name="input" selection="all"/>
                 <item name="current" selection="all"/>
                 <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
             </target-list>
             <target-list name="insert">
                 <item name="input" selection="all"/>
@@ -286,6 +287,7 @@
                 <item name="input" selection="all"/>
                 <item name="old" selection="none"/>
                 <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
             </target-list>
             <target-list name="insert">
                 <item name="input" selection="all"/>
