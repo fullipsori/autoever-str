@@ -13,7 +13,7 @@ import com.streambase.sb.Tuple;
 import com.streambase.sb.TupleException;
 import com.streambase.sb.client.CustomFunctionResolver;
 
-public class CustomUtils {
+public class CCPCustomUtils {
 
 	public static long GetFieldValue(Tuple tuple, int index) {
 		try {
@@ -27,8 +27,8 @@ public class CustomUtils {
 	@CustomFunctionResolver("GetDeltaValueCustomUtilsResolver0")
 	public static long GetDeltaValue(List<Tuple> datas){
 		if(datas == null) return 0;
-		return datas.stream().mapToLong(tuple -> CustomUtils.GetFieldValue(tuple, 1)).max().getAsLong()
-				- datas.stream().mapToLong(tuple -> CustomUtils.GetFieldValue(tuple, 1)).min().getAsLong();
+		return datas.stream().mapToLong(tuple -> CCPCustomUtils.GetFieldValue(tuple, 1)).max().getAsLong()
+				- datas.stream().mapToLong(tuple -> CCPCustomUtils.GetFieldValue(tuple, 1)).min().getAsLong();
 	}
 
 	public static CompleteDataType GetDeltaValueCustomUtilsResolver0(CompleteDataType datas) {
@@ -38,7 +38,7 @@ public class CustomUtils {
 	@CustomFunctionResolver("GetMaxValueCustomUtilsResolver0")
 	public static long GetMaxValue(List<Tuple> datas){
 		if(datas == null) return 0;
-		return datas.stream().mapToLong(tuple -> CustomUtils.GetFieldValue(tuple, 1)).max().getAsLong();
+		return datas.stream().mapToLong(tuple -> CCPCustomUtils.GetFieldValue(tuple, 1)).max().getAsLong();
 	}
 
 	public static CompleteDataType GetMaxValueCustomUtilsResolver0(CompleteDataType datas) {
@@ -48,7 +48,7 @@ public class CustomUtils {
 	@CustomFunctionResolver("GetMinValueCustomUtilsResolver0")
 	public static long GetMinValue(List<Tuple> datas){
 		if(datas == null) return 0;
-		return datas.stream().mapToLong(tuple -> CustomUtils.GetFieldValue(tuple, 1)).min().getAsLong();
+		return datas.stream().mapToLong(tuple -> CCPCustomUtils.GetFieldValue(tuple, 1)).min().getAsLong();
 	}
 
 	public static CompleteDataType GetMinValueCustomUtilsResolver0(CompleteDataType datas) {
@@ -162,25 +162,6 @@ public class CustomUtils {
 		return CompleteDataType.forTuple(CCPPreProcessor.RawParsed);
 	}
 	
-	@CustomFunctionResolver("printDataCustomUtilsResolver0")
-	public static boolean printData(String type, List<Tuple> cells) {
-		if(cells != null) {
-			System.out.println("");
-			cells.stream().forEach(f -> {
-				try {
-					System.out.printf("%d", f.getLong(1));
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-				}
-			});
-			System.out.println("");
-		}
-		return true;
-	}
-	public static CompleteDataType printDataCustomUtilsResolver0(CompleteDataType type, CompleteDataType cells) {
-		return CompleteDataType.forBoolean();
-	}
-
 	@CustomFunctionResolver("getCellDiffCustomUtilsResolver0")
 	public static List<Long> getCellDiff(Tuple kafkaMessage, List<Tuple> curCells, List<Tuple> prevCells) {
 		ODTParser odtParser = ODTRepository.getInstance().getMapper(kafkaMessage);

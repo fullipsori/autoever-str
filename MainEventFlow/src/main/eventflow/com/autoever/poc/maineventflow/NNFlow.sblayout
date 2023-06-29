@@ -19,7 +19,7 @@
         <param name="gui:x" value="73"/>
         <param name="gui:y" value="-202"/>
     </component>
-    <component name="LoadModel2">
+    <component name="InitModel">
         <param name="gui:x" value="-142"/>
         <param name="gui:y" value="-147"/>
     </component>
@@ -27,7 +27,7 @@
         <param name="gui:x" value="-32"/>
         <param name="gui:y" value="58"/>
     </component>
-    <component name="ReloadModel">
+    <component name="ReInitModel">
         <param name="gui:x" value="-142"/>
         <param name="gui:y" value="-258"/>
     </component>
@@ -54,7 +54,7 @@
         <param name="gui:y" value="-112"/>
         <param name="gui:bends:1" value="154,-162;174,-82"/>
     </component>
-    <component name="LoadModelOutputStream">
+    <component name="OutputLoadModelStream">
         <param name="gui:x" value="208"/>
         <param name="gui:y" value="-206"/>
         <param name="gui:bends:1" value="164,-182;164,-176"/>

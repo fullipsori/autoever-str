@@ -201,7 +201,7 @@
                 <item name="input" selection="all"/>
                 <expressions>
                     <replace field="RawParsed.msrTBData">sublist(RawParsed.msrTBData, 0, 7)</replace>
-                    <include field="matchedTuple">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'getMatchedTupleByInterval', kafkaMessage, RawParsed, RawHeader.BaseTime + RawHeader.DeltaTime, 0.0, 2.0)</include>
+                    <include field="matchedTuple">getCCPMatchedTupleByInterval(kafkaMessage, RawParsed, RawHeader.BaseTime + RawHeader.DeltaTime, 0.0, 2.0)</include>
                 </expressions>
             </target-list>
         </box>
@@ -211,11 +211,11 @@
             <target-list>
                 <item name="input" selection="all"/>
                 <expressions>
-                    <include field="deltaVol">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetDeltaValue', RawParsed.cellData)</include>
-                    <include field="dVols">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetDVol', RawParsed.cellData)</include>
+                    <include field="deltaVol">getCCPDeltaValue(RawParsed.cellData)</include>
+                    <include field="dVols">getCCPDVol(RawParsed.cellData)</include>
                     <include field="RESs">emptylist(double(null))</include>
-                    <include field="deltaTB">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetDeltaValue', RawParsed.msrTBData)</include>
-                    <include field="maxTB">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetMaxValue', RawParsed.msrTBData)</include>
+                    <include field="deltaTB">getCCPDeltaValue(RawParsed.msrTBData)</include>
+                    <include field="maxTB">getCCPMaxFieldValue(RawParsed.msrTBData)</include>
                     <include field="cellDiffs">if(!isnull(matchedTuple)) then maplist(function(f1 FieldType, f2 FieldType){f2.fieldValue-f1.fieldValue}, RawParsed.cellData , matchedTuple.cellData) else emptylist(long(null))</include>
                 </expressions>
             </target-list>
@@ -260,7 +260,7 @@
                 </item>
                 <expressions>
                     <replace field="messageID">messageID + '_' + seq_id</replace>
-                    <include field="dVolMaxField">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'GetMaxDVol', dVols)</include>
+                    <include field="dVolMaxField">getCCPMaxDVol(dVols)</include>
                 </expressions>
             </target-list>
         </box>
@@ -298,10 +298,10 @@
                     <include field="rootCount">kafkaMessage.RootCount</include>
                     <include field="*">RawParsed.*</include>
                     <replace field="RESs">"NA"</replace>
-                    <replace field="cellData">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromCellTuples', RawParsed.cellData)</replace>
-                    <include field="cellDiffData">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromNumberList', cellDiffs)</include>
-                    <replace field="msrTBData">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromMsrTBTuples', RawParsed.msrTBData)</replace>
-                    <include field="dVol">calljava('com.autoever.poc.parser.ccp.CustomUtils', 'JoinFromNumberList', dVols)</include>
+                    <replace field="cellData">joinCCPCellTuples(RawParsed.cellData)</replace>
+                    <include field="cellDiffData">joinCCPNumberList(cellDiffs)</include>
+                    <replace field="msrTBData">joinCCPMsrTBTuples(RawParsed.msrTBData)</replace>
+                    <include field="dVol">joinCCPNumberList(dVols)</include>
                     <include field="maxDVolCell">if(!isnull(dVolMaxField)) then dVolMaxField.field else string(null)</include>
                     <include field="maxDVolVal">if(!isnull(dVolMaxField)) then dVolMaxField.value else double(null)</include>
                     <replace field="SOC">round(RawParsed.SOC * 1.0)/10.0</replace>
