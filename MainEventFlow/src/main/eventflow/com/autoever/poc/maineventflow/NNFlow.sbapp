@@ -15,11 +15,6 @@
             <parameter default="lv://localhost:11080" name="LV_SERVER_URI"/>
         </parameter-definitions>
         <dynamic-variables/>
-        <stream name="ControlInstance">
-            <schema>
-                <field name="command" type="string"/>
-            </schema>
-        </stream>
         <stream name="ControlStream">
             <schema>
                 <field name="command" type="string"/>
@@ -52,19 +47,6 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="nn_instance" type="java">
-            <input port="1" stream="ControlInstance"/>
-            <param name="start:state" value="true"/>
-            <param name="javaclass" value="com.streambase.sb.adapter.python.PythonInstanceAdapter"/>
-            <param name="CaptureOutput" value="false"/>
-            <param name="EnableControlPort" value="true"/>
-            <param name="Executable" value="${PYTHON_EXECUTABLE}"/>
-            <param name="GlobalInstanceId" value=""/>
-            <param name="InstanceType" value="Local"/>
-            <param name="LogLevel" value="INFO"/>
-            <param name="UseTempFile" value="false"/>
-            <param name="WorkingDir" value="."/>
-        </box>
         <box name="pack" type="map">
             <input port="1" stream="InputStream"/>
             <output port="1" stream="out:pack_1"/>
@@ -91,9 +73,9 @@
             <output port="1" stream="out:Predict_1"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.streambase.sb.adapter.python.PythonAdapter"/>
-            <param name="Asynchronous" value="true"/>
-            <param name="GlobalInstanceId" value=""/>
-            <param name="InstanceType" value="Local"/>
+            <param name="Asynchronous" value="false"/>
+            <param name="GlobalInstanceId" value="python_nn_instance"/>
+            <param name="InstanceType" value="Global"/>
             <param name="LocalInstanceId" value="nn_instance"/>
             <param name="LogLevel" value="INFO"/>
             <param name="OutputVarsSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema&gt;&#13;&#10;    &lt;field name=&quot;y_predict&quot; type=&quot;list&quot;&gt;&#13;&#10;        &lt;element-type type=&quot;double&quot;/&gt;&#13;&#10;    &lt;/field&gt;&#13;&#10;&lt;/schema&gt;&#13;&#10;"/>
@@ -118,8 +100,8 @@
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.streambase.sb.adapter.python.PythonAdapter"/>
             <param name="Asynchronous" value="false"/>
-            <param name="GlobalInstanceId" value=""/>
-            <param name="InstanceType" value="Local"/>
+            <param name="GlobalInstanceId" value="python_nn_instance"/>
+            <param name="InstanceType" value="Global"/>
             <param name="LocalInstanceId" value="nn_instance"/>
             <param name="LogLevel" value="INFO"/>
             <param name="OutputVarsSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema/&gt;&#13;&#10;"/>

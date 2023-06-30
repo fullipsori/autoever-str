@@ -112,7 +112,7 @@
             <output name="OutputRawDataStream" port="3" stream="OutputRawDataStream"/>
             <param name="parallel" value="true"/>
             <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
-            <multiplicity number="3" type="concrete"/>
+            <multiplicity number="5" type="concrete"/>
             <param name="file" value="com.autoever.poc.parser.CANParser_v3"/>
             <input-dataref name="QueryTable" table="CanParamsTable"/>
             <parameter-bindings>

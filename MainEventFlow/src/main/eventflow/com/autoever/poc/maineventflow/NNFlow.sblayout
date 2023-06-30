@@ -1,66 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?><application-layout>
-    <component name="ControlInstance">
-        <param name="gui:x" value="-251"/>
-        <param name="gui:y" value="-36"/>
-    </component>
     <component name="ControlStream">
-        <param name="gui:x" value="-251"/>
-        <param name="gui:y" value="-258"/>
+        <param name="gui:x" value="-250"/>
+        <param name="gui:y" value="-205"/>
     </component>
     <component name="InputStream">
-        <param name="gui:x" value="-251"/>
-        <param name="gui:y" value="58"/>
-    </component>
-    <component name="InputAdapter">
-        <param name="gui:x" value="-251"/>
-        <param name="gui:y" value="-147"/>
-    </component>
-    <component name="LoadModel">
-        <param name="gui:x" value="73"/>
-        <param name="gui:y" value="-202"/>
+        <param name="gui:x" value="-250"/>
+        <param name="gui:y" value="0"/>
     </component>
     <component name="InitModel">
-        <param name="gui:x" value="-142"/>
-        <param name="gui:y" value="-147"/>
+        <param name="gui:x" value="-140"/>
+        <param name="gui:y" value="-94"/>
+    </component>
+    <component name="InputAdapter">
+        <param name="gui:x" value="-250"/>
+        <param name="gui:y" value="-94"/>
+    </component>
+    <component name="LoadModel">
+        <param name="gui:x" value="72"/>
+        <param name="gui:y" value="-155"/>
     </component>
     <component name="Predict">
-        <param name="gui:x" value="-32"/>
-        <param name="gui:y" value="58"/>
+        <param name="gui:x" value="-33"/>
+        <param name="gui:y" value="0"/>
     </component>
     <component name="ReInitModel">
-        <param name="gui:x" value="-142"/>
-        <param name="gui:y" value="-258"/>
+        <param name="gui:x" value="-140"/>
+        <param name="gui:y" value="-205"/>
     </component>
     <component name="Union">
-        <param name="gui:x" value="-32"/>
-        <param name="gui:y" value="-202"/>
-        <param name="gui:bends:1" value="-58,-228;-48,-182"/>
-        <param name="gui:bends:2" value="-71,-117;-61,-162"/>
-    </component>
-    <component name="nn_instance">
-        <param name="gui:x" value="-142"/>
-        <param name="gui:y" value="-36"/>
+        <param name="gui:x" value="-33"/>
+        <param name="gui:y" value="-155"/>
+        <param name="gui:bends:1" value="-71,-175;-66,-135"/>
+        <param name="gui:bends:2" value="-64,-64;-52,-115"/>
     </component>
     <component name="pack">
-        <param name="gui:x" value="-142"/>
-        <param name="gui:y" value="58"/>
+        <param name="gui:x" value="-140"/>
+        <param name="gui:y" value="0"/>
     </component>
     <component name="unpack">
-        <param name="gui:x" value="73"/>
-        <param name="gui:y" value="58"/>
+        <param name="gui:x" value="72"/>
+        <param name="gui:y" value="0"/>
     </component>
     <component name="ErrorOutputStream">
-        <param name="gui:x" value="208"/>
-        <param name="gui:y" value="-112"/>
-        <param name="gui:bends:1" value="154,-162;174,-82"/>
+        <param name="gui:x" value="207"/>
+        <param name="gui:y" value="-102"/>
+        <param name="gui:bends:1" value="158,-115;168,-72"/>
     </component>
     <component name="OutputLoadModelStream">
-        <param name="gui:x" value="208"/>
-        <param name="gui:y" value="-206"/>
-        <param name="gui:bends:1" value="164,-182;164,-176"/>
+        <param name="gui:x" value="207"/>
+        <param name="gui:y" value="-196"/>
+        <param name="gui:bends:1" value="173,-135;179,-166"/>
     </component>
     <component name="OutputStream">
-        <param name="gui:x" value="208"/>
-        <param name="gui:y" value="58"/>
+        <param name="gui:x" value="207"/>
+        <param name="gui:y" value="0"/>
     </component>
 </application-layout>

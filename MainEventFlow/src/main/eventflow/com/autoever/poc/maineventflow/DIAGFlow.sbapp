@@ -40,7 +40,6 @@
             <output name="OutputParserStream" port="1" stream="OutputParserStream"/>
             <output name="ExecError" port="2" stream="OutputErrorStream"/>
             <param name="parallel" value="true"/>
-            <param name="parallel-region-queue-max-outstanding-tuples" value="2"/>
             <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
             <multiplicity number="2" type="concrete"/>
             <param name="file" value="com.autoever.poc.parser.DIAGParser"/>

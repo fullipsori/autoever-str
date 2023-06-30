@@ -130,9 +130,8 @@
             <output name="OutputParserStream" port="1" stream="OutputParserStream"/>
             <output name="OutputRawDataStream" port="2" stream="OutputRawDataStream"/>
             <param name="parallel" value="true"/>
-            <param name="parallel-region-queue-max-processing-batch-size" value="5"/>
             <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
-            <multiplicity number="3" type="concrete"/>
+            <multiplicity number="4" type="concrete"/>
             <param name="file" value="com.autoever.poc.parser.CCPParser_v3"/>
             <input-dataref name="CCPParamsTable" table="CCPParamsTable"/>
             <parameter-bindings>
