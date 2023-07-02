@@ -7,10 +7,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import com.streambase.sb.CompleteDataType;
-import com.streambase.sb.NullValueException;
 import com.streambase.sb.Schema;
 import com.streambase.sb.Tuple;
-import com.streambase.sb.TupleException;
 import com.streambase.sb.client.CustomFunctionResolver;
 
 public class CCPCustomUtils {
