@@ -8,11 +8,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.autoever.poc.common.NumUtils;
-import com.autoever.poc.parser.can.CanPreProcessor;
-import com.autoever.poc.parser.can.PolicyParser;
-import com.autoever.poc.parser.can.PolicyRepository;
-import com.autoever.poc.parser.ccp.CCPPreProcessor;
-import com.autoever.poc.parser.ccp.ODTRepository;
 import com.streambase.sb.CompleteDataType;
 import com.streambase.sb.Schema;
 import com.streambase.sb.Tuple;

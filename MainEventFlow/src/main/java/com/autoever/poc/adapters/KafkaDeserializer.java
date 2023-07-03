@@ -4,14 +4,12 @@
 
 package com.autoever.poc.adapters;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
 
 import org.slf4j.Logger;
 
 import com.autoever.poc.common.NumUtils;
-import com.autoever.poc.common.TimeUtils;
 import com.autoever.poc.parser.AutoKafkaField;
 import com.streambase.sb.Schema;
 import com.streambase.sb.StreamBaseException;

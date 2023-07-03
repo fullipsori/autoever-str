@@ -4,8 +4,6 @@ package com.autoever.poc.parser.can;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.autoever.poc.adapters.VdmsRawParser.RawParserDataField;
-import com.autoever.poc.common.RawDataField;
 import com.autoever.poc.parser.AutoKafkaField;
 import com.autoever.poc.parser.PreProcessable;
 import com.autoever.poc.parser.RawDataParser;
