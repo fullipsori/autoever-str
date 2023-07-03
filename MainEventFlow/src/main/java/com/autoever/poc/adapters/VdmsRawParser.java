@@ -181,7 +181,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 			}else if(filePath != null && !filePath.isEmpty()) {
 				Path file = Paths.get(filePath);
 				allBytes = Files.readAllBytes(file);
-//				Files.delete(file);
+				Files.delete(file);
 			}else {
 				return;
 			}

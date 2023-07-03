@@ -174,7 +174,7 @@ public class ODTParser implements Parseable, DataSavable {
 		try {
 			documentBuilder = factory.newDocumentBuilder();
 			
-			Path evtPath = Paths.get("d:/projects/autoever-str/MainEventFlow/src/main/resources/evt/219054.evt");
+			Path evtPath = Paths.get("d:/projects/vdms/autoever-str/MainEventFlow/src/main/resources/evt/219054.evt");
 			ODTParser evtParser =  new ODTParser(evtPath, documentBuilder);
 			
 			evtParser.odt_map.stream()
