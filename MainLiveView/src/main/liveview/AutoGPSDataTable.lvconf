@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ASCII"?>
 <liveview-configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.streambase.com/schemas/lvconf/">
-  <data-table id="AutoGPSDataTable" snapshot-parallelism="4" snapshot-concurrency="2">
+  <data-table id="AutoGPSDataTable" snapshot-parallelism="2" snapshot-concurrency="2">
     <fields>
       <field name="EventArrivalTS" type="timestamp"/>
     </fields>
@@ -12,6 +12,15 @@
     <indices>
       <index>
         <field ref="EventArrivalTS"/>
+      </index>
+      <index>
+        <field ref="terminalID"/>
+      </index>
+      <index>
+        <field ref="vehicleKeyID"/>
+      </index>
+      <index>
+        <field ref="realTime"/>
       </index>
     </indices>
     <field-rules>

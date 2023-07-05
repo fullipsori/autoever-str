@@ -52,7 +52,7 @@ configuration = {
 		{
 			"vdms-availability-zone" = 
 			{
-				dataDistributionPolicy = "vdms-dynamic-data_distribution-policy"	
+				dataDistributionPolicy = "vdms-dynamic-data-distribution-policy"	
 			}	
 		}
 	}

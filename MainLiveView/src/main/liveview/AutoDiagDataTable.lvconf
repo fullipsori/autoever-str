@@ -13,6 +13,15 @@
       <index>
         <field ref="EventArrivalTS"/>
       </index>
+      <index>
+        <field ref="terminalID"/>
+      </index>
+      <index>
+        <field ref="vehicleKeyID"/>
+      </index>
+      <index>
+        <field ref="realTime"/>
+      </index>
     </indices>
     <field-rules>
       <rule description="Retention policy table delete rule">
