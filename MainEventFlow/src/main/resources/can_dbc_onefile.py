@@ -14,108 +14,80 @@ pd.set_option('display.max_columns',None)
 pd.set_option('display.width',1000)
 
 class VDMSRAW:
-    def __init__(self, filename):
-        self.VehicleKey = 0
-        self.PolicyVersion = 0  # 데이터 생성 기준 Policy 버전. Policy가 변경되면 Submit을 새로 생성한다.
-        self.RecordCnt = 0      # 한번에 붙여서 보내는 CAN Data 건수 (Data Length ~ Data 반복 건수)
-        self.SN = 0             # 모듈 S/N
-        self.BaseTime = 0       # Struct Timespec, Vehicle Message type이 '녹음정보'인 경우 Trigger 발생시점을 Base Time으로 사용함
-        self.MessageType = 0    # 1:CAN, 2:CCP/XCP, 3:J1979, 4:DIAG, 5:Reserved, 6:GPS, 7:PWR,
-                                # 8:녹음정보 (Trigger 버튼) --> Raw Data 바로 기록 (옥음크기+20헤더DL에 기록)
-                                # 9:Thermocouple (확장모듈), 10:Analog (확장모듈), 11:CAN (확장모듈)
-        self.FPID = []          # CCP, XCP의 First PID 변경 정보 (Message Type이 CCP/XCP 인 경우만 존재, FPID 없는 경우 초기값은 0xFF로 셋팅)
+    def __init__(self, file, binary, kafkaMsg):
+        self.VehicleKey = None #kafkaMsg["VehicleKeyID"]
+        self.BaseTime = 0 #kafkaMsg["BaseTime"]
+        self.FPID = []
         self.header = 0
         self.RecordSum = 0
         self.RealTime = 0
-        try:
-            print("File Name : " + filename)
-            self.InFile = open(filename, 'rb', 1024)
-        except:
-            print("File Read Error!!!")
+        self.mode = None
+        self.binData = binary
+        self.InFile = None
+        self.headerSize = 0
 
-        self.parseHeader()
-
-    def parseHeader(self):
-        self.header = self.InFile.read(26)
-        #print("header: %s" % (self.header))
-        self.VehicleKey, self.PolicyVersion, self.RecordCnt, self.SN, self.BaseTime, self.MessageType = struct.unpack(
-            '!IHI11sIB', self.header)
-        #VehicleKey(4) / PolicyVersion(2) / RecordCnt(4) / SN(11) / BaseTime(4), MessageType(1)
-        #print("Policy Version: %d" % (self.PolicyVersion))
-        #print("MSG Count: %d" % (self.RecordCnt))
-        #print("VDMS SN: %s" % (self.SN))
-        #print("Message Type: %d" % (self.MessageType))
-        t = time.gmtime(self.BaseTime + 3600 * 9)  # Korea Time
-        self.RealTime = time.strftime('%Y%m%d%H%M%S', t)
-        #print("Measure Start Time: %s" % (time.asctime(t)) + "\n")
-        if self.MessageType == 2:  # CCP/XCP
-            self.FPID = self.InFile.read(128)   # CH1-CCP1~CCP4, CH1-XCP1~XCP4, CH2-CCP1~XCP4, CH2-CCP1~XCP4 (8byte * 16)
-
-    def writeRawFile(self, filename, msgRawlist):
-        newheader = struct.pack('!IHI11sIB', self.VehicleKey, self.PolicyVersion, len(msgRawlist), self.SN,
-                                self.BaseTime, self.MessageType)
-        try:
-            outFile = open(filename, 'wb')
-        except:
-            print(filename)
-            print("File Read Error!!")
-            return None
-        outFile.write(newheader)
-        if self.MessageType == 2:
-            outFile.write(self.FPID)
-
-        for msg in msgRawlist:
-            outFile.write(msg)
-        outFile.close()
-
-    def writeMergeFile(self, filename, msgRawlist, writeFlag):
-        if writeFlag == False:
-            newheader = struct.pack('!IHI11sIB', self.VehicleKey, self.PolicyVersion, len(msgRawlist), self.SN,
-                                    self.BaseTime, self.MessageType)
+        if file:
+            self.mode = "file"
             try:
-                outFile = open(filename, 'wb')
+                self.InFile = open(file, 'rb', 1024)
             except:
-                print("File Write Error!!")
-                return None
-            outFile.write(newheader)
+                print("File Read Error!!")
+        elif self.binData:
+            self.mode = "bin"
+            self.binIndex = 0
         else:
-            try:
-                outFile = open(filename, 'rb+')
-                recordSum = outFile.read(10)[6:]
-                recordSum, = struct.unpack('!I', recordSum)
-                outFile.seek(6, 0)
-                outFile.flush()
-                outFile.write(struct.pack(">I", recordSum+len(msgRawlist)))
-                outFile.close()
+            raise ValueError("no data")
 
-                outFile = open(filename, 'ab')
-            except:
-                print("File Write Error!!!")
-                return None
+    def rewind(self):
+        try:
+            if self.mode == "file" and self.InFile:
+                self.InFile.seek(self.headerSize)
+            elif self.mode == "bin":
+                self.binIndex = 0
+            else:
+                pass
+        except:
+            raise Exception("rewind Exception")
 
-        if self.MessageType == 2:
-            outFile.write(self.FPID)
 
-        for msg in msgRawlist:
-            outFile.write(msg)
-        outFile.close()
+    def close(self):
+        try:
+            if self.mode == "file" and self.InFile:
+                self.InFile.close()
+            else:
+                pass
+        except:
+            print("File close Exception")
 
+    def readStream(self, size):
+        try:
+            if self.mode == "bin":
+                data = self.binData[self.binIndex:self.binIndex+size]
+                self.binIndex += size
+                return data
+            elif self.mode == "file":
+                data = self.InFile.read(size)
+                return data
+            else:
+                raise Exception("unknown read mode")
+        except:
+            raise
+        
     def getMSG(self):
         dlc_Size = [0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64]
-
         try:
-            fdata = self.InFile.read(1)
-            DLC = fdata[0]
-            temp = fdata
+            data = self.readStream(1)
+            DLC = data[0]
+            temp = data
         except:
             return None
+
         MSGInfo = ""
-        fdata = self.InFile.read(10 + dlc_Size[DLC])
-        temp += fdata
-        DeltaTime, DataFlag, DataChannel, DataID = struct.unpack('!IBBI', fdata[0:10])
+        data = self.readStream(10 + dlc_Size[DLC])
+        temp += data
+        DeltaTime, DataFlag, DataChannel, DataID = struct.unpack('!IBBI', data[0:10])
 
         DeltaTime = DeltaTime * 0.00005  # 1 tick is 50us
-        
         if DataFlag == 2:
             MSGInfo = "Error Frame"
         else:
@@ -125,7 +97,7 @@ class VDMSRAW:
                 MSGInfo = "Standard ID"
             if (DataFlag and 4) == 4:
                 MSGInfo = MSGInfo + " FD"
-        return [DataChannel, DeltaTime, MSGInfo, DataID, DLC, fdata[10:10 + dlc_Size[DLC]],temp, self.BaseTime, self.VehicleKey]
+        return [DataChannel, DeltaTime, MSGInfo, DataID, DLC, data[10:10 + dlc_Size[DLC]], temp, self.BaseTime, self.VehicleKey]
 
 
 def parsed_dbc(filepath):
@@ -206,23 +178,23 @@ dbcFileName = 'ch5_20230131_STD_DB_CAR_2021_FD_E_v22_12_02.dbc'
 dbcfilepath = 'd:/projects/from_hyuncar/can_source/TestFile/' + dbcFileName
 
 dbc_list = parsed_dbc(dbcfilepath)
-print(dbc_list)
-print(len(dbc_list))
+# print(dbc_list)
 
-filepath = 'd:/projects/from_hyuncar/can_source/test/raws/' + 'SX2_N23-01-111_VM-18L-0068_BASE_5042_4_-1_CAN_20230614122432_211462.dat'
-raw = VDMSRAW(filepath)
+filepath = 'd:/projects/vdms/resources/download/BM-15C-0003_142683_1_1689049974_1689127350566.dat'
+raw = VDMSRAW(filepath, None, None)
 
 import csv  
+import datetime
 
 # 동일한 시간대의 신호들
 # while True:
 counter=0
 output_size_multi = 0
 output_size = 0
-for i in range (20):
-# while True:
+# for i in range (20):
+
+while True:
     counter = counter + 1
-    policyVer = raw.PolicyVersion
     msg = raw.getMSG()
     if msg is None:
         break
@@ -240,6 +212,10 @@ for i in range (20):
     dlc = msg[4]
     fdata = binascii.hexlify(msg[5]).upper()
     fdata2 = msg[5]
+
+    if fdata2 is None or len(fdata2) == 0:
+        continue
+
     baseTime = msg[7]
     vehicleKey = msg[8]
     t = time.gmtime(baseTime + 3600 * 9)
@@ -258,11 +234,11 @@ for i in range (20):
                 lastbyte=int(row['sig_start'])+int(row['sig_length'])-1 >> 3
                 if row['sig_byte_order']=="little_endian":
                     for i in range(lastbyte,startbyte-1,-1):
-                        rawvalue=rawvalue*256+msg[5][i]
+                            rawvalue=rawvalue*256+msg[5][i]
                     rawvalue=rawvalue>>(int(row['sig_start']) % 8)
                 else:
                     for i in range(startbyte,lastbyte+1,1):
-                        rawvalue=rawvalue*256+msg[5][i]   
+                            rawvalue=rawvalue*256+msg[5][i]   
                     rawvalue=rawvalue>>((8000- int(row['sig_start']) - int(row['sig_length'])) %8)
                 rawvalue = rawvalue & (2 ** int(row['sig_length']) - 1)
                 if row['sig_is_signed']=="True":
@@ -273,7 +249,7 @@ for i in range (20):
                 # print(f"{row['sig_name']} / {value}")
                 # data_dict[row['sig_name']]=value
                 # print(data_dict)
-                print(f"{deltaTime:0.3f} / {msgInfo} / {msgId} / {fdata} / {baseTime} / {vehicleKey} / {row['sig_name']} / {value}")
+                # print(f"{deltaTime:0.3f} / {msgInfo} / {msgId} / {fdata} / {baseTime} / {vehicleKey} / {row['sig_name']} / {value}")
                 output_size_multi += 1
                 # resultfile.write(f"#### {dataChannel} / {deltaTime:0.6f} / {msgInfo} / {msgId} / {dlc} / {fdata} / {baseTime} / {vehicleKey} / {policyVer} / {row['sig_name']} / {value} \n")
                 # resultfile.write(f"#### {deltaTime:0.6f} / {msgInfo} / {msgId} / {fdata} / {baseTime} / {vehicleKey} / {row['sig_name']} / {value} \n")
@@ -282,21 +258,30 @@ for i in range (20):
             lastbyte=int(row['sig_start'])+int(row['sig_length'])-1 >> 3
             if row['sig_byte_order']=="little_endian":
                 for i in range(lastbyte,startbyte-1,-1):
-                    rawvalue=rawvalue*256+msg[5][i]
+                    try:
+                        rawvalue=rawvalue*256+msg[5][i]
+                    except:
+                        print("Exception")
                 rawvalue=rawvalue>>(int(row['sig_start']) % 8)
             else:
                 for i in range(startbyte,lastbyte+1,1):
-                    rawvalue=rawvalue*256+msg[5][i]
+                    try:
+                        rawvalue=rawvalue*256+msg[5][i]
+                    except:
+                        print("Exception")
                 rawvalue=rawvalue>>((8000- int(row['sig_start']) - int(row['sig_length'])) %8)
+
             rawvalue = rawvalue & (2 ** int(row['sig_length']) - 1)
             if row['sig_is_signed']=="True":
                 if (rawvalue & (1 << (int(row['sig_length']) - 1))) != 0:
                     rawvalue = (-(((~rawvalue) & (2 ** int(row['sig_length']) - 1)) + 1))
+
             value=rawvalue*float(row['sig_scale'])+float(row['sig_offset'])
+
             # print(f"{row['sig_name']} / {value}")
             # data_dict[row['sig_name']]=value
             # print(data_dict)
-            print(f"{deltaTime:0.3f} / {msgInfo} / {msgId} / {fdata} / {baseTime} / {vehicleKey} / {row['sig_name']} / {value}")
+            # print(f"{deltaTime:0.3f} / {msgInfo} / {msgId} / {fdata} / {baseTime} / {vehicleKey} / {row['sig_name']} / {value}")
             multi_value.append(int(value))
             output_size += 1
             # resultfile.write(f"#### {dataChannel} / {deltaTime:0.6f} / {msgInfo} / {msgId} / {dlc} / {fdata} / {baseTime} / {vehicleKey} / {policyVer} / {row['sig_name']} / {value} \n")
@@ -305,4 +290,3 @@ for i in range (20):
 # print(data_dict)
 print(output_size)
 print(output_size_multi)
-print(len(sig_data))    

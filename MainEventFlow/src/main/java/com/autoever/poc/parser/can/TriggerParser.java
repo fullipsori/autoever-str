@@ -137,7 +137,7 @@ public class TriggerParser implements DataSavable {
 		return null;
 	}
 
-	public static long GetRawValue(String sigendian, byte[] rawdata, String sigtype, int sigstartbit, int siglength) {
+	public static double GetRawValue(byte[] rawdata, String sigendian, String sigtype, int sigstartbit, int siglength, double sigfactor, double sigoffset) {
 		long rawvalue = 0;
 		int startbyte = sigstartbit >> 3;
 		int lastbyte = (sigstartbit + siglength -1) >> 3;
@@ -162,7 +162,7 @@ public class TriggerParser implements DataSavable {
 				rawvalue = (-(((~rawvalue) & (((long)1)<<siglength - 1)) + 1));
 		}
 
-		return rawvalue;
+		return rawvalue*sigfactor + sigoffset;
 	}
 
 	public static int GetValue(String sigendian, byte[] rawdata, String sigtype, int sigstartbit, int siglength) {
@@ -209,13 +209,11 @@ public class TriggerParser implements DataSavable {
 		try {
 			byte[] rawdata = Base64.decode(canmsg.getString(RawDataField.DATA.getIndex()));
 			long baseTime = canmsg.getLong(RawDataField.BaseTime.getIndex());
-			long rawvalue = 0;
 			int startbyte = trigger.sigstartbit >> 3;
 			int lastbyte = (trigger.sigstartbit + trigger.siglength -1) >> 3;
 			
 			trigger.time = canmsg.getDouble(RawDataField.DeltaTime.getIndex());
 
-			rawvalue = GetRawValue(trigger.sigendian, rawdata, trigger.sigtype, trigger.sigstartbit, trigger.siglength); 
 
 			/**
 			int rawvalue2 = GetValue(trigger.sigendian, rawdata, trigger.sigtype, trigger.sigstartbit, trigger.siglength);
@@ -224,7 +222,7 @@ public class TriggerParser implements DataSavable {
 			 * 
 			 */
 
-			double value = rawvalue * trigger.sigfactor + trigger.sigoffset;
+			double value = GetRawValue(rawdata, trigger.sigendian, trigger.sigtype, trigger.sigstartbit, trigger.siglength, trigger.sigfactor, trigger.sigoffset); 
 			boolean rvalue = false;
 
 			switch(trigger.conditionformula) {
@@ -419,9 +417,9 @@ public class TriggerParser implements DataSavable {
 		// TODO Auto-generated method stub
 //00ffde6cf9ffffff
 //		byte[] x = {(byte)0xf7,0x00,0x00,0x43,0x53,(byte)0xff,(byte)0xff,(byte)0xfa};
-		byte[] x = {(byte)0x00,(byte)0xff,(byte)0xde,(byte)0x6c,(byte)0xf9,(byte)0xff,(byte)0xff,(byte)0xff};
-		long rawvalue = TriggerParser.GetRawValue("Little", x, "unsigned", 16, 24);
-		System.out.println("rawvalue:" + rawvalue);
+//		byte[] x = {(byte)0x00,(byte)0xff,(byte)0xde,(byte)0x6c,(byte)0xf9,(byte)0xff,(byte)0xff,(byte)0xff};
+//		long rawvalue = TriggerParser.GetRawValue("Little", x, "unsigned", 16, 24);
+//		System.out.println("rawvalue:" + rawvalue);
 		String t = "1,,2,";
 		if(t.split(",",-1)[3].isEmpty()) {
 			System.out.println("ok");
