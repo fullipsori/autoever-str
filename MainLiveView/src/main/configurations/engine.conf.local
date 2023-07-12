@@ -10,10 +10,8 @@ configuration = {
         //
         jvmArgs =
         [
-//            "-Xmx48g"
-//            "-Xms32g"
-            "-Xmx16g"
-            "-Xms8g"
+            "-Xmx8g"
+            "-Xms4g"
             "-XX:+UseG1GC"
             "-XX:MaxGCPauseMillis=500"
             "-XX:ConcGCThreads=1"

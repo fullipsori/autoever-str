@@ -14,9 +14,70 @@
         <implements module-reference="com.autoever.poc.maineventflow.ResourceTable"/>
         <implements module-reference="com.autoever.poc.maineventflow.kafkaSchemas"/>
         <import from="com.autoever.poc.maineventflow.HttpClientSchema"/>
+        <import alias="PerfDataSchema" from="com.autoever.poc.maineventflow.LiveViewTable" item="PerfDataSchema"/>
         <import from="com.autoever.poc.maineventflow.ResourceTable"/>
         <import from="com.autoever.poc.maineventflow.kafkaSchemas"/>
         <named-schemas>
+            <schema name="HCPSchema">
+                <field name="message" type="tuple">
+                    <schema>
+                        <field description="단말기 시리얼 번호" name="TerminalID" type="string"/>
+                        <field name="SequenceNo" type="long"/>
+                        <field description="Body 크기" name="BodyLength" type="long"/>
+                        <field description="차종" name="CIN" type="string"/>
+                        <field description="차량식별번호" name="VIN" type="string"/>
+                        <field description="차량 키 아이디" name="VehicleKeyID" type="long"/>
+                        <field description="데이터 수집 정책 버전" name="PolicyVersion" type="int"/>
+                        <field description="데이터 건수" name="RecordCount" type="long"/>
+                        <field description="트립 번호" name="RootCount" type="int"/>
+                        <field description="트립 안에서의 데이터 순서" name="SubmitSequenceNo" type="long"/>
+                        <field description="단말기 시리얼 번호" name="SerialNo" type="string"/>
+                        <field description="데이터 수집 시작 시간" name="BaseTime" type="long"/>
+                        <field description="수집 데이터의 종류" name="MessageType" type="int"/>
+                        <field description="CCP 메세지인 경우" name="FirstPID" type="string"/>
+                        <field description="메시지파일ID" name="MsgSrcKeyID" type="string"/>
+                        <field description="동기서버 생성 ID" name="SyncSerID" type="string"/>
+                        <field description="Message Collect Time" name="LoadDTM" type="string"/>
+                        <field description="예외 Redis 입력일시" name="XctRedisInpDTM" type="long"/>
+                    </schema>
+                </field>
+                <field name="perfData" type="tuple">
+                    <schema>
+                        <field name="kafka_msg_id" type="string"/>
+                        <field name="start_time" type="long"/>
+                        <field name="t1_time" type="long"/>
+                        <field name="t2_time" type="long"/>
+                        <field name="t3_time" type="long"/>
+                        <field name="t4_time" type="long"/>
+                        <field name="t5_time" type="long"/>
+                        <field name="end_time" type="long"/>
+                        <field name="elapsed" type="long"/>
+                        <field name="data_count" type="int"/>
+                        <field name="msg_count" type="long"/>
+                    </schema>
+                </field>
+                <field name="messageID" type="string"/>
+                <field name="mgmtNO" type="string"/>
+                <field name="url" type="string"/>
+                <field name="filePath" type="string"/>
+                <field name="headers" type="list">
+                    <element-type type="tuple">
+                        <schema>
+                            <field name="name" type="string"/>
+                            <field name="values" type="list">
+                                <element-type type="string"/>
+                            </field>
+                        </schema>
+                    </element-type>
+                </field>
+                <field name="settings" type="tuple">
+                    <schema>
+                        <field name="requestType" type="string"/>
+                        <field name="downloadPath" type="string"/>
+                    </schema>
+                </field>
+                <field name="retryCount" type="int"/>
+            </schema>
             <schema name="MainOutputSchema">
                 <field name="kafkaMessage" type="tuple">
                     <schema>
@@ -60,24 +121,28 @@
                 <field name="messageID" type="string"/>
                 <field name="mgmtNO" type="string"/>
             </schema>
+            <schema name="TestSchema">
+                <field name="data_1" type="string"/>
+                <field name="data_2" type="string"/>
+            </schema>
         </named-schemas>
         <parameter-definitions>
             <parameter default="user" name="OP_MODE"/>
             <parameter default="10.12.109.204:6667;10.12.109.157:6667;10.12.109.232:6667" name="KAFKA_BROKER"/>
-            <parameter default="autoever_vdms_group_temp" name="KAFKA_GROUP_ID"/>
             <parameter default="AutoSubmitReq" name="KAFKA_TOPIC"/>
+            <parameter default="autoever_vdms_local_dev" name="KAFKA_GROUP_ID"/>
             <parameter default="d:/projects/vdms/temp" name="FILE_TEMP_FOLDER"/>
             <parameter default="D:/projects/vdms_env/Scripts/python.exe" name="PYTHON_EXECUTABLE"/>
             <parameter default="d:/projects/vdms/resources" name="RESOURCE_ROOT"/>
             <parameter default="memory" name="downloadMode"/>
         </parameter-definitions>
         <dynamic-variables>
-            <dynamic-variable initial-expression="emptylist(string())" name="CCPVIDs" setter-expression="if(!isnull(input.CCPVIDs)) then input.CCPVIDs else CCPVIDs" setter-stream="UpdateKeyStream"/>
-            <dynamic-variable initial-expression="true" name="allowCan" setter-expression="if (!isnull(input.allowCan)) then input.allowCan else allowCan" setter-stream="UpdateFilterStream"/>
-            <dynamic-variable initial-expression="false" name="allowCcp" setter-expression="if (!isnull(input.allowCcp)) then input.allowCcp else allowCcp" setter-stream="UpdateFilterStream"/>
-            <dynamic-variable initial-expression="false" name="allowDiag" setter-expression="if (!isnull(input.allowDiag)) then input.allowDiag else allowDiag" setter-stream="UpdateFilterStream"/>
-            <dynamic-variable initial-expression="false" name="allowGps" setter-expression="if (!isnull(input.allowGps)) then input.allowGps else allowGps" setter-stream="UpdateFilterStream"/>
-            <dynamic-variable initial-expression="emptylist(string())" name="policyFiles" setter-expression="if(!isnull(input.policyFiles)) then input.policyFiles else policyFiles" setter-stream="UpdateKeyStream"/>
+            <dynamic-variable initial-expression="emptylist(string())" name="CCPVIDs" setter-expression="coalesce(input.CCPVIDs, CCPVIDs)" setter-stream="UpdateKeyStream"/>
+            <dynamic-variable initial-expression="true" name="allowCan" setter-expression="coalesce(input.allowCan, allowCan)" setter-stream="UpdateFilterStream"/>
+            <dynamic-variable initial-expression="true" name="allowCcp" setter-expression="coalesce(input.allowCcp, allowCcp)" setter-stream="UpdateFilterStream"/>
+            <dynamic-variable initial-expression="true" name="allowDiag" setter-expression="coalesce(input.allowDiag, allowDiag)" setter-stream="UpdateFilterStream"/>
+            <dynamic-variable initial-expression="true" name="allowGps" setter-expression="coalesce(input.allowGps, allowGps)" setter-stream="UpdateFilterStream"/>
+            <dynamic-variable initial-expression="emptylist(string())" name="policyFiles" setter-expression="coalesce(input.policyFiles, policyFiles)" setter-stream="UpdateKeyStream"/>
         </dynamic-variables>
         <data name="MGMTQueryTable" shared="false" source="concrete" type="querytable">
             <param name="storage-method" value="heap"/>
@@ -86,7 +151,6 @@
             <param name="truncate" value="false"/>
             <preload format="csv" mode="empty"/>
         </data>
-        <stream name="FullHTTPControl" schema="HttpClientControlSchema"/>
         <stream name="KafkaConsumerControl">
             <schema>
                 <parent-schemas>
@@ -95,6 +159,7 @@
                 <field name="FetchFromDateTime" type="timestamp"/>
             </schema>
         </stream>
+        <stream name="out:IncRetryCount_1" schema="HCPSchema"/>
         <stream name="UpdateFilterStream">
             <schema>
                 <field name="allowCan" type="bool"/>
@@ -427,7 +492,7 @@
                     <declare field="messageID">message.VehicleKeyID + '_' + strftime("%Y%m%d%H%M%S%f", now())</declare>
                 </item>
                 <expressions>
-                    <include field="perfData">tuple(messageID AS kafka_msg_id, to_milliseconds(now()) AS start_time, 0L AS t1_time, 0L AS t2_time, 0L AS t3_time, 0L AS t4_time, 0L AS t5_time, 0L AS end_time, 0L AS elapsed, 0 AS data_count, message.RecordCount AS msg_count)</include>
+                    <include field="perfData">PerfDataSchema(messageID, to_milliseconds(now()), 0, 0, 0, 0, 0, 0, 0, 0, message.RecordCount)</include>
                     <include field="messageID">messageID</include>
                 </expressions>
             </target-list>
@@ -456,20 +521,20 @@
         <output-stream name="ToCCPControlStream">
             <param name="connection" value="'ccpflow.ControlStream'"/>
         </output-stream>
-        <box name="DistributeMessageType" type="filter">
+        <box name="FilterFromFiles" type="filter">
             <input port="1" stream="out:InitializeData_1"/>
-            <output port="1" stream="out:DistributeMessageType_1"/>
-            <output port="2" stream="out:DistributeMessageType_2"/>
-            <output port="3" stream="out:DistributeMessageType_3"/>
+            <output port="1" stream="out:FilterFromFiles_1"/>
+            <output port="2" stream="out:FilterFromFiles_2"/>
+            <output port="3" stream="out:FilterFromFiles_3"/>
             <param name="autogen-nomatch-port" value="false"/>
             <param name="expression.0" value="message.MessageType==1 &amp;&amp; contains(policyFiles, message.TerminalID)"/>
             <param name="expression.1" value="message.MessageType==4 || message.MessageType==6"/>
             <param name="expression.2" value="message.MessageType==2 &amp;&amp; contains(CCPVIDs, string(message.VehicleKeyID))"/>
         </box>
         <box name="Union5" type="union">
-            <input port="1" stream="out:DistributeMessageType_1"/>
-            <input port="2" stream="out:DistributeMessageType_2"/>
-            <input port="3" stream="out:DistributeMessageType_3"/>
+            <input port="1" stream="out:FilterFromFiles_1"/>
+            <input port="2" stream="out:FilterFromFiles_2"/>
+            <input port="3" stream="out:FilterFromFiles_3"/>
             <output port="1" stream="out:Union5_1"/>
             <param name="strict" value="false"/>
         </box>
@@ -507,13 +572,8 @@
                 <item name="input" selection="all"/>
             </target-list>
         </box>
-        <box name="QueryUnion" type="union">
-            <input port="1" stream="out:Query2Mgmt_1"/>
-            <output port="1" stream="out:QueryUnion_1"/>
-            <param name="strict" value="false"/>
-        </box>
         <box name="CheckMgmtNO" type="filter">
-            <input port="1" stream="out:QueryUnion_1"/>
+            <input port="1" stream="out:Query2Mgmt_1"/>
             <output port="1" stream="out:CheckMgmtNO_1"/>
             <param name="autogen-nomatch-port" value="false"/>
             <param name="expression.0" value="mgmtNO != &quot;unknown&quot;"/>
@@ -529,21 +589,22 @@
                     <include field="url">GetAWSUrl(message.BaseTime, message.VehicleKeyID,trim(message.MsgSrcKeyID)+'.data')</include>
                     <include field="filePath">if '${downloadMode}' == 'file' then downloadPath else ''</include>
                     <include field="headers">list(tuple('Authorization' AS name, list('HCP MTE3OTY1OA==:2dd45bb153db94699c7b6a7b495f940f') AS values))</include>
-                    <include field="settings.requestType">'file download'</include>
+                    <include field="settings.requestType">'File Download'</include>
                     <include field="settings.downloadPath">if '${downloadMode}' == 'file' then downloadPath else string(null)</include>
+                    <include field="retryCount">0</include>
                 </expressions>
             </target-list>
         </box>
         <box name="Union" type="union">
-            <input port="1" stream="FullHTTPControl"/>
-            <input port="2" stream="out:AddUrl_1"/>
+            <input port="1" stream="out:AddUrl_1"/>
+            <input port="2" stream="out:IncRetryCount_1"/>
             <output port="1" stream="out:Union_1"/>
             <param name="strict" value="false"/>
         </box>
         <box name="LoadHCP" type="inputadapter">
             <input port="1" stream="out:Union_1"/>
             <output port="1" stream="out:LoadHCP_1"/>
-            <output port="2" stream="Status"/>
+            <output port="2" stream="out:LoadHCP_2"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.streambase.sb.adapter.httpclient.HTTPClient"/>
             <param name="Charset" value=""/>
@@ -578,7 +639,12 @@
             <param name="urlDecodeData" value="false"/>
             <param name="urlDecodeDataType" value="QUERY_PARAM_SPACE_ENCODED"/>
         </box>
-        <output-stream name="Status"/>
+        <box name="Filter_ResError" type="filter">
+            <input port="1" stream="out:LoadHCP_2"/>
+            <output port="1" stream="out:Filter_ResError_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="startswith(status, 'Response')"/>
+        </box>
         <box name="InitDataField" type="map">
             <input port="1" stream="out:LoadHCP_1"/>
             <output port="1" stream="out:InitDataField_1"/>
@@ -607,6 +673,18 @@
             <param name="expression.2" value="kafkaMessage.MessageType==6"/>
             <param name="expression.3" value="kafkaMessage.MessageType==2"/>
         </box>
+        <box name="ParseInputTuple" type="map">
+            <input port="1" stream="out:Filter_ResError_1"/>
+            <output port="1" stream="out:ParseInputTuple_1"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <declare field="RetryHCP">parsecsv(HCPSchema(), null, info[1].value)</declare>
+                </item>
+                <expressions>
+                    <include field="*">RetryHCP.*</include>
+                </expressions>
+            </target-list>
+        </box>
         <output-stream name="CANStream">
             <param name="connection" value="'canflow.InputStream'"/>
         </output-stream>
@@ -619,5 +697,55 @@
         <output-stream name="GPSStream">
             <param name="connection" value="'gpsflow.InputStream'"/>
         </output-stream>
+        <box name="Check_RetryCount" type="filter">
+            <input port="1" stream="out:ParseInputTuple_1"/>
+            <output port="1" stream="out:Check_RetryCount_1"/>
+            <output port="2" stream="out:Check_RetryCount_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="retryCount &lt; 3"/>
+            <param name="expression.1" value="true"/>
+        </box>
+        <box name="ErrorDownloadHCP" type="outputadapter">
+            <input port="1" stream="out:Check_RetryCount_2"/>
+            <output port="1" stream="out:ErrorDownloadHCP_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.logger.Log"/>
+            <param name="CaptureStrategy" value="FLATTEN"/>
+            <param name="asyncEnabled" value="true"/>
+            <param name="compressFrequentMessages" value="false"/>
+            <param name="compressMaxWindowSize" value="5.0"/>
+            <param name="customFormat" value=""/>
+            <param name="customFormatExpression" value=""/>
+            <param name="customFormatType" value="Basic"/>
+            <param name="emitLoggedTuples" value="true"/>
+            <param name="encodeSubType" value="Map"/>
+            <param name="hexEncodeBlobs" value="false"/>
+            <param name="includeNullFields" value="false"/>
+            <param name="logLevel" value="Info"/>
+            <param name="logLevelOverrideFieldName" value=""/>
+            <param name="loggerFormatType" value="CSV"/>
+            <param name="messageIdentifier" value=""/>
+            <param name="messageIdentifierExpression" value=""/>
+            <param name="messageIdentifierType" value="Use EventFlow Name"/>
+            <param name="messagePrefix" value=""/>
+            <param name="moduleQualifiedEventFlowName" value="false"/>
+            <param name="quoteNullStrings" value="true"/>
+            <param name="timestampAsLong" value="false"/>
+            <param name="timestampFormat" value="yyyy-MM-dd HH:mm:ss.SSSZ"/>
+            <param name="verbose" value="false"/>
+        </box>
+        <box name="IncRetryCount" type="map">
+            <input port="1" stream="out:Check_RetryCount_1"/>
+            <output port="1" stream="out:IncRetryCount_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <replace field="retryCount">retryCount + 1</replace>
+                </expressions>
+            </target-list>
+        </box>
+        <gui.note name="Note">
+            <property name="description" value="Response Error 발생시 3번까지 retry"/>
+        </gui.note>
     </add>
 </modify>

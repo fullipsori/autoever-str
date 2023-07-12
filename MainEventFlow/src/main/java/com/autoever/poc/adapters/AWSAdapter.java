@@ -49,8 +49,6 @@ public class AWSAdapter {
 	* using the alias name instead of using calljava().
 	*/
 	public static String GetAWSUrl(long baseTime, long vehicleID, String filename){
-	    // TODO Implement function here
-	    // TODO Implement function here
 		LocalDateTime localDateTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(baseTime), ZoneId.of("Asia/Seoul"));
 		String dateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
 		try {
