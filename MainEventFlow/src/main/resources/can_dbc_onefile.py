@@ -174,7 +174,7 @@ def parsed_dbc(filepath):
     return dbc_list        
 
 
-dbcFileName = 'ch5_20230131_STD_DB_CAR_2021_FD_E_v22_12_02.dbc'
+dbcFileName = '20200604_마스터_EV(2nd_Gen-2ch-P)_2_70_01_ALL.dbc'
 dbcfilepath = 'd:/projects/from_hyuncar/can_source/TestFile/' + dbcFileName
 
 dbc_list = parsed_dbc(dbcfilepath)
@@ -223,7 +223,10 @@ while True:
     # print(deltaTime,realTime,msgInfo,msgId,msgId2,dlc,fdata,vehicleKey)
     # print(f"{deltaTime:0.3f} / {realTime} / {msgInfo} / {msgId} / {msgId2} / {dlc} / {fdata} / {vehicleKey}")
 
+    # sig_data=dbc_list[dbc_list['msg_id']==str(msgId2)]
+    signals = ['CF_Clu_Odometer', 'CF_Vcu_GarSelDisp', 'CR_Mcu_VehSpdDec_Kph', 'CR_Mcu_VehSpd_Kph', 'CF_OBC_DCChargingStat', 'CF_Bms_chgsts']
     sig_data=dbc_list[dbc_list['msg_id']==str(msgId2)]
+    sig_data=sig_data[sig_data['sig_name'].isin(signals)]
     multi_value=[]
     #for문 (아직 multiplexer 구현 x)
     for idx,row in sig_data.iterrows():

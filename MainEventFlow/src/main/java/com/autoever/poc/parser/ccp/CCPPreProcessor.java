@@ -112,13 +112,14 @@ public class CCPPreProcessor implements PreProcessable {
 
 
 	@Override
-	public boolean preProcess(Tuple kafkaMessage, Tuple dataTuple, int channel, int id, byte[] rawData) {
+	public boolean preProcess(Tuple inputTuple, Tuple dataTuple, int msgInfo, int channel, int id, byte[] rawData) {
 		// TODO Auto-generated method stub
 		if(rawData == null || rawData.length == 0) return false;
 		if(prevCmd != 0 ) {
 			if(prevCmd != 255 && ((rawData[0]&0xff) >= ccpStartCmd) && ((rawData[0]&0xff) <= ccpEndCmd)) {
 				prevCmd = rawData[0] & 0xff;
 				try {
+					Tuple kafkaMessage = inputTuple.getTuple("kafkaMessage");
 					ODTParser odtParser = ODTRepository.getInstance().getMapper(kafkaMessage);
 					List<Pair<String, Long>> odtParsed = parseData(rawData, odtParser);
 					if(odtParsed != null) {

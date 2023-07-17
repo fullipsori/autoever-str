@@ -17,31 +17,6 @@
                 <field name="nameFilter" type="string"/>
                 <field name="baseValue" type="string"/>
             </schema>
-            <schema name="DBCDataSchema">
-                <field name="data_id" type="long"/>
-                <field name="vehicleKeyID" type="long"/>
-                <field name="msg_name" type="string"/>
-                <field name="msg_id" type="long"/>
-                <field name="msg_is_extended_frame" type="bool"/>
-                <field name="msg_length" type="int"/>
-                <field name="msg_comment" type="string"/>
-                <field name="sig_name" type="string"/>
-                <field name="sig_start" type="int"/>
-                <field name="sig_length" type="int"/>
-                <field name="sig_byte_order" type="string"/>
-                <field name="sig_is_signed" type="bool"/>
-                <field name="sig_initial" type="int"/>
-                <field name="sig_scale" type="double"/>
-                <field name="sig_offset" type="double"/>
-                <field name="sig_minimum" type="string"/>
-                <field name="sig_maximum" type="string"/>
-                <field name="sig_unit" type="string"/>
-                <field name="sig_is_multiplexer" type="bool"/>
-                <field name="sig_multiplexer_ids" type="string"/>
-                <field name="sig_mtable" type="string"/>
-                <field name="sig_spn" type="string"/>
-                <field name="sig_comments" type="string"/>
-            </schema>
             <schema name="TRIGDATA">
                 <field name="preTime" type="double"/>
                 <field name="postTime" type="double"/>
@@ -59,7 +34,6 @@
         <dynamic-variables>
             <dynamic-variable initial-expression="string(null)" name="compEvent" setter-expression="if !isempty(input.eventName) then input.eventName else compEvent" setter-stream="UpdateVarStream"/>
             <dynamic-variable initial-expression="string(null)" name="compValue" setter-expression="input.eventValue" setter-stream="UpdateVarStream"/>
-            <dynamic-variable initial-expression="emptylist(DBCDataSchema())" name="matchSignals" setter-expression="if isnull(input.matchSignal) then emptylist(DBCDataSchema()) else append(matchSignals, input.matchSignal)" setter-stream="UpdateSignalVariable"/>
         </dynamic-variables>
         <table-schemas>
             <table-schema name="CanParamsSchema">
@@ -77,29 +51,11 @@
                     <field name="terminalID"/>
                 </primary-index>
             </table-schema>
-            <table-schema name="DBCTableSchema" schema="DBCDataSchema">
-                <primary-index type="btree">
-                    <field name="data_id"/>
-                </primary-index>
-                <index type="btree">
-                    <field name="vehicleKeyID"/>
-                </index>
-                <index type="btree">
-                    <field name="sig_name"/>
-                </index>
-            </table-schema>
         </table-schemas>
         <data name="QueryTable" shared="false" source="input" type="querytable">
             <param name="storage-method" value="transactional_memory"/>
             <param name="replicated" value="false"/>
             <param name="table-schema" value="CanParamsSchema"/>
-            <param name="truncate" value="false"/>
-            <preload format="csv" mode="empty"/>
-        </data>
-        <data name="QueryTable2" shared="false" source="input" type="querytable">
-            <param name="storage-method" value="transactional_memory"/>
-            <param name="replicated" value="false"/>
-            <param name="table-schema" value="DBCTableSchema"/>
             <param name="truncate" value="false"/>
             <preload format="csv" mode="empty"/>
         </data>
@@ -151,8 +107,7 @@
             <input port="1" stream="out:GetPrevData_1"/>
             <output port="1" stream="out:Split4_1"/>
             <output port="2" stream="out:Split4_2"/>
-            <output port="3" stream="out:Split4_3"/>
-            <param name="output-count" value="3"/>
+            <param name="output-count" value="2"/>
         </box>
         <box name="LoadParams" type="map">
             <input port="1" stream="out:Split4_1"/>
@@ -168,7 +123,7 @@
             </target-list>
         </box>
         <box name="RemoveUnused" type="map">
-            <input port="1" stream="out:Split4_3"/>
+            <input port="1" stream="out:Split4_2"/>
             <output port="1" stream="out:RemoveUnused_1"/>
             <target-list>
                 <item name="input" selection="all">
@@ -178,12 +133,6 @@
                 </item>
             </target-list>
         </box>
-        <box name="Split" type="split">
-            <input port="1" stream="out:Split4_2"/>
-            <output port="1" stream="out:Split_1"/>
-            <output port="2" stream="out:Split_2"/>
-            <param name="output-count" value="2"/>
-        </box>
         <box name="CANRawParser" type="java">
             <input port="1" stream="out:RemoveUnused_1"/>
             <output port="1" stream="out:CANRawParser_1"/>
@@ -192,56 +141,7 @@
             <param name="javaclass" value="com.autoever.poc.adapters.VdmsRawParser"/>
             <param name="parserType" value="CAN"/>
         </box>
-        <box name="Map2" type="map">
-            <input port="1" stream="out:Split_1"/>
-            <output port="1" stream="out:Map2_1"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="matchSignal">DBCDataSchema()</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="ReadDBCData" type="query">
-            <input port="1" stream="out:Split_2"/>
-            <output port="1" stream="out:ReadDBCData_1"/>
-            <dataref id="querytable" name="QueryTable2"/>
-            <param name="operation" value="read"/>
-            <param name="where" value="secondary-key"/>
-            <param name="key-field.0" value="vehicleKeyID"/>
-            <param name="key-lowerbound-value.0" value="219054"/>
-            <param name="key-lowerbound-operation.0" value="eq"/>
-            <param name="key-upperbound-operation.0" value="none"/>
-            <param name="write-type" value="insert"/>
-            <param name="if-write-fails" value="ignore"/>
-            <param name="no-match-mode" value="output-no-match-nothing"/>
-            <param name="order-by-direction" value="none"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <item name="current" selection="all"/>
-                <item name="old" selection="none"/>
-            </target-list>
-            <target-list goal-schema="DBCDataSchema" name="insert">
-                <item name="input" selection="all"/>
-            </target-list>
-            <target-list goal-schema="DBCDataSchema" name="update">
-                <item name="input" selection="all"/>
-            </target-list>
-            <target-list goal-schema="DBCDataSchema" name="no-match">
-                <item name="input" selection="all"/>
-            </target-list>
-        </box>
         <output-stream name="OutputRawDataStream"/>
-        <box name="Map" type="map">
-            <input port="1" stream="out:ReadDBCData_1"/>
-            <output port="1" stream="out:Map_1"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="matchSignal.*">*</include>
-                </expressions>
-            </target-list>
-        </box>
         <box name="Organize" type="map">
             <input port="1" stream="out:CANRawParser_1"/>
             <output port="1" stream="out:Organize_1"/>
@@ -266,13 +166,12 @@
             <param name="expression.1" value="IsEnded"/>
             <param name="expression.2" value="true"/>
         </box>
-        <box name="Union2" type="union">
-            <input port="1" stream="out:Map2_1"/>
-            <input port="2" stream="out:Map_1"/>
-            <output port="1" stream="UpdateSignalVariable"/>
-            <param name="strict" value="false"/>
+        <box name="FilterKeyFlag" type="filter">
+            <input port="1" stream="out:FilterMarker_3"/>
+            <output port="1" stream="out:FilterKeyFlag_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="GetKeyFlag(kafkaMessage.TerminalID, RawHeader)"/>
         </box>
-        <output-stream name="UpdateSignalVariable"/>
         <box name="MarkerEnded" type="map">
             <input port="1" stream="out:FilterMarker_2"/>
             <output port="1" stream="out:MarkerEnded_1"/>
@@ -304,27 +203,13 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="Split3" type="split">
-            <input port="1" stream="out:FilterMarker_3"/>
-            <output port="1" stream="out:Split3_1"/>
-            <output port="2" stream="out:Split3_2"/>
-            <param name="output-count" value="2"/>
-        </box>
-        <box name="FilterKeyFlag" type="filter">
-            <input port="1" stream="out:Split3_1"/>
-            <output port="1" stream="out:FilterKeyFlag_1"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="GetKeyFlag(kafkaMessage.TerminalID, RawHeader)"/>
-        </box>
-        <box name="Map4" type="map">
-            <input port="1" stream="out:Split3_2"/>
-            <output port="1" stream="out:Map4_1"/>
+        <box name="GetTrigData" type="map">
+            <input port="1" stream="out:FilterKeyFlag_1"/>
+            <output port="1" stream="out:GetTrigData_1"/>
             <target-list>
-                <item name="input" selection="all">
-                    <declare field="dataMsgID">if(bitand(RawHeader.MSGInfo, 0x1)==0x1) then bitand(RawHeader.DataID, 0x00FFFFFF) else bitand(RawHeader.DataID, 0x7FF)</declare>
-                </item>
+                <item name="input" selection="all"/>
                 <expressions>
-                    <include field="matched">filterlist(matchSignals, function(dbc DBCDataSchema) { dbc.msg_id == dataMsgID})</include>
+                    <include field="trigDataList">GetTrigData(kafkaMessage.TerminalID,RawHeader)</include>
                 </expressions>
             </target-list>
         </box>
@@ -352,22 +237,6 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="Filter" type="filter">
-            <input port="1" stream="out:Map4_1"/>
-            <output port="1" stream="out:Filter_1"/>
-            <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="!isempty(matched)"/>
-        </box>
-        <box name="GetTrigData" type="map">
-            <input port="1" stream="out:FilterKeyFlag_1"/>
-            <output port="1" stream="out:GetTrigData_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="trigDataList">GetTrigData(kafkaMessage.TerminalID,RawHeader)</include>
-                </expressions>
-            </target-list>
-        </box>
         <box name="FilterTrigData" type="filter">
             <input port="1" stream="out:GetTrigData_1"/>
             <output port="1" stream="out:FilterTrigData_1"/>
@@ -381,16 +250,6 @@
                 <item name="input" selection="all"/>
                 <expressions>
                     <include field="prevData">GetPolicyParams(kafkaMessage.TerminalID)</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="GetRawData" type="map">
-            <input port="1" stream="out:Filter_1"/>
-            <output port="1" stream="out:GetRawData_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="matchedDatas">GetMatchedSignal(RawHeader, matched)</include>
                 </expressions>
             </target-list>
         </box>
@@ -412,27 +271,9 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="Iter_TrigDataCopy" type="iterate">
-            <input port="1" stream="out:GetRawData_1"/>
-            <output port="1" stream="out:Iter_TrigDataCopy_1"/>
-            <param name="iterate-expr" value="matchedDatas"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="*">each.element.*</include>
-                    <include field="baseTime">kafkaMessage.BaseTime</include>
-                    <include field="messageID">messageID</include>
-                    <include field="realTime">long(GetLocalTime(kafkaMessage.BaseTime + long(each.element.deltaTime), ''))</include>
-                    <include field="rootCount">kafkaMessage.RootCount</include>
-                    <include field="terminalID">kafkaMessage.TerminalID</include>
-                    <include field="vehicleKeyID">kafkaMessage.VehicleKeyID</include>
-                    <include field="mgmtNO">mgmtNO</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="Query" type="query">
+        <box name="InsertCur" type="query">
             <input port="1" stream="out:GetParamsToSave_1"/>
-            <output port="1" stream="out:Query_1"/>
+            <output port="1" stream="out:InsertCur_1"/>
             <dataref id="querytable" name="QueryTable"/>
             <param name="operation" value="write"/>
             <param name="where" value="primary-key"/>
@@ -446,7 +287,6 @@
                 <item name="input" selection="all"/>
                 <item name="old" selection="none"/>
                 <item name="new" selection="none"/>
-                <item name="current" selection="none"/>
             </target-list>
             <target-list name="insert">
                 <item name="input" selection="all"/>
@@ -463,8 +303,14 @@
                 <item name="input" selection="all"/>
             </target-list>
         </box>
+        <box name="Split_status" type="split">
+            <input port="1" stream="out:Iter_TrigData_1"/>
+            <output port="1" stream="out:Split_status_1"/>
+            <output port="2" stream="out:Split_status_2"/>
+            <param name="output-count" value="2"/>
+        </box>
         <box name="EndedCanProc" type="map">
-            <input port="1" stream="out:Query_1"/>
+            <input port="1" stream="out:InsertCur_1"/>
             <output port="1" stream="out:EndedCanProc_1"/>
             <target-list>
                 <item name="input" selection="none"/>
@@ -474,19 +320,6 @@
                     <replace field="perfData.data_count">MSGIdx-2</replace>
                 </expressions>
             </target-list>
-        </box>
-        <box name="Sequence2" type="seqnum">
-            <input port="1" stream="out:Iter_TrigDataCopy_1"/>
-            <output port="1" stream="out:Sequence2_1"/>
-            <param name="output-field" value="sequence3_id"/>
-            <param name="sequence-id" value="sequence3id"/>
-            <param name="update-expression" value="sequence3id + 1"/>
-        </box>
-        <box name="Split_status" type="split">
-            <input port="1" stream="out:Iter_TrigData_1"/>
-            <output port="1" stream="out:Split_status_1"/>
-            <output port="2" stream="out:Split_status_2"/>
-            <param name="output-count" value="2"/>
         </box>
         <box name="Filter_NotTrig" type="filter">
             <input port="1" stream="out:Split_status_1"/>
@@ -499,18 +332,6 @@
             <output port="1" stream="out:FilterChangedEvent_1"/>
             <param name="autogen-nomatch-port" value="false"/>
             <param name="expression.0" value="false &amp;&amp; (!isempty(value) &amp;&amp; (eventName == compEvent) &amp;&amp; (isempty(compValue) || value !=compValue))"/>
-        </box>
-        <box name="Map3" type="map">
-            <input port="1" stream="out:Sequence2_1"/>
-            <output port="1" stream="out:Map3_1"/>
-            <target-list>
-                <item name="input" selection="all">
-                    <remove field="sequence3_id"/>
-                </item>
-                <expressions>
-                    <replace field="messageID">messageID + '_' + sequence3_id</replace>
-                </expressions>
-            </target-list>
         </box>
         <module-reference name="PublishPerf">
             <input name="InputStream" port="1" stream="out:EndedCanProc_1"/>
@@ -609,14 +430,8 @@
             <param name="useRuntimeURI" value="false"/>
         </box>
         <output-stream name="UpdateVarStream"/>
-        <box name="Union3" type="union">
-            <input port="1" stream="out:ADD_seq2id_1"/>
-            <input port="2" stream="out:Map3_1"/>
-            <output port="1" stream="out:Union3_1"/>
-            <param name="strict" value="false"/>
-        </box>
         <box name="PublishRaw" type="outputadapter">
-            <input port="1" stream="out:Union3_1"/>
+            <input port="1" stream="out:ADD_seq2id_1"/>
             <output port="1" stream="out:PublishRaw_1"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.streambase.sb.adapter.liveview.LiveViewPublish"/>

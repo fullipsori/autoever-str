@@ -22,10 +22,9 @@ public class CanPreProcessor implements PreProcessable {
 	}
 
 	@Override
-	public boolean preProcess(Tuple kafkaMessage, Tuple dataTuple, int channel, int id, byte[] rawData) {
-		return true;
-		/** blocked because of dbc 
+	public boolean preProcess(Tuple inputTuple, Tuple dataTuple, int msgInfo, int channel, int id, byte[] rawData) {
 		try {
+			Tuple kafkaMessage = inputTuple.getTuple("kafkaMessage");
 			PolicyParser policy = PolicyRepository.getInstance().getMapper(kafkaMessage);
 			if(policy == null) return false;
 			return policy.IsAvailable(channel, id);
@@ -33,7 +32,6 @@ public class CanPreProcessor implements PreProcessable {
 			e.printStackTrace();
 			return false;
 		}
-		**/
 	}
 	
 	@Override

@@ -13,11 +13,19 @@ import com.autoever.poc.common.RawDataField;
 import com.autoever.poc.parser.AutoDataHeaderField;
 import com.autoever.poc.parser.DefaultPreProcessor;
 import com.autoever.poc.parser.PreProcessable;
+import com.autoever.poc.parser.can.CanDBCPreProcessor;
 import com.autoever.poc.parser.can.CanPreProcessor;
 import com.autoever.poc.parser.ccp.CCPPreProcessor;
 import com.autoever.poc.parser.gps.GPSPreProcessor;
-import com.streambase.sb.*;
-import com.streambase.sb.operator.*;
+import com.streambase.sb.ByteArrayView;
+import com.streambase.sb.CompleteDataType;
+import com.streambase.sb.Schema;
+import com.streambase.sb.StreamBaseException;
+import com.streambase.sb.Tuple;
+import com.streambase.sb.TupleException;
+import com.streambase.sb.operator.Operator;
+import com.streambase.sb.operator.Parameterizable;
+import com.streambase.sb.operator.TypecheckException;
 import com.streambase.sb.util.Base64;
 
 /**
@@ -41,7 +49,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 
 	// Enum definition for property parserType 
 	public static enum parserTypeEnum {
-		DEFAULT("default"), CAN("CAN"), CCP("CCP"), GPS("GPS");
+		DEFAULT("default"), CAN("CAN"), CCP("CCP"), GPS("GPS"), CAN_DBC("CAN_DBC");
 
 		private final String rep;
 
@@ -125,6 +133,8 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 			
 			if(getParserType() == parserTypeEnum.CAN) {
 				CanPreProcessor.addSchemaField(outputSchemaField);
+			}else if(getParserType() == parserTypeEnum.CAN_DBC) {
+				CanDBCPreProcessor.addSchemaField(outputSchemaField);
 			}else if(getParserType() == parserTypeEnum.CCP) {
 				CCPPreProcessor.addSchemaField(outputSchemaField);
 			}else if(getParserType() == parserTypeEnum.GPS) {
@@ -272,7 +282,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 				}
 				dataTuple.setTuple("PassThroughs", inputTuple);
 				
-				if(preprocessor == null || preprocessor.preProcess(kafkaMessage, dataTuple, dataChannel, dataId, rawData)) {
+				if(preprocessor == null || preprocessor.preProcess(inputTuple, dataTuple, dataFlag, dataChannel, dataId, rawData)) {
 					tuples.add(dataTuple);
 					msgIdx++;
 				}else {
@@ -287,7 +297,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 			endTuple.setInt(RawParserDataField.MSGIdx.index, msgIdx+1); //started + ended + count(tuples)
 			endTuple.setTuple("PassThroughs", inputTuple);
 			tuples.add(endTuple);
-
+			
 		}catch(Exception e) {
 			e.printStackTrace();
 //			System.out.println("RawParser Exception:" + e.getMessage());
@@ -310,6 +320,8 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 
 		if(parserType == parserTypeEnum.CAN) {
 			preprocessor = new CanPreProcessor();
+		}else if(parserType == parserTypeEnum.CAN_DBC){
+			preprocessor = new CanDBCPreProcessor();
 		}else if(parserType == parserTypeEnum.CCP){
 			preprocessor = new CCPPreProcessor();
 		}else if(parserType == parserTypeEnum.GPS){

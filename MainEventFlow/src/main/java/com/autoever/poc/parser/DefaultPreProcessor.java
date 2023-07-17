@@ -16,7 +16,7 @@ public class DefaultPreProcessor implements PreProcessable {
 	}
 
 	@Override
-	public boolean preProcess(Tuple kafkaMessage, Tuple dataTuple, int channel, int id, byte[] rawData) {
+	public boolean preProcess(Tuple inputTuple, Tuple dataTuple, int msgInfo, int channel, int id, byte[] rawData) {
 		// TODO Auto-generated method stub
 		return true;
 	}

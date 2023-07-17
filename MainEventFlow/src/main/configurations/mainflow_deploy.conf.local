@@ -35,6 +35,16 @@ configuration = {
 					}
 				}
 			}
+			candbcflow = {
+				moduleName="com.autoever.poc.maineventflow.CANDBCFlow"
+				moduleParameterSettings = {
+					parameters = {
+						PYTHON_EXECUTABLE = "D:/projects/vdms_env/Scripts/python.exe"
+						RESOURCE_ROOT = "d:/Projects/vdms/resources"
+						LV_SERVER_URI = "lv://localhost:11080"
+					}
+				}
+			}
 			diagflow = {
 				moduleName="com.autoever.poc.maineventflow.DIAGFlow"
 				moduleParameterSettings = {

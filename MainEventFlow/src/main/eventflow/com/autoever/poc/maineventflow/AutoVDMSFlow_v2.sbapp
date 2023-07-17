@@ -527,7 +527,7 @@
             <output port="2" stream="out:FilterFromFiles_2"/>
             <output port="3" stream="out:FilterFromFiles_3"/>
             <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="message.MessageType==1 &amp;&amp; contains(policyFiles, message.TerminalID)"/>
+            <param name="expression.0" value="message.MessageType==1 &amp;&amp; (contains(policyFiles, message.TerminalID) || contains(CCPVIDs, string(message.VehicleKeyID)))"/>
             <param name="expression.1" value="message.MessageType==4 || message.MessageType==6"/>
             <param name="expression.2" value="message.MessageType==2 &amp;&amp; contains(CCPVIDs, string(message.VehicleKeyID))"/>
         </box>
@@ -663,7 +663,7 @@
         </box>
         <box name="Distribute" type="filter">
             <input port="1" stream="out:InitDataField_1"/>
-            <output port="1" stream="CANStream"/>
+            <output port="1" stream="out:Distribute_1"/>
             <output port="2" stream="DIAGStream"/>
             <output port="3" stream="GPSStream"/>
             <output port="4" stream="CCPStream"/>
@@ -685,9 +685,6 @@
                 </expressions>
             </target-list>
         </box>
-        <output-stream name="CANStream">
-            <param name="connection" value="'canflow.InputStream'"/>
-        </output-stream>
         <output-stream name="CCPStream">
             <param name="connection" value="'ccpflow.InputStream'"/>
         </output-stream>
@@ -705,9 +702,15 @@
             <param name="expression.0" value="retryCount &lt; 3"/>
             <param name="expression.1" value="true"/>
         </box>
+        <box name="Split4" type="split">
+            <input port="1" stream="out:Distribute_1"/>
+            <output port="1" stream="out:Split4_1"/>
+            <output port="2" stream="out:Split4_2"/>
+            <param name="output-count" value="2"/>
+        </box>
         <box name="ErrorDownloadHCP" type="outputadapter">
             <input port="1" stream="out:Check_RetryCount_2"/>
-            <output port="1" stream="out:ErrorDownloadHCP_1"/>
+            <output port="1" stream="OutputHCPRetryOverStream"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.streambase.sb.adapter.logger.Log"/>
             <param name="CaptureStrategy" value="FLATTEN"/>
@@ -734,6 +737,18 @@
             <param name="timestampFormat" value="yyyy-MM-dd HH:mm:ss.SSSZ"/>
             <param name="verbose" value="false"/>
         </box>
+        <box name="Filter_CCPList" type="filter">
+            <input port="1" stream="out:Split4_2"/>
+            <output port="1" stream="CANDBCStream"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="contains(CCPVIDs, string(kafkaMessage.VehicleKeyID))"/>
+        </box>
+        <box name="Filter_PolicyList" type="filter">
+            <input port="1" stream="out:Split4_1"/>
+            <output port="1" stream="CANStream"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="contains(policyFiles, kafkaMessage.TerminalID)"/>
+        </box>
         <box name="IncRetryCount" type="map">
             <input port="1" stream="out:Check_RetryCount_1"/>
             <output port="1" stream="out:IncRetryCount_1"/>
@@ -744,6 +759,13 @@
                 </expressions>
             </target-list>
         </box>
+        <output-stream name="CANDBCStream">
+            <param name="connection" value="'candbcflow.InputStream'"/>
+        </output-stream>
+        <output-stream name="CANStream">
+            <param name="connection" value="'canflow.InputStream'"/>
+        </output-stream>
+        <output-stream name="OutputHCPRetryOverStream"/>
         <gui.note name="Note">
             <property name="description" value="Response Error 발생시 3번까지 retry"/>
         </gui.note>

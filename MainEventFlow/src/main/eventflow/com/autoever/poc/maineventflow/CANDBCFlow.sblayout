@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><application-layout>
+    <component name="InputStream">
+        <param name="gui:x" value="-551"/>
+        <param name="gui:y" value="2"/>
+    </component>
+    <component name="CANDBCParser">
+        <param name="gui:x" value="-439"/>
+        <param name="gui:y" value="0"/>
+        <param name="gui:height" value="65"/>
+        <param name="gui:bends:2" value="-294,-19;-284,-66"/>
+    </component>
+    <component name="DBCTable">
+        <param name="gui:x" value="-122"/>
+        <param name="gui:y" value="218"/>
+        <param name="gui:width" value="80"/>
+        <param name="gui:height" value="56"/>
+    </component>
+    <component name="AddSignals">
+        <param name="gui:x" value="-439"/>
+        <param name="gui:y" value="-173"/>
+    </component>
+    <component name="DeletePrev">
+        <param name="gui:x" value="-192"/>
+        <param name="gui:y" value="-173"/>
+    </component>
+    <component name="Initialize">
+        <param name="gui:x" value="-551"/>
+        <param name="gui:y" value="-173"/>
+    </component>
+    <component name="InsertDBC">
+        <param name="gui:x" value="420"/>
+        <param name="gui:y" value="-173"/>
+    </component>
+    <component name="Iterate">
+        <param name="gui:x" value="340"/>
+        <param name="gui:y" value="-173"/>
+    </component>
+    <component name="Iterate2">
+        <param name="gui:x" value="-272"/>
+        <param name="gui:y" value="-173"/>
+    </component>
+    <component name="LoadDBCData">
+        <param name="gui:x" value="-14"/>
+        <param name="gui:y" value="-173"/>
+    </component>
+    <component name="Unpack">
+        <param name="gui:x" value="98"/>
+        <param name="gui:y" value="-173"/>
+    </component>
+    <component name="jsonToTuple">
+        <param name="gui:x" value="202"/>
+        <param name="gui:y" value="-173"/>
+    </component>
+    <component name="pack">
+        <param name="gui:x" value="-112"/>
+        <param name="gui:y" value="-173"/>
+    </component>
+    <component name="OutputDBCStream">
+        <param name="gui:x" value="510"/>
+        <param name="gui:y" value="-173"/>
+    </component>
+    <component name="OutputParserStream">
+        <param name="gui:x" value="-272"/>
+        <param name="gui:y" value="-79"/>
+        <param name="gui:bends:1" value="-337,20;-321,-49"/>
+    </component>
+    <component name="OutputRawDataStream">
+        <param name="gui:x" value="-272"/>
+        <param name="gui:y" value="109"/>
+        <param name="gui:bends:1" value="-353,45;-331,139"/>
+    </component>
+    <component name="OutputVarStream">
+        <param name="gui:x" value="-272"/>
+        <param name="gui:y" value="15"/>
+        <param name="gui:bends:1" value="-330,32;-328,45"/>
+    </component>
+</application-layout>

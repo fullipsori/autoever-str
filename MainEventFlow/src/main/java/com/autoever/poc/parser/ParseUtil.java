@@ -141,7 +141,7 @@ public class ParseUtil {
 						tuple.setString(3, p.first); //event
 						tuple.setString(4, ""); //category
 						tuple.setString(5, ""); //status
-						tuple.setString(6, String.valueOf(p.second)); //value
+						tuple.setString(6, String.format("%.3f",p.second)); //value
 						return tuple;
 					}catch(Exception e) {
 						return null;
