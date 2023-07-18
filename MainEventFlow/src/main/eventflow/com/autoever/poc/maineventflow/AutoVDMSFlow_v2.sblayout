@@ -20,7 +20,6 @@
     <component name="AddUrl">
         <param name="gui:x" value="-1222"/>
         <param name="gui:y" value="763"/>
-        <param name="gui:bends:1" value="-1428,557;-1368,798"/>
     </component>
     <component name="CheckMgmtNO">
         <param name="gui:x" value="-1588"/>
@@ -42,7 +41,6 @@
         <param name="gui:x" value="-813"/>
         <param name="gui:y" value="851"/>
         <param name="gui:height" value="78"/>
-        <param name="gui:bends:1" value="-867,872;-863,890"/>
     </component>
     <component name="ErrorDownloadHCP">
         <param name="gui:x" value="-1222"/>
@@ -290,12 +288,6 @@
     <component name="UpdateKeyStream">
         <param name="gui:x" value="-2211"/>
         <param name="gui:y" value="1097"/>
-    </component>
-    <component name="Note">
-        <param name="gui:x" value="-3400"/>
-        <param name="gui:y" value="979"/>
-        <param name="gui:width" value="230"/>
-        <param name="gui:height" value="51"/>
     </component>
     <component name="Group_DN_HCP">
         <param name="gui:x" value="-1552"/>

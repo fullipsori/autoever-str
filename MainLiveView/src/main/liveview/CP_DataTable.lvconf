@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="ASCII"?>
 <liveview-configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.streambase.com/schemas/lvconf/">
-  <data-table id="AutoCCPTrigDataTable" snapshot-parallelism="1" snapshot-concurrency="1">
+  <data-table id="CP_DataTable" snapshot-parallelism="1" snapshot-concurrency="1">
     <fields>
       <field name="EventArrivalTS" type="timestamp"/>
     </fields>
-    <import-schema from="com.autoever.poc.mainliveview.LiveViewTable" schema="CCPTrigDataSchema"/>
+    <import-schema from="com.autoever.poc.mainliveview.LiveViewTable" schema="CP_DataTableSchema"/>
     <table-delete-rule>WHEN EventArrivalTS BETWEEN epoch() AND now()-days(1)</table-delete-rule>
     <primary-key>
       <field ref="messageID"/>
     </primary-key>
     <indices>
-      <index>
-        <field ref="terminalID"/>
-      </index>
       <index>
         <field ref="vehicleKeyID"/>
       </index>

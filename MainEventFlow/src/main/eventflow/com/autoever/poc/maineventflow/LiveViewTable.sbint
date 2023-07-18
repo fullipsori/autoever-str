@@ -53,6 +53,36 @@
             <field description="배터리팩내 개별 온도 센서 정보들의 하나의 문자열로 조인" name="msrTBData" type="string"/>
             <field description="배터리 SOC 상태" name="SOC" type="double"/>
         </schema>
+        <schema name="CP_DataTableSchema">
+            <field description="sb 에서 생성한 메세지 ID (vehicleKeyID + timestamp + seq_num)" name="messageID" type="string"/>
+            <field description="단말기 ID (KafkaMessage)" name="terminalID" type="string"/>
+            <field description="차량번호 (KafkaMessage)" name="vehicleKeyID" type="long"/>
+            <field description="차량 관리번호 (연구소 제공 자료)" name="mgmtNO" type="string"/>
+            <field description="주행번호 (KafkaMessage)" name="rootCount" type="int"/>
+            <field description="운행 baseTime (KafkaMessage)" name="baseTime" type="long"/>
+            <field description="kafka DeltaTime" name="deltaTime" type="double"/>
+            <field description="event 발생 시간" name="realTime" type="long"/>
+            <field description="최대(cell)-최소(cell)" name="deltaVol" type="long"/>
+            <field description="cell 데이터 값" name="cellData" type="string"/>
+            <field description="이전과 현재 cell 데이터 차이" name="cellDiffData" type="string"/>
+            <field description="각 셀 전압변화의 편차" name="dVol" type="string"/>
+            <field description="셀 전압 편차 최대인 셀" name="maxDVolCell" type="string"/>
+            <field description="셀 전압 편차 최대값" name="maxDVolVal" type="double"/>
+            <field description="배터리팩내 개별 온도 센서" name="msrTBData" type="string"/>
+            <field description="최대-최소 온도" name="deltaTB" type="double"/>
+            <field description="최대 온도" name="maxTB" type="double"/>
+            <field description="배터리 SOC 상태" name="SOC" type="double"/>
+            <field description="배터리 전류값" name="IBM" type="double"/>
+            <field description="배터리 충전 상태" name="chargingNow" type="long"/>
+            <field description="절연 저항값" name="ISOL" type="long"/>
+            <field description="Cell 저항값(1초 변화량)" name="RESs" type="string"/>
+            <field description="주행거리" name="CF_Clu_Odometer" type="string"/>
+            <field description="기어포지션" name="CF_Vcu_GarSelDisp" type="string"/>
+            <field description="차속, 소수점" name="CR_Mcu_VehSpdDec_Kph" type="string"/>
+            <field description="차속, 소수점" name="CR_Mcu_VehSpd_Kph" type="string"/>
+            <field description="DC충전flag" name="CF_OBC_DCChargingStat" type="string"/>
+            <field description="충전상태" name="CF_Bms_ChgSts" type="string"/>
+        </schema>
         <schema name="CanDataTableSchema">
             <field description="sb 에서 생성한 message unique id (vehicleKeyID + timestamp + seq_num)" name="messageID" type="string"/>
             <field description="단말기ID (KafkaMessage)" name="terminalID" type="string"/>

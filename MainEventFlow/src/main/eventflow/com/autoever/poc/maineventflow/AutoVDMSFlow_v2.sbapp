@@ -139,7 +139,7 @@
         <dynamic-variables>
             <dynamic-variable initial-expression="emptylist(string())" name="CCPVIDs" setter-expression="coalesce(input.CCPVIDs, CCPVIDs)" setter-stream="UpdateKeyStream"/>
             <dynamic-variable initial-expression="true" name="allowCan" setter-expression="coalesce(input.allowCan, allowCan)" setter-stream="UpdateFilterStream"/>
-            <dynamic-variable initial-expression="false" name="allowCcp" setter-expression="coalesce(input.allowCcp, allowCcp)" setter-stream="UpdateFilterStream"/>
+            <dynamic-variable initial-expression="true" name="allowCcp" setter-expression="coalesce(input.allowCcp, allowCcp)" setter-stream="UpdateFilterStream"/>
             <dynamic-variable initial-expression="false" name="allowDiag" setter-expression="coalesce(input.allowDiag, allowDiag)" setter-stream="UpdateFilterStream"/>
             <dynamic-variable initial-expression="false" name="allowGps" setter-expression="coalesce(input.allowGps, allowGps)" setter-stream="UpdateFilterStream"/>
             <dynamic-variable initial-expression="emptylist(string())" name="policyFiles" setter-expression="coalesce(input.policyFiles, policyFiles)" setter-stream="UpdateKeyStream"/>
@@ -263,6 +263,7 @@
                 <expressions>
                     <replace field="command">coalesce(input1.command, 'subscribe')</replace>
                     <replace field="topic">coalesce(input.topic, 'AutoSubmitReq')</replace>
+                    <include field="time">to_milliseconds(now()) - 120*1000</include>
                 </expressions>
             </target-list>
         </box>
@@ -527,7 +528,7 @@
             <output port="2" stream="out:FilterFromFiles_2"/>
             <output port="3" stream="out:FilterFromFiles_3"/>
             <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="message.MessageType==1 &amp;&amp; (contains(policyFiles, message.TerminalID) || contains(CCPVIDs, string(message.VehicleKeyID)))"/>
+            <param name="expression.0" value="message.MessageType==1 &amp;&amp; (contains(CCPVIDs, string(message.VehicleKeyID)) || contains(policyFiles, message.TerminalID))"/>
             <param name="expression.1" value="message.MessageType==4 || message.MessageType==6"/>
             <param name="expression.2" value="message.MessageType==2 &amp;&amp; contains(CCPVIDs, string(message.VehicleKeyID))"/>
         </box>
@@ -766,8 +767,5 @@
             <param name="connection" value="'canflow.InputStream'"/>
         </output-stream>
         <output-stream name="OutputHCPRetryOverStream"/>
-        <gui.note name="Note">
-            <property name="description" value="Response Error 발생시 3번까지 retry"/>
-        </gui.note>
     </add>
 </modify>

@@ -66,6 +66,33 @@
             <param name="truncate" value="false"/>
             <preload format="csv" mode="empty"/>
         </data>
+        <data name="LastestValueTable" shared="false" source="input" type="querytable">
+            <param name="storage-method" value="transactional_memory"/>
+            <param name="replicated" value="false"/>
+            <table-schema>
+                <schema>
+                    <field name="vehicleKeyID" type="long"/>
+                    <field name="rootCount" type="long"/>
+                    <field name="fieldInfo" type="list">
+                        <element-type type="tuple">
+                            <schema>
+                                <field name="fieldName" type="string"/>
+                                <field name="fieldValue" type="string"/>
+                            </schema>
+                        </element-type>
+                    </field>
+                </schema>
+                <primary-index type="btree">
+                    <field name="vehicleKeyID"/>
+                </primary-index>
+                <index type="btree">
+                    <field name="vehicleKeyID"/>
+                    <field name="rootCount"/>
+                </index>
+            </table-schema>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+        </data>
         <stream name="InputStream" schema="MainOutputSchema"/>
         <box name="Split4" type="split">
             <input port="1" stream="InputStream"/>
@@ -124,6 +151,7 @@
             <target-list>
                 <item name="input" selection="none"/>
                 <item name="current" selection="all"/>
+                <item name="old" selection="none"/>
             </target-list>
             <target-list goal-schema="DBCDataSchema" name="insert">
                 <item name="input" selection="all"/>
@@ -325,8 +353,48 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="PublishRaw" type="outputadapter">
+        <box name="Split2" type="split">
             <input port="1" stream="out:add_seq_3_1"/>
+            <output port="1" stream="out:Split2_1"/>
+            <output port="2" stream="out:Split2_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <box name="GetLastest" type="query">
+            <input port="1" stream="out:Split2_2"/>
+            <output port="1" stream="out:GetLastest_1"/>
+            <dataref id="querytable" name="LastestValueTable"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="primary-key"/>
+            <param name="limit" value="1"/>
+            <param name="key-field.0" value="vehicleKeyID"/>
+            <param name="key-lowerbound-value.0" value="input1.vehicleKeyID"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="current" selection="none"/>
+                <expressions>
+                    <include field="fieldInfo">fieldInfo</include>
+                </expressions>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="fieldValue">value</set>
+                </expressions>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="PublishRaw" type="outputadapter">
+            <input port="1" stream="out:Split2_1"/>
             <output port="1" stream="out:PublishRaw_1"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.streambase.sb.adapter.liveview.LiveViewPublish"/>
@@ -357,6 +425,45 @@
             <output port="1" stream="OutputParserStream"/>
             <param name="strict" value="false"/>
         </box>
+        <box name="updateFieldInfo" type="map">
+            <input port="1" stream="out:GetLastest_1"/>
+            <output port="1" stream="out:updateFieldInfo_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="newFieldInfo">AddToFieldList(fieldInfo, eventName, value)</include>
+                </expressions>
+            </target-list>
+        </box>
         <output-stream name="OutputParserStream"/>
+        <box name="InsertLastestValue" type="query">
+            <input port="1" stream="out:updateFieldInfo_1"/>
+            <dataref id="querytable" name="LastestValueTable"/>
+            <param name="operation" value="write"/>
+            <param name="where" value="primary-key"/>
+            <param name="key-field.0" value="vehicleKeyID"/>
+            <param name="key-value.0" value="vehicleKeyID"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="force"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+                <expressions>
+                    <set field="fieldInfo">newFieldInfo</set>
+                </expressions>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
     </add>
 </modify>

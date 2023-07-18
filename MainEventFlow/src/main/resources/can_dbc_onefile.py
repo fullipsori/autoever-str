@@ -224,7 +224,7 @@ while True:
     # print(f"{deltaTime:0.3f} / {realTime} / {msgInfo} / {msgId} / {msgId2} / {dlc} / {fdata} / {vehicleKey}")
 
     # sig_data=dbc_list[dbc_list['msg_id']==str(msgId2)]
-    signals = ['CF_Clu_Odometer', 'CF_Vcu_GarSelDisp', 'CR_Mcu_VehSpdDec_Kph', 'CR_Mcu_VehSpd_Kph', 'CF_OBC_DCChargingStat', 'CF_Bms_chgsts']
+    signals = ['CF_Clu_Odometer', 'CF_Vcu_GarSelDisp', 'CR_Mcu_VehSpdDec_Kph', 'CR_Mcu_VehSpd_Kph', 'CF_OBC_DCChargingStat', 'CF_Bms_ChgSts']
     sig_data=dbc_list[dbc_list['msg_id']==str(msgId2)]
     sig_data=sig_data[sig_data['sig_name'].isin(signals)]
     multi_value=[]

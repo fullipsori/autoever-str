@@ -1,5 +1,6 @@
 package com.autoever.poc.parser;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -11,6 +12,7 @@ import com.autoever.poc.parser.ccp.ODTParser;
 import com.autoever.poc.parser.ccp.ODTRepository;
 import com.streambase.sb.CompleteDataType;
 import com.streambase.sb.NullValueException;
+import com.streambase.sb.Schema;
 import com.streambase.sb.Tuple;
 import com.streambase.sb.TupleException;
 import com.streambase.sb.client.CustomFunctionResolver;
@@ -157,4 +159,68 @@ public class ParseUtil {
 		return CompleteDataType.forList(CompleteDataType.forTuple(PolicyRepository.trigDataSchema));
 	}
 	
+	public static Schema fieldSchema = new Schema(
+			null,
+			new Schema.Field("fieldName", CompleteDataType.forString()),
+			new Schema.Field("fieldValue", CompleteDataType.forString())
+	);
+
+	@CustomFunctionResolver("AddToFieldListCustomFunctionResolver0")
+	public static List<Tuple> AddToFieldList(List<Tuple> fieldList, String fieldName, String fieldValue) {
+		try {
+			Tuple tuple = fieldSchema.createTuple();
+			tuple.setString(0, fieldName);
+			tuple.setString(1, fieldValue);
+			if(fieldList == null || fieldList.isEmpty()) {
+				ArrayList<Tuple> fList = new ArrayList<>();
+				fList.add(tuple);
+				return fList;
+			}else {
+				fieldList.removeIf(f -> {
+					try {
+						return fieldName.equals(f.getString(0));
+					} catch (Exception e) {
+						return false;
+					}
+				});
+				fieldList.add(tuple);
+				return fieldList;
+			}
+		}catch(Exception e) {
+			return null;
+		}
+	}
+	
+	public static CompleteDataType AddToFieldListCustomFunctionResolver0(CompleteDataType fieldList, CompleteDataType fieldName, CompleteDataType fieldValue) {
+		return CompleteDataType.forList(CompleteDataType.forTuple(fieldSchema));
+	}
+
+	@CustomFunctionResolver("GetValueInFieldListCustomFunctionResolver0")
+	public static String GetValueInFieldList(List<Tuple> fieldList, String fieldName) {
+		try {
+			if(fieldList == null || fieldList.isEmpty()) {
+				return "";
+			}else {
+				return fieldList.stream().filter(f -> {
+					try {
+						return fieldName.equals(f.getString(0));
+					} catch (Exception e) {
+						return false;
+					}
+				}).map(f -> {
+					try {
+						return f.getString(1);
+					} catch (Exception e) {
+						return "";
+					}
+				}).findFirst().orElse(null);
+			}
+		}catch(Exception e) {
+			return "";
+		}
+	}
+
+	public static CompleteDataType GetValueInFieldListCustomFunctionResolver0(CompleteDataType fieldList, CompleteDataType fieldName) {
+		return CompleteDataType.forString();
+	}
 }

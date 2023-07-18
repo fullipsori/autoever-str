@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ASCII"?>
 <liveview-configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.streambase.com/schemas/lvconf/">
-  <data-table id="AutoCCPDataTable" snapshot-parallelism="2" snapshot-concurrency="1">
+  <data-table id="AutoCCPDataTable" snapshot-parallelism="1" snapshot-concurrency="1">
     <fields>
       <field name="EventArrivalTS" type="timestamp"/>
     </fields>
@@ -11,9 +11,6 @@
     </primary-key>
     <indices>
       <index>
-        <field ref="EventArrivalTS"/>
-      </index>
-      <index>
         <field ref="terminalID"/>
       </index>
       <index>
@@ -21,6 +18,9 @@
       </index>
       <index>
         <field ref="realTime"/>
+      </index>
+      <index>
+        <field ref="EventArrivalTS"/>
       </index>
     </indices>
     <field-rules>

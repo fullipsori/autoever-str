@@ -29,6 +29,37 @@
                 <param name="data-mapper-type" value="round-robin"/>
             </table-partitioning>
         </data>
+        <data name="LastestValueTable" shared="true" source="concrete" type="querytable">
+            <param name="storage-method" value="transactional_memory"/>
+            <param name="replicated" value="false"/>
+            <table-schema>
+                <schema>
+                    <field name="vehicleKeyID" type="long"/>
+                    <field name="rootCount" type="long"/>
+                    <field name="fieldInfo" type="list">
+                        <element-type type="tuple">
+                            <schema>
+                                <field name="fieldName" type="string"/>
+                                <field name="fieldValue" type="string"/>
+                            </schema>
+                        </element-type>
+                    </field>
+                </schema>
+                <primary-index type="btree">
+                    <field name="vehicleKeyID"/>
+                </primary-index>
+                <index type="btree">
+                    <field name="vehicleKeyID"/>
+                    <field name="rootCount"/>
+                </index>
+            </table-schema>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+            <table-partitioning>
+                <param name="data-distribution-policy-name" value="vdms-dynamic-data-distribution-policy"/>
+                <param name="data-mapper-type" value="round-robin"/>
+            </table-partitioning>
+        </data>
         <stream name="InputStream" schema="MainOutputSchema"/>
         <box name="Initialize" type="inputadapter">
             <output port="1" stream="out:Initialize_1"/>
@@ -58,6 +89,7 @@
             <multiplicity number="5" type="concrete"/>
             <param name="file" value="com.autoever.poc.parser.CANDBCParser"/>
             <input-dataref name="DBCTable" table="DBCTable"/>
+            <input-dataref name="LastestValueTable" table="LastestValueTable"/>
             <parameter-bindings>
                 <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
                 <binding name="RESOURCE_ROOT" value="${RESOURCE_ROOT}"/>
@@ -94,6 +126,7 @@
             <target-list>
                 <item name="input" selection="all"/>
                 <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
             </target-list>
             <target-list goal-schema="DBCDataSchema" name="insert">
                 <item name="input" selection="all"/>
@@ -188,6 +221,7 @@
                 <item name="input" selection="none"/>
                 <item name="old" selection="none"/>
                 <item name="new" selection="all"/>
+                <item name="current" selection="none"/>
             </target-list>
             <target-list name="insert">
                 <item name="input" selection="all"/>

@@ -60,6 +60,33 @@
                 </primary-index>
             </table-schema>
         </table-schemas>
+        <data connection="candbcflow.LastestValueTable" name="CanLastestValueTable" shared="false" source="connection" type="querytable">
+            <param name="storage-method" value="heap"/>
+            <param name="replicated" value="false"/>
+            <table-schema>
+                <schema>
+                    <field name="vehicleKeyID" type="long"/>
+                    <field name="rootCount" type="long"/>
+                    <field name="fieldInfo" type="list">
+                        <element-type type="tuple">
+                            <schema>
+                                <field name="fieldName" type="string"/>
+                                <field name="fieldValue" type="string"/>
+                            </schema>
+                        </element-type>
+                    </field>
+                </schema>
+                <primary-index type="btree">
+                    <field name="vehicleKeyID"/>
+                </primary-index>
+                <index type="btree">
+                    <field name="vehicleKeyID"/>
+                    <field name="rootCount"/>
+                </index>
+            </table-schema>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="empty"/>
+        </data>
         <data name="CCPParamsTable" shared="false" source="input" type="querytable">
             <param name="storage-method" value="transactional_memory"/>
             <param name="replicated" value="false"/>
@@ -360,14 +387,6 @@
             <output port="2" stream="out:Split_2"/>
             <param name="output-count" value="2"/>
         </box>
-        <box name="FilterCopy" type="filter">
-            <input port="1" stream="out:EndedCCPProc_1"/>
-            <output port="1" stream="out:FilterCopy_1"/>
-            <output port="2" stream="out:FilterCopy_2"/>
-            <param name="autogen-nomatch-port" value="true"/>
-            <param name="expression.0" value="true"/>
-            <param name="expression.1" value="true"/>
-        </box>
         <box name="FilterToCCPTrig" type="filter">
             <input port="1" stream="out:Split_2"/>
             <output port="1" stream="out:FilterToCCPTrig_1"/>
@@ -412,13 +431,51 @@
                 </item>
             </target-list>
         </box>
-        <box name="Filter" type="filter">
+        <module-reference name="PublishPerf">
+            <input name="InputStream" port="1" stream="out:EndedCCPProc_1"/>
+            <output name="OutputStream" port="1" stream="out:PublishPerf_1"/>
+            <param name="parallel" value="true"/>
+            <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
+            <param name="file" value="com.autoever.poc.maineventflow.PerfFlow"/>
+            <parameter-bindings>
+                <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
+            </parameter-bindings>
+        </module-reference>
+        <box name="GetLastestCan" type="query">
             <input port="1" stream="out:MapToCCP_1"/>
-            <output port="1" stream="out:Filter_1"/>
-            <output port="2" stream="out:Filter_2"/>
-            <param name="autogen-nomatch-port" value="true"/>
-            <param name="expression.0" value="true"/>
-            <param name="expression.1" value="true"/>
+            <output port="1" stream="out:GetLastestCan_1"/>
+            <dataref id="querytable" name="CanLastestValueTable"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="secondary-key"/>
+            <param name="limit" value="1"/>
+            <param name="key-field.0" value="vehicleKeyID"/>
+            <param name="key-lowerbound-value.0" value="vehicleKeyID"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-upperbound-operation.0" value="none"/>
+            <param name="key-field.1" value="rootCount"/>
+            <param name="key-lowerbound-value.1" value="rootCount"/>
+            <param name="key-lowerbound-operation.1" value="eq"/>
+            <param name="key-upperbound-operation.1" value="none"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="current" selection="none"/>
+                <expressions>
+                    <include field="fieldInfo">fieldInfo</include>
+                </expressions>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
         </box>
         <box name="MapCellDiff" type="map">
             <input port="1" stream="out:FilterToCCPTrig_1"/>
@@ -470,41 +527,22 @@
                 </expressions>
             </target-list>
         </box>
-        <module-reference name="PublishPerf">
-            <input name="InputStream" port="1" stream="out:FilterCopy_1"/>
-            <output name="OutputStream" port="1" stream="out:PublishPerf_1"/>
-            <param name="parallel" value="true"/>
-            <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
-            <param name="file" value="com.autoever.poc.maineventflow.PerfFlow"/>
-            <parameter-bindings>
-                <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
-            </parameter-bindings>
-        </module-reference>
-        <box name="PublishCCP" type="outputadapter">
-            <input port="1" stream="out:Filter_1"/>
-            <output port="1" stream="out:PublishCCP_1"/>
-            <param name="start:state" value="true"/>
-            <param name="javaclass" value="com.streambase.sb.adapter.liveview.LiveViewPublish"/>
-            <param name="ackPeriod" value="0"/>
-            <param name="adHoc" value="false"/>
-            <param name="bufferSize" value="1024"/>
-            <param name="connectInline" value="false"/>
-            <param name="connectionKey" value=""/>
-            <param name="deleteField" value=""/>
-            <param name="dynamicTableName" value="false"/>
-            <param name="enableCompressedConnection" value="false"/>
-            <param name="encapsulatingLV" value="false"/>
-            <param name="flushInterval" value="250"/>
-            <param name="logLevel" value="INFO"/>
-            <param name="lvTableName" value="AutoCCPDataTable"/>
-            <param name="pubName" value=""/>
-            <param name="reliablePub" value="false"/>
-            <param name="seqField" value=""/>
-            <param name="shareConnection" value="true"/>
-            <param name="strictSchema" value="false"/>
-            <param name="throughPort" value="false"/>
-            <param name="uri" value="${LV_SERVER_URI}"/>
-            <param name="useRuntimeURI" value="false"/>
+        <box name="addCanFields" type="map">
+            <input port="1" stream="out:GetLastestCan_1"/>
+            <output port="1" stream="out:addCanFields_1"/>
+            <target-list>
+                <item name="input" selection="all">
+                    <remove field="fieldInfo"/>
+                </item>
+                <expressions>
+                    <include field="CF_Clu_Odometer">GetValueInFieldList(fieldInfo, 'CF_Clu_Odometer')</include>
+                    <include field="CF_Vcu_GarSelDisp">GetValueInFieldList(fieldInfo, 'CF_Vcu_GarSelDisp')</include>
+                    <include field="CR_Mcu_VehSpdDec_Kph">GetValueInFieldList(fieldInfo, 'CR_Mcu_VehSpdDec_Kph')</include>
+                    <include field="CR_Mcu_VehSpd_Kph">GetValueInFieldList(fieldInfo, 'CR_Mcu_VehSpd_Kph')</include>
+                    <include field="CF_OBC_DCChargingStat">GetValueInFieldList(fieldInfo, 'CF_OBC_DCChargingStat')</include>
+                    <include field="CF_Bms_ChgSts">GetValueInFieldList(fieldInfo, 'CF_Bms_ChgSts')</include>
+                </expressions>
+            </target-list>
         </box>
         <box name="Union2" type="union">
             <input port="1" stream="out:MapCellDiff_1"/>
@@ -541,6 +579,32 @@
                 </item>
             </target-list>
         </box>
+        <box name="PublishCP" type="outputadapter">
+            <input port="1" stream="out:addCanFields_1"/>
+            <output port="1" stream="out:PublishCP_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.liveview.LiveViewPublish"/>
+            <param name="ackPeriod" value="0"/>
+            <param name="adHoc" value="false"/>
+            <param name="bufferSize" value="1024"/>
+            <param name="connectInline" value="false"/>
+            <param name="connectionKey" value=""/>
+            <param name="deleteField" value=""/>
+            <param name="dynamicTableName" value="false"/>
+            <param name="enableCompressedConnection" value="false"/>
+            <param name="encapsulatingLV" value="false"/>
+            <param name="flushInterval" value="250"/>
+            <param name="logLevel" value="INFO"/>
+            <param name="lvTableName" value="CP_DataTable"/>
+            <param name="pubName" value=""/>
+            <param name="reliablePub" value="false"/>
+            <param name="seqField" value=""/>
+            <param name="shareConnection" value="true"/>
+            <param name="strictSchema" value="false"/>
+            <param name="throughPort" value="false"/>
+            <param name="uri" value="${LV_SERVER_URI}"/>
+            <param name="useRuntimeURI" value="false"/>
+        </box>
         <box name="PublishCCPTrig" type="outputadapter">
             <input port="1" stream="out:MapToCCPTrig_1"/>
             <output port="1" stream="out:PublishCCPTrig_1"/>
@@ -569,10 +633,8 @@
         </box>
         <box name="Union" type="union">
             <input port="1" stream="out:PublishPerf_1"/>
-            <input port="2" stream="out:PublishCCP_1"/>
-            <input port="3" stream="out:Filter_2"/>
-            <input port="4" stream="out:FilterCopy_2"/>
-            <input port="5" stream="out:PublishCCPTrig_1"/>
+            <input port="2" stream="out:PublishCP_1"/>
+            <input port="3" stream="out:PublishCCPTrig_1"/>
             <output port="1" stream="OutputParserStream"/>
             <param name="strict" value="false"/>
         </box>
