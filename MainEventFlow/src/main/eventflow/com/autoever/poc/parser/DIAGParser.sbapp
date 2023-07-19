@@ -15,7 +15,7 @@
         <import from="com.autoever.poc.maineventflow.LiveViewTable"/>
         <import alias="KafkaVDMSDataSchema" from="com.autoever.poc.maineventflow.kafkaSchemas" item="KafkaVDMSDataSchema"/>
         <parameter-definitions>
-            <parameter default="D:/projects/vdms_env/Scripts/python.exe" name="PYTHON_EXECUTABLE"/>
+            <parameter default="d:/Projects/vdms/tools/Python/Python311/python.exe" name="PYTHON_EXECUTABLE"/>
             <parameter default="d:/Projects/vdms/resources" name="RESOURCE_ROOT"/>
             <parameter default="lv://localhost:11080" name="LV_SERVER_URI"/>
         </parameter-definitions>

@@ -174,13 +174,14 @@ def parsed_dbc(filepath):
     return dbc_list        
 
 
-dbcFileName = '20200604_마스터_EV(2nd_Gen-2ch-P)_2_70_01_ALL.dbc'
-dbcfilepath = 'd:/projects/from_hyuncar/can_source/TestFile/' + dbcFileName
+dbcFileName = '219054.dbc'
+dbcfilepath = 'd:/projects/vdms/resources/dbc/' + dbcFileName
 
 dbc_list = parsed_dbc(dbcfilepath)
 # print(dbc_list)
 
-filepath = 'd:/projects/vdms/resources/download/BM-15C-0003_142683_1_1689049974_1689127350566.dat'
+filepath = 'd:/projects/vdms/autoever-str/MainEventFlow/src/main/resources/download/VM-21C-0074_219054_1_1688969218_1689731892318.dat'
+# filepath = 'd:/projects/vdms/resources/download/BM-15C-0003_142683_1_1689049974_1689127350566.dat'
 raw = VDMSRAW(filepath, None, None)
 
 import csv  

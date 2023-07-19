@@ -16,7 +16,7 @@
         <import alias="CanParamsSchema" from="com.autoever.poc.parser.CANParser_v3" item="CanParamsSchema"/>
         <import alias="ControlCANSchema" from="com.autoever.poc.parser.CANParser_v3" item="ControlCANSchema"/>
         <parameter-definitions>
-            <parameter default="D:/projects/vdms_env/Scripts/python.exe" name="PYTHON_EXECUTABLE"/>
+            <parameter default="d:/Projects/vdms/tools/Python/Python311/python.exe" name="PYTHON_EXECUTABLE"/>
             <parameter default="d:/projects/vdms/resources" name="RESOURCE_ROOT"/>
             <parameter default="lv://localhost:11080" name="LV_SERVER_URI"/>
         </parameter-definitions>

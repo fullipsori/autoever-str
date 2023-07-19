@@ -11,15 +11,6 @@
     </primary-key>
     <indices>
       <index>
-        <field ref="terminalID"/>
-      </index>
-      <index>
-        <field ref="vehicleKeyID"/>
-      </index>
-      <index>
-        <field ref="realTime"/>
-      </index>
-      <index>
         <field ref="EventArrivalTS"/>
       </index>
     </indices>

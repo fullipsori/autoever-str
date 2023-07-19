@@ -13,7 +13,7 @@
         <import alias="DBCDataSchema" from="com.autoever.poc.parser.CANDBCParser" item="DBCDataSchema"/>
         <import alias="DBCTableSchema" from="com.autoever.poc.parser.CANDBCParser" item="DBCTableSchema"/>
         <parameter-definitions>
-            <parameter default="D:/projects/vdms_env/Scripts/python.exe" name="PYTHON_EXECUTABLE"/>
+            <parameter default="d:/Projects/vdms/tools/Python/Python311/python.exe" name="PYTHON_EXECUTABLE"/>
             <parameter default="d:/projects/vdms/resources" name="RESOURCE_ROOT"/>
             <parameter default="lv://localhost:11080" name="LV_SERVER_URI"/>
         </parameter-definitions>
@@ -127,6 +127,7 @@
                 <item name="input" selection="all"/>
                 <item name="old" selection="none"/>
                 <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
             </target-list>
             <target-list goal-schema="DBCDataSchema" name="insert">
                 <item name="input" selection="all"/>

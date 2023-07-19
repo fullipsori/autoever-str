@@ -132,14 +132,14 @@
             <parameter default="AutoSubmitReq" name="KAFKA_TOPIC"/>
             <parameter default="autoever_vdms_local_dev" name="KAFKA_GROUP_ID"/>
             <parameter default="d:/projects/vdms/temp" name="FILE_TEMP_FOLDER"/>
-            <parameter default="D:/projects/vdms_env/Scripts/python.exe" name="PYTHON_EXECUTABLE"/>
+            <parameter default="d:/Projects/vdms/tools/Python/Python311/python.exe" name="PYTHON_EXECUTABLE"/>
             <parameter default="d:/projects/vdms/resources" name="RESOURCE_ROOT"/>
             <parameter default="memory" name="downloadMode"/>
         </parameter-definitions>
         <dynamic-variables>
             <dynamic-variable initial-expression="emptylist(string())" name="CCPVIDs" setter-expression="coalesce(input.CCPVIDs, CCPVIDs)" setter-stream="UpdateKeyStream"/>
             <dynamic-variable initial-expression="true" name="allowCan" setter-expression="coalesce(input.allowCan, allowCan)" setter-stream="UpdateFilterStream"/>
-            <dynamic-variable initial-expression="true" name="allowCcp" setter-expression="coalesce(input.allowCcp, allowCcp)" setter-stream="UpdateFilterStream"/>
+            <dynamic-variable initial-expression="false" name="allowCcp" setter-expression="coalesce(input.allowCcp, allowCcp)" setter-stream="UpdateFilterStream"/>
             <dynamic-variable initial-expression="false" name="allowDiag" setter-expression="coalesce(input.allowDiag, allowDiag)" setter-stream="UpdateFilterStream"/>
             <dynamic-variable initial-expression="false" name="allowGps" setter-expression="coalesce(input.allowGps, allowGps)" setter-stream="UpdateFilterStream"/>
             <dynamic-variable initial-expression="emptylist(string())" name="policyFiles" setter-expression="coalesce(input.policyFiles, policyFiles)" setter-stream="UpdateKeyStream"/>
@@ -263,7 +263,7 @@
                 <expressions>
                     <replace field="command">coalesce(input1.command, 'subscribe')</replace>
                     <replace field="topic">coalesce(input.topic, 'AutoSubmitReq')</replace>
-                    <include field="time">to_milliseconds(now()) - 120*1000</include>
+                    <include field="time">-2</include>
                 </expressions>
             </target-list>
         </box>
