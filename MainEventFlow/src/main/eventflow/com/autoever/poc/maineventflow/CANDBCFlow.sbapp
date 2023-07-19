@@ -12,6 +12,7 @@
         <import alias="MainOutputSchema" from="com.autoever.poc.maineventflow.AutoVDMSFlow_v2" item="MainOutputSchema"/>
         <import alias="DBCDataSchema" from="com.autoever.poc.parser.CANDBCParser" item="DBCDataSchema"/>
         <import alias="DBCTableSchema" from="com.autoever.poc.parser.CANDBCParser" item="DBCTableSchema"/>
+        <constant expr="['CF_Clu_Odometer', 'CF_Vcu_GarSelDisp', 'CR_Mcu_VehSpdDec_Kph', 'CR_Mcu_VehSpd_Kph', 'CF_OBC_DCChargingStat', 'CF_Bms_ChgSts']" name="MATCH_SIGNALS"/>
         <parameter-definitions>
             <parameter default="d:/Projects/vdms/tools/Python/Python311/python.exe" name="PYTHON_EXECUTABLE"/>
             <parameter default="d:/projects/vdms/resources" name="RESOURCE_ROOT"/>
@@ -60,23 +61,17 @@
                 <param name="data-mapper-type" value="round-robin"/>
             </table-partitioning>
         </data>
+        <stream name="ControlStream">
+            <schema>
+                <field name="command" type="string"/>
+            </schema>
+        </stream>
         <stream name="InputStream" schema="MainOutputSchema"/>
         <box name="Initialize" type="inputadapter">
             <output port="1" stream="out:Initialize_1"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.streambase.sb.adapter.once.Once"/>
             <param name="OutputField" value="time"/>
-        </box>
-        <box name="AddSignals" type="map">
-            <input port="1" stream="out:Initialize_1"/>
-            <output port="1" stream="out:AddSignals_1"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="DBCFiles">GetFilenameListInPath("${RESOURCE_ROOT}/dbc", 'dbc')</include>
-                    <include field="signals">['CF_Clu_Odometer', 'CF_Vcu_GarSelDisp', 'CR_Mcu_VehSpdDec_Kph', 'CR_Mcu_VehSpd_Kph', 'CF_OBC_DCChargingStat', 'CF_Bms_ChgSts']</include>
-                </expressions>
-            </target-list>
         </box>
         <module-reference name="CANDBCParser">
             <input dispatch="numerical" key="int(kafkaMessage.VehicleKeyID)" name="InputStream" port="1" stream="InputStream"/>
@@ -95,9 +90,32 @@
                 <binding name="RESOURCE_ROOT" value="${RESOURCE_ROOT}"/>
             </parameter-bindings>
         </module-reference>
+        <box name="Filter" type="filter">
+            <input port="1" stream="ControlStream"/>
+            <output port="1" stream="out:Filter_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="command=='RELOAD'"/>
+        </box>
         <output-stream name="OutputParserStream"/>
         <output-stream name="OutputRawDataStream"/>
         <output-stream name="OutputVarStream"/>
+        <box name="Union" type="union">
+            <input port="1" stream="out:Initialize_1"/>
+            <input port="2" stream="out:Filter_1"/>
+            <output port="1" stream="out:Union_1"/>
+            <param name="strict" value="false"/>
+        </box>
+        <box name="AddSignals" type="map">
+            <input port="1" stream="out:Union_1"/>
+            <output port="1" stream="out:AddSignals_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="DBCFiles">GetFilenameListInPath("${RESOURCE_ROOT}/dbc", 'dbc')</include>
+                    <include field="signals">MATCH_SIGNALS</include>
+                </expressions>
+            </target-list>
+        </box>
         <box name="Iterate2" type="iterate">
             <input port="1" stream="out:AddSignals_1"/>
             <output port="1" stream="out:Iterate2_1"/>

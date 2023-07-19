@@ -263,7 +263,7 @@
                 <expressions>
                     <replace field="command">coalesce(input1.command, 'subscribe')</replace>
                     <replace field="topic">coalesce(input.topic, 'AutoSubmitReq')</replace>
-                    <include field="time">-2</include>
+                    <include field="time">to_milliseconds(now()) - 60*1000*10</include>
                 </expressions>
             </target-list>
         </box>
@@ -509,7 +509,7 @@
         </box>
         <box name="Map2" type="map">
             <input port="1" stream="out:Filter3_1"/>
-            <output port="1" stream="ToCCPControlStream"/>
+            <output port="1" stream="out:Map2_1"/>
             <target-list>
                 <item name="input" selection="all">
                     <remove field="CCPVIDs"/>
@@ -518,9 +518,6 @@
         </box>
         <output-stream name="ToCanControlStream">
             <param name="connection" value="'canflow.ControlStream'"/>
-        </output-stream>
-        <output-stream name="ToCCPControlStream">
-            <param name="connection" value="'ccpflow.ControlStream'"/>
         </output-stream>
         <box name="FilterFromFiles" type="filter">
             <input port="1" stream="out:InitializeData_1"/>
@@ -532,6 +529,25 @@
             <param name="expression.1" value="message.MessageType==4 || message.MessageType==6"/>
             <param name="expression.2" value="message.MessageType==2 &amp;&amp; contains(CCPVIDs, string(message.VehicleKeyID))"/>
         </box>
+        <box name="Split5" type="split">
+            <input port="1" stream="out:Map2_1"/>
+            <output port="1" stream="ToCCPControlStream"/>
+            <output port="2" stream="out:Split5_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <output-stream name="ToCCPControlStream">
+            <param name="connection" value="'ccpflow.ControlStream'"/>
+        </output-stream>
+        <box name="Map3" type="map">
+            <input port="1" stream="out:Split5_2"/>
+            <output port="1" stream="ToCanDBCControlStream"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <remove field="evtFolder"/>
+                </expressions>
+            </target-list>
+        </box>
         <box name="Union5" type="union">
             <input port="1" stream="out:FilterFromFiles_1"/>
             <input port="2" stream="out:FilterFromFiles_2"/>
@@ -539,6 +555,9 @@
             <output port="1" stream="out:Union5_1"/>
             <param name="strict" value="false"/>
         </box>
+        <output-stream name="ToCanDBCControlStream">
+            <param name="connection" value="'candbcflow.ControlStream'"/>
+        </output-stream>
         <box name="Query2Mgmt" type="query">
             <input port="1" stream="out:Union5_1"/>
             <output port="1" stream="out:Query2Mgmt_1"/>

@@ -157,9 +157,9 @@
             </target-list>
         </box>
         <output-stream name="UpdateVarStream"/>
-        <box name="CCPRawParser" type="java">
+        <box name="GenCCPs" type="java">
             <input port="1" stream="out:RemoveUnsused_1"/>
-            <output port="1" stream="out:CCPRawParser_1"/>
+            <output port="1" stream="out:GenCCPs_1"/>
             <output port="2" stream="OutputRawDataStream"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.autoever.poc.adapters.VdmsRawParser"/>
@@ -167,7 +167,7 @@
         </box>
         <output-stream name="OutputRawDataStream"/>
         <box name="Organize" type="map">
-            <input port="1" stream="out:CCPRawParser_1"/>
+            <input port="1" stream="out:GenCCPs_1"/>
             <output port="1" stream="out:Organize_1"/>
             <target-list>
                 <item name="input" selection="all">
@@ -463,6 +463,7 @@
             <target-list>
                 <item name="input" selection="all"/>
                 <item name="current" selection="none"/>
+                <item name="old" selection="none"/>
                 <expressions>
                     <include field="fieldInfo">fieldInfo</include>
                 </expressions>

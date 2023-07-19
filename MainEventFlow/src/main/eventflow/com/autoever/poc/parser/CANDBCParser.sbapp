@@ -116,9 +116,9 @@
             <output port="2" stream="out:Split_2"/>
             <param name="output-count" value="2"/>
         </box>
-        <box name="CanDBCParser" type="java">
+        <box name="GenCanDBCs" type="java">
             <input port="1" stream="out:Get_DBCIDs_1"/>
-            <output port="1" stream="out:CanDBCParser_1"/>
+            <output port="1" stream="out:GenCanDBCs_1"/>
             <output port="2" stream="OutputRawDataStream"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.autoever.poc.adapters.VdmsRawParser"/>
@@ -152,6 +152,7 @@
                 <item name="input" selection="none"/>
                 <item name="current" selection="all"/>
                 <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
             </target-list>
             <target-list goal-schema="DBCDataSchema" name="insert">
                 <item name="input" selection="all"/>
@@ -175,7 +176,7 @@
             </target-list>
         </box>
         <box name="Organize" type="map">
-            <input port="1" stream="out:CanDBCParser_1"/>
+            <input port="1" stream="out:GenCanDBCs_1"/>
             <output port="1" stream="out:Organize_1"/>
             <target-list>
                 <item name="input" selection="all">
@@ -376,6 +377,7 @@
             <target-list>
                 <item name="input" selection="all"/>
                 <item name="current" selection="none"/>
+                <item name="old" selection="none"/>
                 <expressions>
                     <include field="fieldInfo">fieldInfo</include>
                 </expressions>
@@ -451,6 +453,7 @@
                 <item name="input" selection="none"/>
                 <item name="old" selection="none"/>
                 <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
             </target-list>
             <target-list name="insert">
                 <item name="input" selection="all"/>
