@@ -35,7 +35,7 @@
         <param name="gui:x" value="50"/>
         <param name="gui:y" value="306"/>
     </component>
-    <component name="CCPRawParser">
+    <component name="GenCCPs">
         <param name="gui:x" value="-639"/>
         <param name="gui:y" value="268"/>
     </component>

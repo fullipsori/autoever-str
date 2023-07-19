@@ -23,7 +23,7 @@
         <param name="gui:x" value="-6"/>
         <param name="gui:y" value="250"/>
     </component>
-    <component name="CanDBCParser">
+    <component name="GenCanDBCs">
         <param name="gui:x" value="-534"/>
         <param name="gui:y" value="363"/>
     </component>

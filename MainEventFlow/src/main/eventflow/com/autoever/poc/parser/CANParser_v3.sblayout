@@ -34,7 +34,7 @@
         <param name="gui:x" value="-272"/>
         <param name="gui:y" value="119"/>
     </component>
-    <component name="CANRawParser">
+    <component name="GenCANs">
         <param name="gui:x" value="-769"/>
         <param name="gui:y" value="193"/>
     </component>
@@ -83,6 +83,10 @@
         <param name="gui:x" value="-356"/>
         <param name="gui:y" value="317"/>
     </component>
+    <component name="InsertCur">
+        <param name="gui:x" value="-87"/>
+        <param name="gui:y" value="119"/>
+    </component>
     <component name="Iter_TrigData">
         <param name="gui:x" value="-184"/>
         <param name="gui:y" value="317"/>
@@ -127,10 +131,6 @@
     <component name="PublishRaw">
         <param name="gui:x" value="541"/>
         <param name="gui:y" value="495"/>
-    </component>
-    <component name="InsertCur">
-        <param name="gui:x" value="-87"/>
-        <param name="gui:y" value="119"/>
     </component>
     <component name="RemoveUnused">
         <param name="gui:x" value="-877"/>

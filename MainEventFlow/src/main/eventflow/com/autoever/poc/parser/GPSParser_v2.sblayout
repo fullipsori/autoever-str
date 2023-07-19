@@ -23,7 +23,7 @@
         <param name="gui:x" value="-329"/>
         <param name="gui:y" value="231"/>
     </component>
-    <component name="GPSRawParser">
+    <component name="GenGPSs">
         <param name="gui:x" value="-523"/>
         <param name="gui:y" value="231"/>
     </component>

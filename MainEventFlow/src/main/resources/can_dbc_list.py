@@ -82,10 +82,9 @@ def parsed_dbc(filepath):
     return dbc_list        
 
 #input : vehicleKeyID, signals
-# vehicleKeyID = 1000
+# vehicleKeyID = 219054
 # signals = ['CF_Clu_Odometer', 'CF_Vcu_GarSelDisp', 'CR_Mcu_VehSpdDec_Kph', 'CR_Mcu_VehSpd_Kph', 'CF_OBC_DCChargingStat', 'CF_BMS_chgsts']
 
-# dbcFileName = '219054.dbc'
 dbcFileName = str(vehicleKeyID) + '.dbc'
 dbcfilepath = 'd:/projects/vdms/resources/dbc/' + dbcFileName
 dbc_list = parsed_dbc(dbcfilepath)
