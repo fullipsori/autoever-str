@@ -44,14 +44,17 @@
                 </schema>
                 <primary-index type="btree">
                     <field name="vehicleKeyID"/>
-                    <field name="modTime"/>
                     <field name="fieldName"/>
+                    <field name="modTime"/>
                 </primary-index>
                 <index type="btree">
                     <field name="vehicleKeyID"/>
                     <field name="rootCount"/>
-                    <field name="fieldName"/>
                     <field name="realTime"/>
+                </index>
+                <index type="btree">
+                    <field name="vehicleKeyID"/>
+                    <field name="rootCount"/>
                 </index>
             </table-schema>
             <param name="truncate" value="false"/>
@@ -145,6 +148,7 @@
                 <item name="input" selection="all"/>
                 <item name="old" selection="none"/>
                 <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
             </target-list>
             <target-list goal-schema="DBCDataSchema" name="insert">
                 <item name="input" selection="all"/>

@@ -213,7 +213,7 @@ public class ParseUtil {
 					} catch (Exception e) {
 						return "";
 					}
-				}).findFirst().orElse(null);
+				}).findFirst().orElse("");
 			}
 		}catch(Exception e) {
 			return "";
