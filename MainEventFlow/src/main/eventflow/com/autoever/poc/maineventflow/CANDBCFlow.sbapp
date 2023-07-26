@@ -56,6 +56,10 @@
                     <field name="vehicleKeyID"/>
                     <field name="rootCount"/>
                 </index>
+                <index type="btree">
+                    <field name="vehicleKeyID"/>
+                    <field name="fieldName"/>
+                </index>
             </table-schema>
             <param name="truncate" value="false"/>
             <preload format="csv" mode="empty"/>

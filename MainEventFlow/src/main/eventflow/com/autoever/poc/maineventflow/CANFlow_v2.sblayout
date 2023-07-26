@@ -1,80 +1,80 @@
 <?xml version="1.0" encoding="UTF-8"?><application-layout>
     <component name="ControlStream">
         <param name="gui:x" value="-636"/>
-        <param name="gui:y" value="-65"/>
+        <param name="gui:y" value="-67"/>
     </component>
     <component name="InputStream">
         <param name="gui:x" value="-357"/>
-        <param name="gui:y" value="207"/>
+        <param name="gui:y" value="205"/>
     </component>
     <component name="UpdateVarStream">
         <param name="gui:x" value="-636"/>
-        <param name="gui:y" value="123"/>
+        <param name="gui:y" value="121"/>
     </component>
     <component name="CANParser_v3">
         <param name="gui:x" value="-247"/>
-        <param name="gui:y" value="110"/>
+        <param name="gui:y" value="108"/>
         <param name="gui:height" value="65"/>
-        <param name="gui:bends:1" value="-270,143;-268,130"/>
-        <param name="gui:bends:2" value="-279,237;-259,155"/>
+        <param name="gui:bends:1" value="-268,141;-266,128"/>
+        <param name="gui:bends:2" value="-277,235;-257,153"/>
     </component>
     <component name="CanParamsTable">
         <param name="gui:x" value="-257"/>
-        <param name="gui:y" value="244"/>
+        <param name="gui:y" value="242"/>
         <param name="gui:width" value="80"/>
         <param name="gui:height" value="56"/>
     </component>
     <component name="CheckNull">
         <param name="gui:x" value="-451"/>
-        <param name="gui:y" value="113"/>
+        <param name="gui:y" value="111"/>
     </component>
     <component name="InitPolicy">
         <param name="gui:x" value="-451"/>
-        <param name="gui:y" value="-55"/>
+        <param name="gui:y" value="-57"/>
     </component>
     <component name="Initialize">
         <param name="gui:x" value="-821"/>
-        <param name="gui:y" value="29"/>
+        <param name="gui:y" value="27"/>
     </component>
     <component name="LoadInitMeta">
         <param name="gui:x" value="-721"/>
-        <param name="gui:y" value="29"/>
+        <param name="gui:y" value="27"/>
     </component>
     <component name="RemoveUnused">
         <param name="gui:x" value="-357"/>
-        <param name="gui:y" value="113"/>
+        <param name="gui:y" value="111"/>
     </component>
     <component name="Split">
         <param name="gui:x" value="-636"/>
-        <param name="gui:y" value="29"/>
+        <param name="gui:y" value="27"/>
     </component>
     <component name="Union">
         <param name="gui:x" value="-531"/>
-        <param name="gui:y" value="-55"/>
-        <param name="gui:bends:2" value="-559,49;-543,-15"/>
+        <param name="gui:y" value="-57"/>
+        <param name="gui:bends:2" value="-560,47;-544,-17"/>
     </component>
     <component name="Union3">
         <param name="gui:x" value="-531"/>
-        <param name="gui:y" value="113"/>
-        <param name="gui:bends:1" value="-559,69;-543,133"/>
+        <param name="gui:y" value="111"/>
+        <param name="gui:bends:1" value="-547,67;-539,131"/>
     </component>
     <component name="OutputParserStream">
         <param name="gui:x" value="-82"/>
-        <param name="gui:y" value="31"/>
-        <param name="gui:bends:1" value="-148,130;-132,61"/>
+        <param name="gui:y" value="29"/>
+        <param name="gui:bends:1" value="-149,128;-133,59"/>
     </component>
     <component name="OutputPolicyStream">
         <param name="gui:x" value="-357"/>
-        <param name="gui:y" value="-55"/>
+        <param name="gui:y" value="-57"/>
     </component>
     <component name="OutputRawDataStream">
         <param name="gui:x" value="-82"/>
-        <param name="gui:y" value="219"/>
-        <param name="gui:bends:1" value="-164,155;-142,249"/>
+        <param name="gui:y" value="217"/>
+        <param name="gui:bends:1" value="-165,153;-143,247"/>
     </component>
     <component name="OutputVarStream">
         <param name="gui:x" value="-82"/>
-        <param name="gui:y" value="125"/>
-        <param name="gui:bends:1" value="-141,142;-139,155"/>
+        <param name="gui:y" value="123"/>
+        <param name="gui:bends:1" value="-142,140;-140,153"/>
     </component>
 </application-layout>
