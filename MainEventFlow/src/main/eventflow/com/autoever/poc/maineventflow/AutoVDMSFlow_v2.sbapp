@@ -139,7 +139,7 @@
         <dynamic-variables>
             <dynamic-variable initial-expression="emptylist(string())" name="CCPVIDs" setter-expression="coalesce(input.CCPVIDs, CCPVIDs)" setter-stream="UpdateKeyStream"/>
             <dynamic-variable initial-expression="true" name="allowCan" setter-expression="coalesce(input.allowCan, allowCan)" setter-stream="UpdateFilterStream"/>
-            <dynamic-variable initial-expression="false" name="allowCcp" setter-expression="coalesce(input.allowCcp, allowCcp)" setter-stream="UpdateFilterStream"/>
+            <dynamic-variable initial-expression="true" name="allowCcp" setter-expression="coalesce(input.allowCcp, allowCcp)" setter-stream="UpdateFilterStream"/>
             <dynamic-variable initial-expression="false" name="allowDiag" setter-expression="coalesce(input.allowDiag, allowDiag)" setter-stream="UpdateFilterStream"/>
             <dynamic-variable initial-expression="false" name="allowGps" setter-expression="coalesce(input.allowGps, allowGps)" setter-stream="UpdateFilterStream"/>
             <dynamic-variable initial-expression="emptylist(string())" name="policyFiles" setter-expression="coalesce(input.policyFiles, policyFiles)" setter-stream="UpdateKeyStream"/>
@@ -263,7 +263,7 @@
                 <expressions>
                     <replace field="command">coalesce(input1.command, 'subscribe')</replace>
                     <replace field="topic">coalesce(input.topic, 'AutoSubmitReq')</replace>
-                    <include field="time">to_milliseconds(now()) - 60*1000*10</include>
+                    <include field="time">to_milliseconds(now()) - 60*1000*50</include>
                 </expressions>
             </target-list>
         </box>

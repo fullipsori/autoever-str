@@ -94,8 +94,48 @@ public class CCPCustomUtils {
 		}
 	}
 	
-	public static CompleteDataType GetMaxDVolCustomUtilsResolver0(CompleteDataType cellDatas) {
+	public static CompleteDataType GetMaxDVolCustomUtilsResolver0(CompleteDataType dVols) {
 		return CompleteDataType.forTuple(FieldDoubleSchema);
+	}
+
+	@CustomFunctionResolver("GetMaxDVolValCustomUtilsResolver0")
+	public static Double GetMaxDVolVal(List<Double> dVols){
+		if(dVols == null || dVols.isEmpty()) return 0.0;
+		return dVols.stream().max(Comparator.comparingDouble(Math::abs)).map(Math::abs).get();
+	}
+	
+	public static CompleteDataType GetMaxDVolValCustomUtilsResolver0(CompleteDataType dVols) {
+		return CompleteDataType.forDouble();
+	}
+
+	@CustomFunctionResolver("GetMaxDVolCellsCustomUtilsResolver0")
+	public static String GetMaxDVolCells(List<Double> dVols, Double value){
+		if(dVols == null || dVols.isEmpty()) return "";
+		return IntStream.range(0, dVols.size()).filter(i -> Math.abs(dVols.get(i)) == value.doubleValue()).mapToObj(i -> String.valueOf(i+1)).collect(Collectors.joining(","));
+	}
+	
+	public static CompleteDataType GetMaxDVolCellsCustomUtilsResolver0(CompleteDataType dVols, CompleteDataType value) {
+		return CompleteDataType.forString();
+	}
+
+	@CustomFunctionResolver("GetMaxCDiffValCustomUtilsResolver0")
+	public static Long GetMaxCDiffVal(List<Long> cellDiffs){
+		if(cellDiffs == null || cellDiffs.isEmpty()) return (long)0;
+		return cellDiffs.stream().max(Comparator.comparingLong(Math::abs)).map(Math::abs).get();
+	}
+	
+	public static CompleteDataType GetMaxCDiffValCustomUtilsResolver0(CompleteDataType cellDiffs) {
+		return CompleteDataType.forLong();
+	}
+
+	@CustomFunctionResolver("GetMaxCDiffCellsCustomUtilsResolver0")
+	public static String GetMaxCDiffCells(List<Long> cellDiffs, Long value){
+		if(cellDiffs == null || cellDiffs.isEmpty()) return "";
+		return IntStream.range(0, cellDiffs.size()).filter(i -> Math.abs(cellDiffs.get(i)) == value.longValue()).mapToObj(i -> String.valueOf(i+1)).collect(Collectors.joining(","));
+	}
+	
+	public static CompleteDataType GetMaxCDiffCellsCustomUtilsResolver0(CompleteDataType cellDiffs, CompleteDataType value) {
+		return CompleteDataType.forString();
 	}
 
 	@CustomFunctionResolver("JoinFromCellTuplesCustomUtilsResolver0")

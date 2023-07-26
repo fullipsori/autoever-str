@@ -124,7 +124,7 @@ public class ParseUtil {
 						return new Pair<String, Double>(dbc.getString("sig_name"),
 								TriggerParser.GetRawValue(rawdata, 
 									dbc.getString("sig_byte_order").startsWith("little")? "Little" :"Big", 
-									(dbc.getBoolean("sig_is_signed")? "signed": "unsigned"), 
+									(dbc.getString("sig_is_signed").equalsIgnoreCase("True")? "signed": "unsigned"), 
 									dbc.getInt("sig_start"), 
 									dbc.getInt("sig_length"), 
 									dbc.getDouble("sig_scale"), 

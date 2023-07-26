@@ -17,21 +17,21 @@
                 <field name="vehicleKeyID" type="long"/>
                 <field name="msg_name" type="string"/>
                 <field name="msg_id" type="long"/>
-                <field name="msg_is_extended_frame" type="bool"/>
+                <field name="msg_is_extended_frame" type="string"/>
                 <field name="msg_length" type="int"/>
                 <field name="msg_comment" type="string"/>
                 <field name="sig_name" type="string"/>
                 <field name="sig_start" type="int"/>
                 <field name="sig_length" type="int"/>
                 <field name="sig_byte_order" type="string"/>
-                <field name="sig_is_signed" type="bool"/>
+                <field name="sig_is_signed" type="string"/>
                 <field name="sig_initial" type="int"/>
                 <field name="sig_scale" type="double"/>
                 <field name="sig_offset" type="double"/>
                 <field name="sig_minimum" type="string"/>
                 <field name="sig_maximum" type="string"/>
                 <field name="sig_unit" type="string"/>
-                <field name="sig_is_multiplexer" type="bool"/>
+                <field name="sig_is_multiplexer" type="string"/>
                 <field name="sig_multiplexer_ids" type="string"/>
                 <field name="sig_mtable" type="string"/>
                 <field name="sig_spn" type="string"/>
@@ -72,22 +72,22 @@
             <table-schema>
                 <schema>
                     <field name="vehicleKeyID" type="long"/>
+                    <field name="modTime" type="long"/>
                     <field name="rootCount" type="long"/>
-                    <field name="fieldInfo" type="list">
-                        <element-type type="tuple">
-                            <schema>
-                                <field name="fieldName" type="string"/>
-                                <field name="fieldValue" type="string"/>
-                            </schema>
-                        </element-type>
-                    </field>
+                    <field name="realTime" type="long"/>
+                    <field name="fieldName" type="string"/>
+                    <field name="fieldValue" type="string"/>
                 </schema>
                 <primary-index type="btree">
                     <field name="vehicleKeyID"/>
+                    <field name="modTime"/>
+                    <field name="fieldName"/>
                 </primary-index>
                 <index type="btree">
                     <field name="vehicleKeyID"/>
                     <field name="rootCount"/>
+                    <field name="fieldName"/>
+                    <field name="realTime"/>
                 </index>
             </table-schema>
             <param name="truncate" value="false"/>
@@ -360,27 +360,25 @@
             <output port="2" stream="out:Split2_2"/>
             <param name="output-count" value="2"/>
         </box>
-        <box name="GetLastest" type="query">
+        <box name="InsertLastestValue" type="query">
             <input port="1" stream="out:Split2_2"/>
-            <output port="1" stream="out:GetLastest_1"/>
             <dataref id="querytable" name="LastestValueTable"/>
-            <param name="operation" value="read"/>
+            <param name="operation" value="write"/>
             <param name="where" value="primary-key"/>
-            <param name="limit" value="1"/>
             <param name="key-field.0" value="vehicleKeyID"/>
-            <param name="key-lowerbound-value.0" value="input1.vehicleKeyID"/>
-            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-value.0" value="vehicleKeyID"/>
+            <param name="key-field.1" value="modTime"/>
+            <param name="key-value.1" value="realTime %10000"/>
+            <param name="key-field.2" value="fieldName"/>
+            <param name="key-value.2" value="eventName"/>
             <param name="write-type" value="insert"/>
-            <param name="if-write-fails" value="ignore"/>
+            <param name="if-write-fails" value="force"/>
             <param name="no-match-mode" value="output-no-match-null"/>
             <param name="order-by-direction" value="none"/>
             <target-list>
-                <item name="input" selection="all"/>
-                <item name="current" selection="none"/>
+                <item name="input" selection="none"/>
                 <item name="old" selection="none"/>
-                <expressions>
-                    <include field="fieldInfo">fieldInfo</include>
-                </expressions>
+                <item name="new" selection="none"/>
             </target-list>
             <target-list name="insert">
                 <item name="input" selection="all"/>
@@ -427,46 +425,6 @@
             <output port="1" stream="OutputParserStream"/>
             <param name="strict" value="false"/>
         </box>
-        <box name="updateFieldInfo" type="map">
-            <input port="1" stream="out:GetLastest_1"/>
-            <output port="1" stream="out:updateFieldInfo_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="newFieldInfo">AddToFieldList(fieldInfo, eventName, value)</include>
-                </expressions>
-            </target-list>
-        </box>
         <output-stream name="OutputParserStream"/>
-        <box name="InsertLastestValue" type="query">
-            <input port="1" stream="out:updateFieldInfo_1"/>
-            <dataref id="querytable" name="LastestValueTable"/>
-            <param name="operation" value="write"/>
-            <param name="where" value="primary-key"/>
-            <param name="key-field.0" value="vehicleKeyID"/>
-            <param name="key-value.0" value="vehicleKeyID"/>
-            <param name="write-type" value="insert"/>
-            <param name="if-write-fails" value="force"/>
-            <param name="no-match-mode" value="output-no-match-null"/>
-            <param name="order-by-direction" value="none"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <item name="old" selection="none"/>
-                <item name="new" selection="none"/>
-                <item name="current" selection="none"/>
-            </target-list>
-            <target-list name="insert">
-                <item name="input" selection="all"/>
-                <expressions>
-                    <set field="fieldInfo">newFieldInfo</set>
-                </expressions>
-            </target-list>
-            <target-list name="update">
-                <item name="input" selection="all"/>
-            </target-list>
-            <target-list name="no-match">
-                <item name="input" selection="all"/>
-            </target-list>
-        </box>
     </add>
 </modify>

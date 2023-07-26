@@ -61,27 +61,27 @@
             </table-schema>
         </table-schemas>
         <data connection="candbcflow.LastestValueTable" name="CanLastestValueTable" shared="false" source="connection" type="querytable">
-            <param name="storage-method" value="heap"/>
+            <param name="storage-method" value="transactional_memory"/>
             <param name="replicated" value="false"/>
             <table-schema>
                 <schema>
                     <field name="vehicleKeyID" type="long"/>
+                    <field name="modTime" type="long"/>
                     <field name="rootCount" type="long"/>
-                    <field name="fieldInfo" type="list">
-                        <element-type type="tuple">
-                            <schema>
-                                <field name="fieldName" type="string"/>
-                                <field name="fieldValue" type="string"/>
-                            </schema>
-                        </element-type>
-                    </field>
+                    <field name="realTime" type="long"/>
+                    <field name="fieldName" type="string"/>
+                    <field name="fieldValue" type="string"/>
                 </schema>
                 <primary-index type="btree">
                     <field name="vehicleKeyID"/>
+                    <field name="modTime"/>
+                    <field name="fieldName"/>
                 </primary-index>
                 <index type="btree">
                     <field name="vehicleKeyID"/>
                     <field name="rootCount"/>
+                    <field name="fieldName"/>
+                    <field name="realTime"/>
                 </index>
             </table-schema>
             <param name="truncate" value="false"/>
@@ -287,7 +287,8 @@
                 </item>
                 <expressions>
                     <replace field="messageID">messageID + '_' + seq_id</replace>
-                    <include field="dVolMaxField">getCCPMaxDVol(dVols)</include>
+                    <include field="tMaxDVolVal">getCCPMaxDVolVal(dVols)</include>
+                    <include field="tMaxCDiffVal">getCCPMaxCDiffVal(cellDiffs)</include>
                 </expressions>
             </target-list>
         </box>
@@ -329,12 +330,14 @@
                     <include field="cellDiffData">joinCCPNumberList(cellDiffs)</include>
                     <replace field="msrTBData">joinCCPMsrTBTuples(RawParsed.msrTBData)</replace>
                     <include field="dVol">joinCCPNumberList(dVols)</include>
-                    <include field="maxDVolCell">if(!isnull(dVolMaxField)) then dVolMaxField.field else string(null)</include>
-                    <include field="maxDVolVal">if(!isnull(dVolMaxField)) then dVolMaxField.value else double(null)</include>
+                    <include field="maxDVolVal">tMaxDVolVal</include>
+                    <include field="maxDVolCells">getCCPMaxDVolCells(dVols, tMaxDVolVal)</include>
                     <replace field="SOC">round(RawParsed.SOC * 1.0)/10.0</replace>
                     <replace field="IBM">round(RawParsed.IBM * 1.0)/10.0</replace>
                     <replace field="deltaTB">deltaTB/10.0</replace>
                     <replace field="maxTB">maxTB/10.0</replace>
+                    <include field="maxCDiffVal">tMaxCDiffVal</include>
+                    <include field="maxCDiffCells">getCCPMaxCDiffCells(cellDiffs, tMaxCDiffVal)</include>
                 </expressions>
             </target-list>
         </box>
@@ -426,8 +429,10 @@
                     <include field="SOC"/>
                     <include field="terminalID"/>
                     <include field="vehicleKeyID"/>
-                    <include field="maxDVolCell"/>
+                    <include field="maxDVolCells"/>
                     <include field="maxDVolVal"/>
+                    <include field="maxCDiffCells"/>
+                    <include field="maxCDiffVal"/>
                 </item>
             </target-list>
         </box>
@@ -441,31 +446,44 @@
                 <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
             </parameter-bindings>
         </module-reference>
-        <box name="GetLastestCan" type="query">
+        <box name="GetOdometer" type="query">
             <input port="1" stream="out:MapToCCP_1"/>
-            <output port="1" stream="out:GetLastestCan_1"/>
+            <output port="1" stream="out:GetOdometer_1"/>
             <dataref id="querytable" name="CanLastestValueTable"/>
             <param name="operation" value="read"/>
             <param name="where" value="secondary-key"/>
             <param name="limit" value="1"/>
             <param name="key-field.0" value="vehicleKeyID"/>
-            <param name="key-lowerbound-value.0" value="vehicleKeyID"/>
+            <param name="key-lowerbound-value.0" value="input.vehicleKeyID"/>
             <param name="key-lowerbound-operation.0" value="eq"/>
             <param name="key-upperbound-operation.0" value="none"/>
             <param name="key-field.1" value="rootCount"/>
-            <param name="key-lowerbound-value.1" value="rootCount"/>
+            <param name="key-lowerbound-value.1" value="input.rootCount"/>
             <param name="key-lowerbound-operation.1" value="eq"/>
             <param name="key-upperbound-operation.1" value="none"/>
+            <param name="key-field.2" value="fieldName"/>
+            <param name="key-lowerbound-value.2" value="'CF_Clu_Odometer'"/>
+            <param name="key-lowerbound-operation.2" value="eq"/>
+            <param name="key-upperbound-operation.2" value="none"/>
+            <param name="key-field.3" value="realTime"/>
+            <param name="key-lowerbound-value.3" value="input.realTime-300"/>
+            <param name="key-lowerbound-operation.3" value="ge"/>
+            <param name="key-upperbound-value.3" value="input.realTime"/>
+            <param name="key-upperbound-operation.3" value="le"/>
             <param name="write-type" value="insert"/>
             <param name="if-write-fails" value="ignore"/>
             <param name="no-match-mode" value="output-no-match-null"/>
-            <param name="order-by-direction" value="none"/>
+            <param name="order-by-direction" value="descending"/>
+            <param name="order-by-key-field.0" value="vehicleKeyID"/>
+            <param name="order-by-key-field.1" value="rootCount"/>
+            <param name="order-by-key-field.2" value="fieldName"/>
+            <param name="order-by-key-field.3" value="realTime"/>
             <target-list>
                 <item name="input" selection="all"/>
                 <item name="current" selection="none"/>
                 <item name="old" selection="none"/>
                 <expressions>
-                    <include field="fieldInfo">fieldInfo</include>
+                    <include field="CF_Clu_Odometer">if isnull(current) then '' else coalesce(current.fieldValue,'')</include>
                 </expressions>
             </target-list>
             <target-list name="insert">
@@ -528,21 +546,54 @@
                 </expressions>
             </target-list>
         </box>
-        <box name="addCanFields" type="map">
-            <input port="1" stream="out:GetLastestCan_1"/>
-            <output port="1" stream="out:addCanFields_1"/>
+        <box name="GetGarSelDisp" type="query">
+            <input port="1" stream="out:GetOdometer_1"/>
+            <output port="1" stream="out:GetGarSelDisp_1"/>
+            <dataref id="querytable" name="CanLastestValueTable"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="secondary-key"/>
+            <param name="limit" value="1"/>
+            <param name="key-field.0" value="vehicleKeyID"/>
+            <param name="key-lowerbound-value.0" value="input.vehicleKeyID"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-upperbound-operation.0" value="none"/>
+            <param name="key-field.1" value="rootCount"/>
+            <param name="key-lowerbound-value.1" value="input.rootCount"/>
+            <param name="key-lowerbound-operation.1" value="eq"/>
+            <param name="key-upperbound-operation.1" value="none"/>
+            <param name="key-field.2" value="fieldName"/>
+            <param name="key-lowerbound-value.2" value="'CF_Vcu_GarSelDisp'"/>
+            <param name="key-lowerbound-operation.2" value="eq"/>
+            <param name="key-upperbound-operation.2" value="none"/>
+            <param name="key-field.3" value="realTime"/>
+            <param name="key-lowerbound-value.3" value="input.realTime-300"/>
+            <param name="key-lowerbound-operation.3" value="ge"/>
+            <param name="key-upperbound-value.3" value="input.realTime"/>
+            <param name="key-upperbound-operation.3" value="le"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="descending"/>
+            <param name="order-by-key-field.0" value="vehicleKeyID"/>
+            <param name="order-by-key-field.1" value="rootCount"/>
+            <param name="order-by-key-field.2" value="fieldName"/>
+            <param name="order-by-key-field.3" value="realTime"/>
             <target-list>
-                <item name="input" selection="all">
-                    <remove field="fieldInfo"/>
-                </item>
+                <item name="input" selection="all"/>
+                <item name="current" selection="none"/>
+                <item name="old" selection="none"/>
                 <expressions>
-                    <include field="CF_Clu_Odometer">GetValueInFieldList(fieldInfo, 'CF_Clu_Odometer')</include>
-                    <include field="CF_Vcu_GarSelDisp">GetValueInFieldList(fieldInfo, 'CF_Vcu_GarSelDisp')</include>
-                    <include field="CR_Mcu_VehSpdDec_Kph">GetValueInFieldList(fieldInfo, 'CR_Mcu_VehSpdDec_Kph')</include>
-                    <include field="CR_Mcu_VehSpd_Kph">GetValueInFieldList(fieldInfo, 'CR_Mcu_VehSpd_Kph')</include>
-                    <include field="CF_OBC_DCChargingStat">GetValueInFieldList(fieldInfo, 'CF_OBC_DCChargingStat')</include>
-                    <include field="CF_Bms_ChgSts">GetValueInFieldList(fieldInfo, 'CF_Bms_ChgSts')</include>
+                    <include field="CF_Vcu_GarSelDisp">if isnull(current) then '' else coalesce(current.fieldValue,'')</include>
                 </expressions>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
             </target-list>
         </box>
         <box name="Union2" type="union">
@@ -553,6 +604,56 @@
             <input port="5" stream="out:MapMaxTB_1"/>
             <output port="1" stream="out:Union2_1"/>
             <param name="strict" value="false"/>
+        </box>
+        <box name="GetVehSpdDec" type="query">
+            <input port="1" stream="out:GetGarSelDisp_1"/>
+            <output port="1" stream="out:GetVehSpdDec_1"/>
+            <dataref id="querytable" name="CanLastestValueTable"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="secondary-key"/>
+            <param name="limit" value="1"/>
+            <param name="key-field.0" value="vehicleKeyID"/>
+            <param name="key-lowerbound-value.0" value="input.vehicleKeyID"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-upperbound-operation.0" value="none"/>
+            <param name="key-field.1" value="rootCount"/>
+            <param name="key-lowerbound-value.1" value="input.rootCount"/>
+            <param name="key-lowerbound-operation.1" value="eq"/>
+            <param name="key-upperbound-operation.1" value="none"/>
+            <param name="key-field.2" value="fieldName"/>
+            <param name="key-lowerbound-value.2" value="'CR_Mcu_VehSpdDec_Kph'"/>
+            <param name="key-lowerbound-operation.2" value="eq"/>
+            <param name="key-upperbound-operation.2" value="none"/>
+            <param name="key-field.3" value="realTime"/>
+            <param name="key-lowerbound-value.3" value="input.realTime-300"/>
+            <param name="key-lowerbound-operation.3" value="ge"/>
+            <param name="key-upperbound-value.3" value="input.realTime"/>
+            <param name="key-upperbound-operation.3" value="le"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="descending"/>
+            <param name="order-by-key-field.0" value="vehicleKeyID"/>
+            <param name="order-by-key-field.1" value="rootCount"/>
+            <param name="order-by-key-field.2" value="fieldName"/>
+            <param name="order-by-key-field.3" value="realTime"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="current" selection="none"/>
+                <item name="old" selection="none"/>
+                <expressions>
+                    <include field="CR_Mcu_VehSpdDec_Kph">if isnull(current) then '' else coalesce(current.fieldValue,'')</include>
+                </expressions>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
         </box>
         <box name="MapToCCPTrig" type="map">
             <input port="1" stream="out:Union2_1"/>
@@ -580,31 +681,55 @@
                 </item>
             </target-list>
         </box>
-        <box name="PublishCP" type="outputadapter">
-            <input port="1" stream="out:addCanFields_1"/>
-            <output port="1" stream="out:PublishCP_1"/>
-            <param name="start:state" value="true"/>
-            <param name="javaclass" value="com.streambase.sb.adapter.liveview.LiveViewPublish"/>
-            <param name="ackPeriod" value="0"/>
-            <param name="adHoc" value="false"/>
-            <param name="bufferSize" value="1024"/>
-            <param name="connectInline" value="false"/>
-            <param name="connectionKey" value=""/>
-            <param name="deleteField" value=""/>
-            <param name="dynamicTableName" value="false"/>
-            <param name="enableCompressedConnection" value="false"/>
-            <param name="encapsulatingLV" value="false"/>
-            <param name="flushInterval" value="250"/>
-            <param name="logLevel" value="INFO"/>
-            <param name="lvTableName" value="CP_DataTable"/>
-            <param name="pubName" value=""/>
-            <param name="reliablePub" value="false"/>
-            <param name="seqField" value=""/>
-            <param name="shareConnection" value="true"/>
-            <param name="strictSchema" value="false"/>
-            <param name="throughPort" value="false"/>
-            <param name="uri" value="${LV_SERVER_URI}"/>
-            <param name="useRuntimeURI" value="false"/>
+        <box name="GetVehSpd_Kph" type="query">
+            <input port="1" stream="out:GetVehSpdDec_1"/>
+            <output port="1" stream="out:GetVehSpd_Kph_1"/>
+            <dataref id="querytable" name="CanLastestValueTable"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="secondary-key"/>
+            <param name="limit" value="1"/>
+            <param name="key-field.0" value="vehicleKeyID"/>
+            <param name="key-lowerbound-value.0" value="input.vehicleKeyID"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-upperbound-operation.0" value="none"/>
+            <param name="key-field.1" value="rootCount"/>
+            <param name="key-lowerbound-value.1" value="input.rootCount"/>
+            <param name="key-lowerbound-operation.1" value="eq"/>
+            <param name="key-upperbound-operation.1" value="none"/>
+            <param name="key-field.2" value="fieldName"/>
+            <param name="key-lowerbound-value.2" value="'CR_Mcu_VehSpd_Kph'"/>
+            <param name="key-lowerbound-operation.2" value="eq"/>
+            <param name="key-upperbound-operation.2" value="none"/>
+            <param name="key-field.3" value="realTime"/>
+            <param name="key-lowerbound-value.3" value="input.realTime-300"/>
+            <param name="key-lowerbound-operation.3" value="ge"/>
+            <param name="key-upperbound-value.3" value="input.realTime"/>
+            <param name="key-upperbound-operation.3" value="le"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="descending"/>
+            <param name="order-by-key-field.0" value="vehicleKeyID"/>
+            <param name="order-by-key-field.1" value="rootCount"/>
+            <param name="order-by-key-field.2" value="fieldName"/>
+            <param name="order-by-key-field.3" value="realTime"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="current" selection="none"/>
+                <item name="old" selection="none"/>
+                <expressions>
+                    <include field="CR_Mcu_VehSpd_Kph">if isnull(current) then '' else coalesce(current.fieldValue,'')</include>
+                </expressions>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
         </box>
         <box name="PublishCCPTrig" type="outputadapter">
             <input port="1" stream="out:MapToCCPTrig_1"/>
@@ -623,6 +748,132 @@
             <param name="flushInterval" value="250"/>
             <param name="logLevel" value="INFO"/>
             <param name="lvTableName" value="AutoCCPTrigDataTable"/>
+            <param name="pubName" value=""/>
+            <param name="reliablePub" value="false"/>
+            <param name="seqField" value=""/>
+            <param name="shareConnection" value="true"/>
+            <param name="strictSchema" value="false"/>
+            <param name="throughPort" value="false"/>
+            <param name="uri" value="${LV_SERVER_URI}"/>
+            <param name="useRuntimeURI" value="false"/>
+        </box>
+        <box name="GetDCChargingStat" type="query">
+            <input port="1" stream="out:GetVehSpd_Kph_1"/>
+            <output port="1" stream="out:GetDCChargingStat_1"/>
+            <dataref id="querytable" name="CanLastestValueTable"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="secondary-key"/>
+            <param name="limit" value="1"/>
+            <param name="key-field.0" value="vehicleKeyID"/>
+            <param name="key-lowerbound-value.0" value="input.vehicleKeyID"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-upperbound-operation.0" value="none"/>
+            <param name="key-field.1" value="rootCount"/>
+            <param name="key-lowerbound-value.1" value="input.rootCount"/>
+            <param name="key-lowerbound-operation.1" value="eq"/>
+            <param name="key-upperbound-operation.1" value="none"/>
+            <param name="key-field.2" value="fieldName"/>
+            <param name="key-lowerbound-value.2" value="'CF_OBC_DCChargingStat'"/>
+            <param name="key-lowerbound-operation.2" value="eq"/>
+            <param name="key-upperbound-operation.2" value="none"/>
+            <param name="key-field.3" value="realTime"/>
+            <param name="key-lowerbound-value.3" value="input.realTime-300"/>
+            <param name="key-lowerbound-operation.3" value="ge"/>
+            <param name="key-upperbound-value.3" value="input.realTime"/>
+            <param name="key-upperbound-operation.3" value="le"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="descending"/>
+            <param name="order-by-key-field.0" value="vehicleKeyID"/>
+            <param name="order-by-key-field.1" value="rootCount"/>
+            <param name="order-by-key-field.2" value="fieldName"/>
+            <param name="order-by-key-field.3" value="realTime"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="current" selection="none"/>
+                <item name="old" selection="none"/>
+                <expressions>
+                    <include field="CF_OBC_DCChargingStat">if isnull(current) then '' else coalesce(current.fieldValue,'')</include>
+                </expressions>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="GetBms_ChgSts" type="query">
+            <input port="1" stream="out:GetDCChargingStat_1"/>
+            <output port="1" stream="out:GetBms_ChgSts_1"/>
+            <dataref id="querytable" name="CanLastestValueTable"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="secondary-key"/>
+            <param name="limit" value="1"/>
+            <param name="key-field.0" value="vehicleKeyID"/>
+            <param name="key-lowerbound-value.0" value="input.vehicleKeyID"/>
+            <param name="key-lowerbound-operation.0" value="eq"/>
+            <param name="key-upperbound-operation.0" value="none"/>
+            <param name="key-field.1" value="rootCount"/>
+            <param name="key-lowerbound-value.1" value="input.rootCount"/>
+            <param name="key-lowerbound-operation.1" value="eq"/>
+            <param name="key-upperbound-operation.1" value="none"/>
+            <param name="key-field.2" value="fieldName"/>
+            <param name="key-lowerbound-value.2" value="'CF_Bms_ChgSts'"/>
+            <param name="key-lowerbound-operation.2" value="eq"/>
+            <param name="key-upperbound-operation.2" value="none"/>
+            <param name="key-field.3" value="realTime"/>
+            <param name="key-lowerbound-value.3" value="input.realTime-300"/>
+            <param name="key-lowerbound-operation.3" value="ge"/>
+            <param name="key-upperbound-value.3" value="input.realTime"/>
+            <param name="key-upperbound-operation.3" value="le"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="descending"/>
+            <param name="order-by-key-field.0" value="vehicleKeyID"/>
+            <param name="order-by-key-field.1" value="rootCount"/>
+            <param name="order-by-key-field.2" value="fieldName"/>
+            <param name="order-by-key-field.3" value="realTime"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="current" selection="none"/>
+                <item name="old" selection="none"/>
+                <expressions>
+                    <include field="CF_Bms_ChgSts">if isnull(current) then '' else coalesce(current.fieldValue,'')</include>
+                </expressions>
+            </target-list>
+            <target-list name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="PublishCP" type="outputadapter">
+            <input port="1" stream="out:GetBms_ChgSts_1"/>
+            <output port="1" stream="out:PublishCP_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.liveview.LiveViewPublish"/>
+            <param name="ackPeriod" value="0"/>
+            <param name="adHoc" value="false"/>
+            <param name="bufferSize" value="1024"/>
+            <param name="connectInline" value="false"/>
+            <param name="connectionKey" value=""/>
+            <param name="deleteField" value=""/>
+            <param name="dynamicTableName" value="false"/>
+            <param name="enableCompressedConnection" value="false"/>
+            <param name="encapsulatingLV" value="false"/>
+            <param name="flushInterval" value="250"/>
+            <param name="logLevel" value="INFO"/>
+            <param name="lvTableName" value="CP_DataTable"/>
             <param name="pubName" value=""/>
             <param name="reliablePub" value="false"/>
             <param name="seqField" value=""/>

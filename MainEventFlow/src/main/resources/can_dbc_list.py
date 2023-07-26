@@ -1,13 +1,6 @@
 import cantools
 import pandas as pd
 
-# import sys
-# sys.stdout.reconfigure(encoding='utf-8')
-
-# pd.set_option('display.max_rows',None)
-# pd.set_option('display.max_columns',None)
-# pd.set_option('display.width',1000)
-
 def parsed_dbc(filepath):
     canDB = cantools.db.load_file(filepath)
     
@@ -81,17 +74,25 @@ def parsed_dbc(filepath):
     dbc_list=dbc_list.apply(lambda x: x.str.strip(), axis = 1)
     return dbc_list        
 
+# import sys
+# sys.stdout.reconfigure(encoding='utf-8')
+
+# pd.set_option('display.max_rows',None)
+# pd.set_option('display.max_columns',None)
+# pd.set_option('display.width',1000)
+
 #input : vehicleKeyID, signals
 # vehicleKeyID = 219054
-# signals = ['CF_Clu_Odometer', 'CF_Vcu_GarSelDisp', 'CR_Mcu_VehSpdDec_Kph', 'CR_Mcu_VehSpd_Kph', 'CF_OBC_DCChargingStat', 'CF_BMS_chgsts']
+# signals = ['CF_Clu_Odometer', 'CF_Vcu_GarSelDisp', 'CR_Mcu_VehSpdDec_Kph', 'CR_Mcu_VehSpd_Kph', 'CF_OBC_DCChargingStat', 'CF_Bms_ChgSts']
 
 dbcFileName = str(vehicleKeyID) + '.dbc'
 dbcfilepath = 'd:/projects/vdms/resources/dbc/' + dbcFileName
 dbc_list = parsed_dbc(dbcfilepath)
+# print(dbc_list)
 
 sig_data = dbc_list[dbc_list['sig_name'].isin(signals)]
 sig_data['vehicleKeyID'] = vehicleKeyID 
-converted = sig_data.astype({'msg_id':'int', 'msg_is_extended_frame':'bool', 'msg_length':'int', 'sig_start':'int', 'sig_length':'int', 'sig_is_signed':'bool', 'sig_initial':'int', 'sig_scale':'float', 'sig_offset':'float', 'sig_is_multiplexer':'bool'})
+converted = sig_data.astype({'msg_id':'int', 'msg_is_extended_frame':'str', 'msg_length':'int', 'sig_start':'int', 'sig_length':'int', 'sig_is_signed':'str', 'sig_initial':'int', 'sig_scale':'float', 'sig_offset':'float', 'sig_is_multiplexer':'str'})
 
 dbc_json = f'{{"dbcList": {converted.to_json(orient="records")}}}'
 

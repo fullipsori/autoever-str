@@ -1,162 +1,154 @@
 <?xml version="1.0" encoding="UTF-8"?><application-layout>
     <component name="InputStream">
-        <param name="gui:x" value="-843"/>
-        <param name="gui:y" value="240"/>
+        <param name="gui:x" value="-892"/>
+        <param name="gui:y" value="230"/>
     </component>
     <component name="PublishPerf">
-        <param name="gui:x" value="205"/>
-        <param name="gui:y" value="250"/>
+        <param name="gui:x" value="156"/>
+        <param name="gui:y" value="235"/>
     </component>
     <component name="DBCTable">
-        <param name="gui:x" value="-544"/>
-        <param name="gui:y" value="256"/>
+        <param name="gui:x" value="-593"/>
+        <param name="gui:y" value="246"/>
         <param name="gui:width" value="80"/>
         <param name="gui:height" value="56"/>
     </component>
     <component name="LastestValueTable">
-        <param name="gui:x" value="675"/>
-        <param name="gui:y" value="535"/>
+        <param name="gui:x" value="555"/>
+        <param name="gui:y" value="429"/>
         <param name="gui:width" value="80"/>
         <param name="gui:height" value="56"/>
     </component>
     <component name="AGGToHCP">
-        <param name="gui:x" value="-6"/>
-        <param name="gui:y" value="250"/>
-    </component>
-    <component name="GenCanDBCs">
-        <param name="gui:x" value="-534"/>
-        <param name="gui:y" value="363"/>
+        <param name="gui:x" value="-55"/>
+        <param name="gui:y" value="235"/>
     </component>
     <component name="EndedCanProc">
-        <param name="gui:x" value="89"/>
-        <param name="gui:y" value="250"/>
+        <param name="gui:x" value="40"/>
+        <param name="gui:y" value="235"/>
     </component>
     <component name="Filter">
-        <param name="gui:x" value="-91"/>
-        <param name="gui:y" value="386"/>
+        <param name="gui:x" value="-140"/>
+        <param name="gui:y" value="376"/>
     </component>
     <component name="Filter3">
-        <param name="gui:x" value="89"/>
-        <param name="gui:y" value="386"/>
+        <param name="gui:x" value="40"/>
+        <param name="gui:y" value="376"/>
     </component>
     <component name="FilterMarker">
-        <param name="gui:x" value="-310"/>
-        <param name="gui:y" value="292"/>
+        <param name="gui:x" value="-359"/>
+        <param name="gui:y" value="282"/>
     </component>
-    <component name="GetLastest">
-        <param name="gui:x" value="569"/>
-        <param name="gui:y" value="426"/>
-        <param name="gui:bends:1" value="534,426;540,456"/>
+    <component name="GenCanDBCs">
+        <param name="gui:x" value="-583"/>
+        <param name="gui:y" value="353"/>
     </component>
     <component name="GetMatchedData">
-        <param name="gui:x" value="-6"/>
-        <param name="gui:y" value="386"/>
+        <param name="gui:x" value="-55"/>
+        <param name="gui:y" value="376"/>
     </component>
     <component name="Get_DBCIDs">
-        <param name="gui:x" value="-642"/>
-        <param name="gui:y" value="363"/>
-        <param name="gui:bends:1" value="-679,280;-652,393"/>
+        <param name="gui:x" value="-691"/>
+        <param name="gui:y" value="353"/>
+        <param name="gui:bends:1" value="-728,270;-701,383"/>
     </component>
     <component name="InsertLastestValue">
-        <param name="gui:x" value="784"/>
-        <param name="gui:y" value="426"/>
+        <param name="gui:x" value="565"/>
+        <param name="gui:y" value="300"/>
+        <param name="gui:bends:1" value="517,416;537,330"/>
     </component>
     <component name="Iter_MatchedDatas">
-        <param name="gui:x" value="205"/>
-        <param name="gui:y" value="386"/>
+        <param name="gui:x" value="156"/>
+        <param name="gui:y" value="376"/>
     </component>
     <component name="Map">
-        <param name="gui:x" value="-417"/>
-        <param name="gui:y" value="127"/>
+        <param name="gui:x" value="-466"/>
+        <param name="gui:y" value="117"/>
     </component>
     <component name="MarkerEnded">
-        <param name="gui:x" value="-199"/>
-        <param name="gui:y" value="292"/>
+        <param name="gui:x" value="-248"/>
+        <param name="gui:y" value="282"/>
     </component>
     <component name="MarkerStarted">
-        <param name="gui:x" value="-199"/>
-        <param name="gui:y" value="198"/>
-        <param name="gui:bends:1" value="-240,312;-223,228"/>
+        <param name="gui:x" value="-248"/>
+        <param name="gui:y" value="188"/>
+        <param name="gui:bends:1" value="-280,302;-260,218"/>
     </component>
     <component name="MarkerUnion">
-        <param name="gui:x" value="-91"/>
-        <param name="gui:y" value="250"/>
-        <param name="gui:bends:1" value="-109,228;-101,270"/>
-        <param name="gui:bends:2" value="-121,322;-113,290"/>
+        <param name="gui:x" value="-140"/>
+        <param name="gui:y" value="235"/>
+        <param name="gui:bends:1" value="-156,218;-150,255"/>
+        <param name="gui:bends:2" value="-169,312;-161,275"/>
     </component>
     <component name="MatchSignal">
-        <param name="gui:x" value="-199"/>
-        <param name="gui:y" value="386"/>
-        <param name="gui:bends:1" value="-230,332;-210,416"/>
+        <param name="gui:x" value="-248"/>
+        <param name="gui:y" value="376"/>
+        <param name="gui:bends:1" value="-289,322;-273,406"/>
     </component>
     <component name="Organize">
-        <param name="gui:x" value="-417"/>
-        <param name="gui:y" value="292"/>
-        <param name="gui:bends:1" value="-450,383;-436,322"/>
+        <param name="gui:x" value="-466"/>
+        <param name="gui:y" value="282"/>
+        <param name="gui:bends:1" value="-499,373;-485,312"/>
     </component>
     <component name="PublishRaw">
-        <param name="gui:x" value="569"/>
-        <param name="gui:y" value="332"/>
-        <param name="gui:bends:1" value="545,406;555,362"/>
+        <param name="gui:x" value="565"/>
+        <param name="gui:y" value="536"/>
+        <param name="gui:bends:1" value="519,396;555,566"/>
     </component>
     <component name="ReadDBCData">
-        <param name="gui:x" value="-534"/>
-        <param name="gui:y" value="127"/>
+        <param name="gui:x" value="-583"/>
+        <param name="gui:y" value="117"/>
     </component>
     <component name="Sequence2">
-        <param name="gui:x" value="304"/>
-        <param name="gui:y" value="386"/>
+        <param name="gui:x" value="255"/>
+        <param name="gui:y" value="376"/>
     </component>
     <component name="Split">
-        <param name="gui:x" value="-642"/>
-        <param name="gui:y" value="117"/>
-        <param name="gui:bends:1" value="-666,260;-652,147"/>
+        <param name="gui:x" value="-691"/>
+        <param name="gui:y" value="107"/>
+        <param name="gui:bends:1" value="-715,250;-701,137"/>
     </component>
     <component name="Split2">
-        <param name="gui:x" value="464"/>
-        <param name="gui:y" value="386"/>
+        <param name="gui:x" value="415"/>
+        <param name="gui:y" value="376"/>
     </component>
     <component name="Split4">
-        <param name="gui:x" value="-760"/>
-        <param name="gui:y" value="240"/>
+        <param name="gui:x" value="-809"/>
+        <param name="gui:y" value="230"/>
     </component>
     <component name="Union">
-        <param name="gui:x" value="685"/>
-        <param name="gui:y" value="273"/>
+        <param name="gui:x" value="736"/>
+        <param name="gui:y" value="258"/>
         <param name="gui:height" value="91"/>
-        <param name="gui:bends:1" value="470,280;472,293"/>
-        <param name="gui:bends:2" value="658,362;662,344"/>
+        <param name="gui:bends:1" value="481,265;483,278"/>
+        <param name="gui:bends:2" value="635,566;679,329"/>
     </component>
     <component name="Union2">
-        <param name="gui:x" value="-310"/>
-        <param name="gui:y" value="43"/>
-        <param name="gui:bends:2" value="-340,157;-322,83"/>
+        <param name="gui:x" value="-359"/>
+        <param name="gui:y" value="33"/>
+        <param name="gui:bends:2" value="-388,147;-370,73"/>
     </component>
     <component name="add_seq_3">
-        <param name="gui:x" value="384"/>
-        <param name="gui:y" value="386"/>
+        <param name="gui:x" value="335"/>
+        <param name="gui:y" value="376"/>
     </component>
     <component name="initData">
-        <param name="gui:x" value="-534"/>
-        <param name="gui:y" value="33"/>
-        <param name="gui:bends:1" value="-562,137;-544,63"/>
-    </component>
-    <component name="updateFieldInfo">
-        <param name="gui:x" value="685"/>
-        <param name="gui:y" value="426"/>
+        <param name="gui:x" value="-583"/>
+        <param name="gui:y" value="23"/>
+        <param name="gui:bends:1" value="-611,127;-593,53"/>
     </component>
     <component name="OutputParserStream">
-        <param name="gui:x" value="784"/>
-        <param name="gui:y" value="289"/>
-        <param name="gui:bends:1" value="765,318;765,319"/>
+        <param name="gui:x" value="833"/>
+        <param name="gui:y" value="274"/>
+        <param name="gui:bends:1" value="814,303;814,304"/>
     </component>
     <component name="OutputRawDataStream">
-        <param name="gui:x" value="-417"/>
-        <param name="gui:y" value="386"/>
-        <param name="gui:bends:1" value="-444,403;-442,416"/>
+        <param name="gui:x" value="-466"/>
+        <param name="gui:y" value="376"/>
+        <param name="gui:bends:1" value="-493,393;-491,406"/>
     </component>
     <component name="UpdateSignalVariable">
-        <param name="gui:x" value="-199"/>
-        <param name="gui:y" value="43"/>
+        <param name="gui:x" value="-248"/>
+        <param name="gui:y" value="33"/>
     </component>
 </application-layout>
