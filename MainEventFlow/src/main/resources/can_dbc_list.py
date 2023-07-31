@@ -85,15 +85,16 @@ def parsed_dbc(filepath):
 # vehicleKeyID = 219054
 # signals = ['CF_Clu_Odometer', 'CF_Vcu_GarSelDisp', 'CR_Mcu_VehSpdDec_Kph', 'CR_Mcu_VehSpd_Kph', 'CF_OBC_DCChargingStat', 'CF_Bms_ChgSts']
 
-dbcFileName = str(vehicleKeyID) + '.dbc'
-dbcfilepath = 'd:/projects/vdms/resources/dbc/' + dbcFileName
-dbc_list = parsed_dbc(dbcfilepath)
-# print(dbc_list)
-
-sig_data = dbc_list[dbc_list['sig_name'].isin(signals)]
-sig_data['vehicleKeyID'] = vehicleKeyID 
-converted = sig_data.astype({'msg_id':'int', 'msg_is_extended_frame':'str', 'msg_length':'int', 'sig_start':'int', 'sig_length':'int', 'sig_is_signed':'str', 'sig_initial':'int', 'sig_scale':'float', 'sig_offset':'float', 'sig_is_multiplexer':'str'})
-
-dbc_json = f'{{"dbcList": {converted.to_json(orient="records")}}}'
+# pd.set_option('mode.chained_assignment',  None)
+#
+# dbcFileName = str(vehicleKeyID) + '.dbc'
+# dbcfilepath = 'd:/projects/vdms/resources/dbc/' + dbcFileName
+# dbc_list = parsed_dbc(dbcfilepath)
+#
+# sig_data = dbc_list[dbc_list['sig_name'].isin(signals)]
+# sig_data['vehicleKeyID'] = vehicleKeyID 
+# converted = sig_data.astype({'msg_id':'int', 'msg_is_extended_frame':'str', 'msg_length':'int', 'sig_start':'int', 'sig_length':'int', 'sig_is_signed':'str', 'sig_initial':'int', 'sig_scale':'float', 'sig_offset':'float', 'sig_is_multiplexer':'str'})
+#
+# dbc_json = f'{{"dbcList": {converted.to_json(orient="records")}}}'
 
 # print(dbc_json)

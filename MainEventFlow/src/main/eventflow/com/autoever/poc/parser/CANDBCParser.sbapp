@@ -10,55 +10,19 @@
         </type-metadata>
         <memory-model-settings/>
         <import from="com.autoever.poc.maineventflow.AutoVDMSFlow_v2"/>
+        <import alias="DBCDataSchema" from="com.autoever.poc.maineventflow.DBCSchema" item="DBCDataSchema"/>
+        <import alias="DBCTableSchema" from="com.autoever.poc.maineventflow.DBCSchema" item="DBCTableSchema"/>
         <import from="com.autoever.poc.maineventflow.LiveViewTable"/>
         <import from="com.autoever.poc.maineventflow.kafkaSchemas"/>
-        <named-schemas>
-            <schema name="DBCDataSchema">
-                <field name="vehicleKeyID" type="long"/>
-                <field name="msg_name" type="string"/>
-                <field name="msg_id" type="long"/>
-                <field name="msg_is_extended_frame" type="string"/>
-                <field name="msg_length" type="int"/>
-                <field name="msg_comment" type="string"/>
-                <field name="sig_name" type="string"/>
-                <field name="sig_start" type="int"/>
-                <field name="sig_length" type="int"/>
-                <field name="sig_byte_order" type="string"/>
-                <field name="sig_is_signed" type="string"/>
-                <field name="sig_initial" type="int"/>
-                <field name="sig_scale" type="double"/>
-                <field name="sig_offset" type="double"/>
-                <field name="sig_minimum" type="string"/>
-                <field name="sig_maximum" type="string"/>
-                <field name="sig_unit" type="string"/>
-                <field name="sig_is_multiplexer" type="string"/>
-                <field name="sig_multiplexer_ids" type="string"/>
-                <field name="sig_mtable" type="string"/>
-                <field name="sig_spn" type="string"/>
-                <field name="sig_comments" type="string"/>
-            </schema>
-        </named-schemas>
+        <constant expr="['CF_Clu_Odometer', 'CF_Vcu_GarSelDisp', 'CR_Mcu_VehSpdDec_Kph', 'CR_Mcu_VehSpd_Kph', 'CF_OBC_DCChargingStat', 'CF_Bms_ChgSts']" name="MATCH_SIGNALS"/>
         <parameter-definitions>
             <parameter default="lv://localhost:11080" name="LV_SERVER_URI"/>
             <parameter default="d:/projects/vdms/resources" name="RESOURCE_ROOT"/>
+            <parameter default="d:/projects/vdms/tools/Python311/python.exe" name="PYTHON_EXECUTABLE"/>
         </parameter-definitions>
         <dynamic-variables>
-            <dynamic-variable initial-expression="emptylist(DBCDataSchema())" name="matchSignals" setter-expression="if isnull(input.matchSignal) then emptylist(DBCDataSchema()) else append(matchSignals, input.matchSignal)" setter-stream="UpdateSignalVariable"/>
+            <dynamic-variable initial-expression="emptylist(DBCDataSchema())" name="matchSignals" setter-expression="matchDBCs" setter-stream="UpdateSignalVariable"/>
         </dynamic-variables>
-        <table-schemas>
-            <table-schema name="DBCTableSchema" schema="DBCDataSchema">
-                <primary-index type="btree">
-                    <field name="vehicleKeyID"/>
-                    <field name="sig_name"/>
-                </primary-index>
-                <index type="btree">
-                    <field name="vehicleKeyID"/>
-                </index>
-                <index type="btree">
-                    <field name="sig_name"/>
-                </index>
-            </table-schema>
-        </table-schemas>
         <data name="DBCTable" shared="false" source="input" type="querytable">
             <param name="storage-method" value="transactional_memory"/>
             <param name="replicated" value="false"/>
@@ -92,10 +56,6 @@
                     <field name="vehicleKeyID"/>
                     <field name="rootCount"/>
                 </index>
-                <index type="btree">
-                    <field name="vehicleKeyID"/>
-                    <field name="fieldName"/>
-                </index>
             </table-schema>
             <param name="truncate" value="false"/>
             <preload format="csv" mode="empty"/>
@@ -107,42 +67,14 @@
             <output port="2" stream="out:Split4_2"/>
             <param name="output-count" value="2"/>
         </box>
-        <box name="Get_DBCIDs" type="map">
+        <box name="CheckDBCLoad" type="filter">
             <input port="1" stream="out:Split4_2"/>
-            <output port="1" stream="out:Get_DBCIDs_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="dbcIDs">unique(maplist(function(d DBCDataSchema) {d.msg_id}, matchSignals))</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="Split" type="split">
-            <input port="1" stream="out:Split4_1"/>
-            <output port="1" stream="out:Split_1"/>
-            <output port="2" stream="out:Split_2"/>
-            <param name="output-count" value="2"/>
-        </box>
-        <box name="GenCanDBCs" type="java">
-            <input port="1" stream="out:Get_DBCIDs_1"/>
-            <output port="1" stream="out:GenCanDBCs_1"/>
-            <output port="2" stream="OutputRawDataStream"/>
-            <param name="start:state" value="true"/>
-            <param name="javaclass" value="com.autoever.poc.adapters.VdmsRawParser"/>
-            <param name="parserType" value="CAN_DBC"/>
-        </box>
-        <box name="initData" type="map">
-            <input port="1" stream="out:Split_1"/>
-            <output port="1" stream="out:initData_1"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="matchSignal">DBCDataSchema()</include>
-                </expressions>
-            </target-list>
+            <output port="1" stream="out:CheckDBCLoad_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="!isempty(matchSignals)"/>
         </box>
         <box name="ReadDBCData" type="query">
-            <input port="1" stream="out:Split_2"/>
+            <input port="1" stream="out:Split4_1"/>
             <output port="1" stream="out:ReadDBCData_1"/>
             <dataref id="querytable" name="DBCTable"/>
             <param name="operation" value="read"/>
@@ -153,13 +85,14 @@
             <param name="key-upperbound-operation.0" value="none"/>
             <param name="write-type" value="insert"/>
             <param name="if-write-fails" value="ignore"/>
-            <param name="no-match-mode" value="output-no-match-nothing"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
             <param name="order-by-direction" value="none"/>
             <target-list>
-                <item name="input" selection="none"/>
-                <item name="current" selection="all"/>
-                <item name="old" selection="none"/>
-                <item name="new" selection="none"/>
+                <item name="input" selection="all"/>
+                <item name="current" selection="none"/>
+                <expressions>
+                    <include field="matchDBCs">aggregatelist(current as DBCDataSchema)</include>
+                </expressions>
             </target-list>
             <target-list goal-schema="DBCDataSchema" name="insert">
                 <item name="input" selection="all"/>
@@ -171,17 +104,63 @@
                 <item name="input" selection="all"/>
             </target-list>
         </box>
-        <output-stream name="OutputRawDataStream"/>
-        <box name="Map" type="map">
+        <box name="CheckDBC" type="filter">
             <input port="1" stream="out:ReadDBCData_1"/>
-            <output port="1" stream="out:Map_1"/>
+            <output port="1" stream="out:CheckDBC_1"/>
+            <output port="2" stream="out:CheckDBC_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="!isnull(matchDBCs) &amp;&amp; !isempty(matchDBCs) &amp;&amp; !isnull(matchDBCs[0].vehicleKeyID)"/>
+            <param name="expression.1" value="true"/>
+        </box>
+        <box name="Get_DBCIDs" type="map">
+            <input port="1" stream="out:CheckDBCLoad_1"/>
+            <output port="1" stream="out:Get_DBCIDs_1"/>
             <target-list>
-                <item name="input" selection="none"/>
+                <item name="input" selection="all"/>
                 <expressions>
-                    <include field="matchSignal.*">*</include>
+                    <include field="dbcIDs">unique(maplist(function(d DBCDataSchema) {d.msg_id}, matchSignals))</include>
                 </expressions>
             </target-list>
         </box>
+        <box name="GenCanDBCs" type="java">
+            <input port="1" stream="out:Get_DBCIDs_1"/>
+            <output port="1" stream="out:GenCanDBCs_1"/>
+            <output port="2" stream="OutputRawDataStream"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.autoever.poc.adapters.VdmsRawParser"/>
+            <param name="parserType" value="CAN_DBC"/>
+        </box>
+        <box name="LoadDBC" type="map">
+            <input port="1" stream="out:CheckDBC_1"/>
+            <output port="1" stream="out:LoadDBC_1"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="matchDBCs"/>
+                </item>
+            </target-list>
+        </box>
+        <box name="MapDBC" type="map">
+            <input port="1" stream="out:CheckDBC_2"/>
+            <output port="1" stream="out:MapDBC_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="vehicleKeyID">kafkaMessage.VehicleKeyID</include>
+                    <include field="signals">MATCH_SIGNALS</include>
+                </expressions>
+            </target-list>
+        </box>
+        <output-stream name="OutputRawDataStream"/>
+        <module-reference name="LoadDBCList">
+            <input name="InputStream" port="1" stream="out:MapDBC_1"/>
+            <output name="OutputDBCStream" port="1" stream="out:LoadDBCList_1"/>
+            <param name="file" value="com.autoever.poc.parser.CANDBCLoadSignals"/>
+            <input-dataref name="DBCTable" table="DBCTable"/>
+            <parameter-bindings>
+                <binding name="PYTHON_EXECUTABLE" value="${PYTHON_EXECUTABLE}"/>
+                <binding name="RESOURCE_ROOT" value="${RESOURCE_ROOT}"/>
+            </parameter-bindings>
+        </module-reference>
         <box name="Organize" type="map">
             <input port="1" stream="out:GenCanDBCs_1"/>
             <output port="1" stream="out:Organize_1"/>
@@ -206,13 +185,16 @@
             <param name="expression.1" value="IsEnded"/>
             <param name="expression.2" value="true"/>
         </box>
-        <box name="Union2" type="union">
-            <input port="1" stream="out:initData_1"/>
-            <input port="2" stream="out:Map_1"/>
-            <output port="1" stream="UpdateSignalVariable"/>
-            <param name="strict" value="false"/>
+        <box name="InitLoadDBC" type="map">
+            <input port="1" stream="out:LoadDBCList_1"/>
+            <output port="1" stream="out:InitLoadDBC_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="matchDBCs">if !isnull(dbcList) &amp;&amp; !isempty(dbcList) &amp;&amp; !isnull(dbcList[0].vehicleKeyID) then dbcList else emptylist(DBCDataSchema())</include>
+                </expressions>
+            </target-list>
         </box>
-        <output-stream name="UpdateSignalVariable"/>
         <box name="MarkerEnded" type="map">
             <input port="1" stream="out:FilterMarker_2"/>
             <output port="1" stream="out:MarkerEnded_1"/>
@@ -256,6 +238,13 @@
                 </expressions>
             </target-list>
         </box>
+        <box name="Union2" type="union">
+            <input port="1" stream="out:LoadDBC_1"/>
+            <input port="2" stream="out:InitLoadDBC_1"/>
+            <output port="1" stream="UpdateSignalVariable"/>
+            <param name="strict" value="false"/>
+        </box>
+        <output-stream name="UpdateSignalVariable"/>
         <box name="Filter" type="filter">
             <input port="1" stream="out:MatchSignal_1"/>
             <output port="1" stream="out:Filter_1"/>
@@ -386,6 +375,7 @@
                 <item name="input" selection="none"/>
                 <item name="old" selection="none"/>
                 <item name="new" selection="none"/>
+                <item name="current" selection="none"/>
             </target-list>
             <target-list name="insert">
                 <item name="input" selection="all"/>

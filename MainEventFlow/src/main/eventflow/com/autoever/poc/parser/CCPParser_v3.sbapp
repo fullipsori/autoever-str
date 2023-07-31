@@ -86,10 +86,6 @@
                     <field name="vehicleKeyID"/>
                     <field name="rootCount"/>
                 </index>
-                <index type="btree">
-                    <field name="vehicleKeyID"/>
-                    <field name="fieldName"/>
-                </index>
             </table-schema>
             <param name="truncate" value="false"/>
             <preload format="csv" mode="empty"/>
@@ -404,12 +400,14 @@
             <output port="3" stream="out:FilterToCCPTrig_3"/>
             <output port="4" stream="out:FilterToCCPTrig_4"/>
             <output port="5" stream="out:FilterToCCPTrig_5"/>
+            <output port="6" stream="out:FilterToCCPTrig_6"/>
             <param name="autogen-nomatch-port" value="false"/>
             <param name="expression.0" value="SOC &gt;= 50 &amp;&amp; !isempty(cellDiffs) &amp;&amp; !isempty(filterlist(cellDiffs, function(d long){ d &gt; 150 }))"/>
             <param name="expression.1" value="SOC &gt;= 50 &amp;&amp; deltaVol &gt;= 150"/>
-            <param name="expression.2" value="deltaTB &gt; 15"/>
+            <param name="expression.2" value="deltaTB &gt; 1.2"/>
             <param name="expression.3" value="ISOL &lt;= 1500"/>
-            <param name="expression.4" value="maxTB &gt;= 45"/>
+            <param name="expression.4" value="maxTB &gt; 32"/>
+            <param name="expression.5" value="maxCDiffVal &gt; 4"/>
         </box>
         <box name="MapToCCP" type="map">
             <input port="1" stream="out:Split_1"/>
@@ -493,6 +491,16 @@
                 </expressions>
             </target-list>
         </box>
+        <box name="MapMaxCDiffVal" type="map">
+            <input port="1" stream="out:FilterToCCPTrig_6"/>
+            <output port="1" stream="out:MapMaxCDiffVal_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="matchFlag">"maxCDiffVal"</include>
+                </expressions>
+            </target-list>
+        </box>
         <box name="MapMaxTB" type="map">
             <input port="1" stream="out:FilterToCCPTrig_5"/>
             <output port="1" stream="out:MapMaxTB_1"/>
@@ -533,9 +541,10 @@
             <target-list>
                 <item name="input" selection="all"/>
                 <item name="current" selection="none"/>
+                <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
                 <expressions>
                     <include field="fieldDatas">UniqueDatas(tuple(fieldName as name, fieldValue as value), true)</include>
-                    <include field="dataSize">count(current.fieldName)</include>
                 </expressions>
             </target-list>
             <target-list name="insert">
@@ -571,6 +580,7 @@
             <input port="3" stream="out:MapDeltaTB_1"/>
             <input port="4" stream="out:MapISOL_1"/>
             <input port="5" stream="out:MapMaxTB_1"/>
+            <input port="6" stream="out:MapMaxCDiffVal_1"/>
             <output port="1" stream="out:Union2_1"/>
             <param name="strict" value="false"/>
         </box>
@@ -597,6 +607,8 @@
                     <include field="SOC"/>
                     <include field="terminalID"/>
                     <include field="vehicleKeyID"/>
+                    <include field="maxCDiffCells"/>
+                    <include field="maxCDiffVal"/>
                 </item>
             </target-list>
         </box>

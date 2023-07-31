@@ -1,7 +1,6 @@
 package com.autoever.poc.common;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 
 import com.streambase.sb.util.Base64;
 
@@ -67,23 +66,6 @@ public class StringUtils {
 		System.arraycopy(first, 0, combined, 0, first.length);
 		System.arraycopy(second,0,combined, first.length, second.length);
 		return combined;
-	}
-
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		byte[] array = {0x01,0x02,0x03,0x04};
-		ByteBuffer wrapped = ByteBuffer.wrap(array);
-		System.out.printf("aaa:0x%x\n", wrapped.getInt());
-
-		byte[] arr = {0x00,0x00, 0x00, 0x01 };
-		ByteBuffer wrapped1 = ByteBuffer.wrap(arr); // big-endian by default
-		int num = wrapped1.getInt(); // 1
-		System.out.println("jlsjdfl:" + num);
-		
-		int data = 0x04030201;
-		System.out.println("result:" + (data & 0x00FFFFFF));
-		System.out.printf("test:0x%x" , (data << 8) & 0xFFFFFFFF);
-		System.out.printf("ttt:0x%x\n", 0x00000001);
 	}
 
 }

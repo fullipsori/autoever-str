@@ -10,9 +10,7 @@
         </type-metadata>
         <memory-model-settings/>
         <import alias="MainOutputSchema" from="com.autoever.poc.maineventflow.AutoVDMSFlow_v2" item="MainOutputSchema"/>
-        <import alias="DBCDataSchema" from="com.autoever.poc.parser.CANDBCParser" item="DBCDataSchema"/>
-        <import alias="DBCTableSchema" from="com.autoever.poc.parser.CANDBCParser" item="DBCTableSchema"/>
-        <constant expr="['CF_Clu_Odometer', 'CF_Vcu_GarSelDisp', 'CR_Mcu_VehSpdDec_Kph', 'CR_Mcu_VehSpd_Kph', 'CF_OBC_DCChargingStat', 'CF_Bms_ChgSts']" name="MATCH_SIGNALS"/>
+        <import from="com.autoever.poc.maineventflow.DBCSchema"/>
         <parameter-definitions>
             <parameter default="d:/Projects/vdms/tools/Python/Python311/python.exe" name="PYTHON_EXECUTABLE"/>
             <parameter default="d:/projects/vdms/resources" name="RESOURCE_ROOT"/>
@@ -56,10 +54,6 @@
                     <field name="vehicleKeyID"/>
                     <field name="rootCount"/>
                 </index>
-                <index type="btree">
-                    <field name="vehicleKeyID"/>
-                    <field name="fieldName"/>
-                </index>
             </table-schema>
             <param name="truncate" value="false"/>
             <preload format="csv" mode="empty"/>
@@ -74,12 +68,6 @@
             </schema>
         </stream>
         <stream name="InputStream" schema="MainOutputSchema"/>
-        <box name="Initialize" type="inputadapter">
-            <output port="1" stream="out:Initialize_1"/>
-            <param name="start:state" value="true"/>
-            <param name="javaclass" value="com.streambase.sb.adapter.once.Once"/>
-            <param name="OutputField" value="time"/>
-        </box>
         <module-reference name="CANDBCParser">
             <input dispatch="numerical" key="int(kafkaMessage.VehicleKeyID)" name="InputStream" port="1" stream="InputStream"/>
             <output name="OutputParserStream" port="1" stream="OutputParserStream"/>
@@ -95,6 +83,7 @@
             <parameter-bindings>
                 <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
                 <binding name="RESOURCE_ROOT" value="${RESOURCE_ROOT}"/>
+                <binding name="PYTHON_EXECUTABLE" value="${PYTHON_EXECUTABLE}"/>
             </parameter-bindings>
         </module-reference>
         <box name="Filter" type="filter">
@@ -106,50 +95,17 @@
         <output-stream name="OutputParserStream"/>
         <output-stream name="OutputRawDataStream"/>
         <output-stream name="OutputVarStream"/>
-        <box name="Union" type="union">
-            <input port="1" stream="out:Initialize_1"/>
-            <input port="2" stream="out:Filter_1"/>
-            <output port="1" stream="out:Union_1"/>
-            <param name="strict" value="false"/>
-        </box>
-        <box name="AddSignals" type="map">
-            <input port="1" stream="out:Union_1"/>
-            <output port="1" stream="out:AddSignals_1"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="DBCFiles">GetFilenameListInPath("${RESOURCE_ROOT}/dbc", 'dbc')</include>
-                    <include field="signals">MATCH_SIGNALS</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="Iterate2" type="iterate">
-            <input port="1" stream="out:AddSignals_1"/>
-            <output port="1" stream="out:Iterate2_1"/>
-            <param name="iterate-expr" value="DBCFiles"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="vehicleKeyID">long(each.element)</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="DeletePrev" type="query">
-            <input port="1" stream="out:Iterate2_1"/>
-            <output port="1" stream="out:DeletePrev_1"/>
+        <box name="DeleteAll" type="query">
+            <input port="1" stream="out:Filter_1"/>
             <dataref id="querytable" name="DBCTable"/>
             <param name="operation" value="delete"/>
-            <param name="where" value="secondary-key"/>
-            <param name="key-field.0" value="vehicleKeyID"/>
-            <param name="key-lowerbound-value.0" value="input1.vehicleKeyID"/>
-            <param name="key-lowerbound-operation.0" value="eq"/>
-            <param name="key-upperbound-operation.0" value="none"/>
+            <param name="where" value="all-rows"/>
             <param name="write-type" value="insert"/>
             <param name="if-write-fails" value="ignore"/>
-            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="no-match-mode" value="output-no-match-nothing"/>
             <param name="order-by-direction" value="none"/>
             <target-list>
-                <item name="input" selection="all"/>
+                <item name="input" selection="none"/>
                 <item name="old" selection="none"/>
                 <item name="new" selection="none"/>
                 <item name="current" selection="none"/>
@@ -164,101 +120,5 @@
                 <item name="input" selection="all"/>
             </target-list>
         </box>
-        <box name="pack" type="map">
-            <input port="1" stream="out:DeletePrev_1"/>
-            <output port="1" stream="out:pack_1"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="inputVars.*">*</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="LoadDBCData" type="java">
-            <input port="1" stream="out:pack_1"/>
-            <output port="1" stream="out:LoadDBCData_1"/>
-            <param name="start:state" value="true"/>
-            <param name="javaclass" value="com.streambase.sb.adapter.python.PythonAdapter"/>
-            <param name="Asynchronous" value="true"/>
-            <param name="GlobalInstanceId" value="python_can_instance"/>
-            <param name="InstanceType" value="Global"/>
-            <param name="LocalInstanceId" value=""/>
-            <param name="LogLevel" value="INFO"/>
-            <param name="OutputVarsSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema&gt;&#13;&#10;    &lt;field name=&quot;dbc_json&quot; type=&quot;string&quot;/&gt;&#13;&#10;&lt;/schema&gt;&#13;&#10;"/>
-            <param name="Script" value=""/>
-            <param name="ScriptFile" value="can_dbc_list.py"/>
-            <param name="ScriptSource" value="File"/>
-            <param name="amsRequiredOnStartup" value="false"/>
-            <param name="artifactName" value=""/>
-            <param name="artifactVersion" value=""/>
-            <param name="enableControlPort" value="false"/>
-        </box>
-        <box name="Unpack" type="map">
-            <input port="1" stream="out:LoadDBCData_1"/>
-            <output port="1" stream="out:Unpack_1"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="*">outputVars.*</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="jsonToTuple" type="java">
-            <input port="1" stream="out:Unpack_1"/>
-            <output port="1" stream="out:jsonToTuple_1"/>
-            <param name="start:state" value="true"/>
-            <param name="javaclass" value="com.streambase.sb.operator.jsontuple.JSON2Tuple"/>
-            <param name="enableLooseParsing" value="true"/>
-            <param name="enablePassThroughFields" value="false"/>
-            <param name="enableStatusPort" value="false"/>
-            <param name="jsonFieldName" value="dbc_json"/>
-            <param name="logLevel" value="INFO"/>
-            <param name="outputSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema&gt;&#13;&#10;    &lt;field name=&quot;dbcList&quot; type=&quot;list&quot;&gt;&#13;&#10;        &lt;element-type type=&quot;tuple&quot; value=&quot;DBCDataSchema&quot;/&gt;&#13;&#10;    &lt;/field&gt;&#13;&#10;&lt;/schema&gt;&#13;&#10;"/>
-            <param name="passThroughFieldsFieldName" value="PassThroughFields"/>
-            <param name="timestampFormat" value="yyyy-MM-dd HH:mm:ss.SSSZ"/>
-        </box>
-        <box name="Iterate" type="iterate">
-            <input port="1" stream="out:jsonToTuple_1"/>
-            <output port="1" stream="out:Iterate_1"/>
-            <param name="iterate-expr" value="dbcList"/>
-            <param name="iterate-cond" value="!isempty(dbcList)"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="*">each.element.*</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="InsertDBC" type="query">
-            <input port="1" stream="out:Iterate_1"/>
-            <output port="1" stream="OutputDBCStream"/>
-            <dataref id="querytable" name="DBCTable"/>
-            <param name="operation" value="write"/>
-            <param name="where" value="primary-key"/>
-            <param name="key-field.0" value="vehicleKeyID"/>
-            <param name="key-value.0" value="input1.vehicleKeyID"/>
-            <param name="key-field.1" value="sig_name"/>
-            <param name="key-value.1" value="input1.sig_name"/>
-            <param name="write-type" value="insert"/>
-            <param name="if-write-fails" value="force"/>
-            <param name="no-match-mode" value="output-no-match-null"/>
-            <param name="order-by-direction" value="none"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <item name="old" selection="none"/>
-                <item name="new" selection="all"/>
-                <item name="current" selection="none"/>
-            </target-list>
-            <target-list goal-schema="DBCDataSchema" name="insert">
-                <item name="input" selection="all"/>
-            </target-list>
-            <target-list goal-schema="DBCDataSchema" name="update">
-                <item name="input" selection="all"/>
-            </target-list>
-            <target-list goal-schema="DBCDataSchema" name="no-match">
-                <item name="input" selection="all"/>
-            </target-list>
-        </box>
-        <output-stream name="OutputDBCStream"/>
     </add>
 </modify>

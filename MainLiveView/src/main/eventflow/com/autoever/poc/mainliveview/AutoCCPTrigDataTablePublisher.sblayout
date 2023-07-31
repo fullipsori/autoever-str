@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <application-layout>
-    <component name="ServerStateIn">
+    <component name="PublishSchemasIn">
         <param name="gui:x" value="10.0"/>
         <param name="gui:y" value="10.0"/>
         <param name="gui:height" value="60.0"/>
         <param name="gui:width" value="60.0"/>
     </component>
-    <component name="ServerStatusIn">
+    <component name="ServerStateIn">
         <param name="gui:x" value="10.0"/>
         <param name="gui:y" value="110.0"/>
         <param name="gui:height" value="60.0"/>
         <param name="gui:width" value="60.0"/>
     </component>
-    <component name="PublishSchemasIn">
+    <component name="ServerStatusIn">
         <param name="gui:x" value="10.0"/>
         <param name="gui:y" value="210.0"/>
         <param name="gui:height" value="60.0"/>
@@ -24,19 +24,19 @@
         <param name="gui:height" value="60.0"/>
         <param name="gui:width" value="60.0"/>
     </component>
-    <component name="QueryTheLastGoodRecordOut">
+    <component name="PublisherStateOut">
         <param name="gui:x" value="750.0"/>
         <param name="gui:y" value="10.0"/>
         <param name="gui:height" value="60.0"/>
         <param name="gui:width" value="60.0"/>
     </component>
-    <component name="PublisherStateOut">
+    <component name="PublishToAutoCCPTrigDataTableOut">
         <param name="gui:x" value="750.0"/>
         <param name="gui:y" value="110.0"/>
         <param name="gui:height" value="60.0"/>
         <param name="gui:width" value="60.0"/>
     </component>
-    <component name="PublishToAutoCCPTrigDataTableOut">
+    <component name="QueryTheLastGoodRecordOut">
         <param name="gui:x" value="750.0"/>
         <param name="gui:y" value="210.0"/>
         <param name="gui:height" value="60.0"/>

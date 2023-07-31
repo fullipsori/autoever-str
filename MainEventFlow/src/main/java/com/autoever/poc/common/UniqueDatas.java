@@ -31,6 +31,7 @@ public class UniqueDatas extends AggregateWindow {
 		if(inData == null) return;
 		try {
 			String fieldName = inData.getString(0);
+			if(fieldName == null) return;
 			Tuple tData = accDatas.stream().filter(t -> {
 				try {
 					return t.getString(0).equals(fieldName);

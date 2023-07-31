@@ -31,22 +31,6 @@ configuration = {
 					  useTempFile = "false"
 					  workingDir = "."
 					}
-				  },
-				  {
-
-					// Section name. The value does not have to be unique; that is, you can have multiple sections with the same name
-					// in the same array of sections. This key is required.
-					name = "python"
-
-					// Section property bag. All values must be strings. This key is optional and has no default value.
-					// On Mac, set the path to something like /usr/loca/bin/python3. See the README for details on 
-					// supported Python versions.
-					settings = {
-					  executable = "d:/Projects/vdms/tools/Python/Python311/python.exe"
-					  instance = "python_can_instance"
-					  useTempFile = "false"
-					  workingDir = "."
-					}
 				  }
 				]
 			}
