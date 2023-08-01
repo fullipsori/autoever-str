@@ -243,7 +243,7 @@
                 <expressions>
                     <include field="deltaVol">getCCPDeltaValue(RawParsed.cellData)</include>
                     <include field="dVols">getCCPDVol(RawParsed.cellData)</include>
-                    <include field="RESs">emptylist(double(null))</include>
+                    <include field="RESs">emptylist(double())</include>
                     <include field="deltaTB">getCCPDeltaValue(RawParsed.msrTBData)</include>
                     <include field="maxTB">getCCPMaxFieldValue(RawParsed.msrTBData)</include>
                     <include field="cellDiffs">if(!isnull(matchedTuple)) then maplist(function(f1 FieldType, f2 FieldType){f2.fieldValue-f1.fieldValue}, RawParsed.cellData , matchedTuple.cellData) else emptylist(long(null))</include>

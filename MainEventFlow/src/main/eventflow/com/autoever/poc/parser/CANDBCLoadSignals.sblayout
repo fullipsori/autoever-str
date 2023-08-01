@@ -34,6 +34,10 @@
         <param name="gui:x" value="-223"/>
         <param name="gui:y" value="112"/>
     </component>
+    <component name="Split">
+        <param name="gui:x" value="328"/>
+        <param name="gui:y" value="-110"/>
+    </component>
     <component name="Unpack">
         <param name="gui:x" value="87"/>
         <param name="gui:y" value="-110"/>
@@ -49,10 +53,6 @@
     <component name="python_dbc_instance">
         <param name="gui:x" value="-305"/>
         <param name="gui:y" value="1"/>
-    </component>
-    <component name="Split">
-        <param name="gui:x" value="328"/>
-        <param name="gui:y" value="-110"/>
     </component>
     <component name="OutputDBCStream">
         <param name="gui:x" value="433"/>
