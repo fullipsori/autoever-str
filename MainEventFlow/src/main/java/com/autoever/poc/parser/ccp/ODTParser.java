@@ -65,13 +65,13 @@ public class ODTParser implements Parseable, DataSavable {
 	}
 	
 	public Tuple getMatchedTupleByInterval(Tuple dataTuple, double realTime, double minInterval, double maxInterval) {
-		// removed over maxInterval
-		final double removeTime = realTime - maxInterval;
-		final double searchTime = realTime - minInterval;
+		//1. removed over maxInterval
+		double removeTime = realTime - maxInterval;
+		double searchTime = realTime - minInterval;
 		prevTuples.removeIf(p -> p.first <= removeTime);
-		//search matched tuple
+		//2. search matched tuple
 		Tuple matched = prevTuples.stream().filter(p -> p.first <= searchTime).findFirst().map(Pair::getSecond).orElse(null);
-		//add current tuple at first index.
+		//3. add current tuple at first index.
 		if(prevTuples.isEmpty() || prevTuples.get(0).first != realTime) {
 			prevTuples.add(0, new Pair<Double, Tuple>(realTime, dataTuple));
 		}

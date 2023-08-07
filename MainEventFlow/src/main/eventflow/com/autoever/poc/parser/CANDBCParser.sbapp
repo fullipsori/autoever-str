@@ -90,6 +90,7 @@
             <target-list>
                 <item name="input" selection="all"/>
                 <item name="current" selection="none"/>
+                <item name="old" selection="none"/>
                 <expressions>
                     <include field="matchDBCs">aggregatelist(current as DBCDataSchema)</include>
                 </expressions>
@@ -153,7 +154,7 @@
         <output-stream name="OutputRawDataStream"/>
         <module-reference name="LoadDBCList">
             <input name="InputStream" port="1" stream="out:MapDBC_1"/>
-            <output name="OutputDBCStream" port="1" stream="out:LoadDBCList_1"/>
+            <output name="ToCANDBCParser" port="1" stream="out:LoadDBCList_1"/>
             <param name="file" value="com.autoever.poc.parser.CANDBCLoadSignals"/>
             <input-dataref name="DBCTable" table="DBCTable"/>
             <parameter-bindings>

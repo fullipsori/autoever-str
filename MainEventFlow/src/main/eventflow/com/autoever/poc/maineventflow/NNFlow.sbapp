@@ -9,62 +9,193 @@
             <param name="fully-qualified-name" value="com.autoever.poc.maineventflow.NNFlow"/>
         </type-metadata>
         <memory-model-settings/>
+        <import alias="FieldType" from="com.autoever.poc.parser.CCPParser_v3" item="FieldType"/>
         <parameter-definitions>
-            <parameter default="D:/projects/vdms_env/Scripts/python.exe" name="PYTHON_EXECUTABLE"/>
+            <parameter default="d:/Projects/vdms/tools/Python/Python311/python.exe" name="PYTHON_EXECUTABLE"/>
             <parameter default="d:/projects/vdms/resources" name="RESOURCE_ROOT"/>
             <parameter default="lv://localhost:11080" name="LV_SERVER_URI"/>
+            <parameter default="20" name="COUNT_CAR"/>
         </parameter-definitions>
-        <dynamic-variables/>
-        <stream name="ControlStream">
-            <schema>
-                <field name="command" type="string"/>
-                <field name="modelFolder" type="string"/>
-            </schema>
-        </stream>
+        <dynamic-variables>
+            <dynamic-variable initial-expression="emptylist(long(null))" name="VIDs" setter-expression="CCPVIDs" setter-stream="OutputVarStream"/>
+        </dynamic-variables>
         <stream name="InputStream">
             <schema>
-                <field name="x_input" type="list">
-                    <element-type type="list">
-                        <element-type type="double"/>
-                    </element-type>
+                <field name="cellDiffs" type="list">
+                    <element-type type="long"/>
                 </field>
+                <field name="deltaTB" type="double"/>
+                <field name="deltaVol" type="long"/>
+                <field name="dVols" type="list">
+                    <element-type type="double"/>
+                </field>
+                <field name="maxTB" type="double"/>
+                <field name="messageID" type="string"/>
+                <field name="mgmtNO" type="string"/>
+                <field name="RawParsed" type="tuple">
+                    <schema>
+                        <field name="rawCellData" type="list">
+                            <element-type type="tuple">
+                                <schema>
+                                    <field name="fieldName" type="string"/>
+                                    <field name="fieldValue" type="long"/>
+                                </schema>
+                            </element-type>
+                        </field>
+                        <field name="rawMsrTBData" type="list">
+                            <element-type type="tuple">
+                                <schema>
+                                    <field name="fieldName" type="string"/>
+                                    <field name="fieldValue" type="long"/>
+                                </schema>
+                            </element-type>
+                        </field>
+                        <field name="rawSOC" type="double"/>
+                        <field name="rawIBM" type="double"/>
+                        <field name="rawChargingNow" type="long"/>
+                        <field name="rawISOL" type="long"/>
+                    </schema>
+                </field>
+                <field name="RESs" type="string"/>
+                <field name="terminalID" type="string"/>
+                <field name="vehicleKeyID" type="long"/>
+                <field name="baseTime" type="long"/>
+                <field name="deltaTime" type="double"/>
+                <field name="realTime" type="long"/>
+                <field name="rootCount" type="int"/>
+                <field name="cellData" type="string"/>
+                <field name="cellDiffData" type="string"/>
+                <field name="msrTBData" type="string"/>
+                <field name="dVol" type="string"/>
+                <field name="maxDVolVal" type="double"/>
+                <field name="maxDVolCells" type="string"/>
+                <field name="SOC" type="double"/>
+                <field name="IBM" type="double"/>
+                <field name="chargingNow" type="long"/>
+                <field name="ISOL" type="long"/>
+                <field name="maxCDiffVal" type="long"/>
+                <field name="maxCDiffCells" type="string"/>
+                <field name="CF_Clu_Odometer" type="string"/>
+                <field name="CF_Vcu_GarSelDisp" type="string"/>
+                <field name="CR_Mcu_VehSpdDec_Kph" type="string"/>
+                <field name="CR_Mcu_VehSpd_Kph" type="string"/>
+                <field name="CF_OBC_DCChargingStat" type="string"/>
+                <field name="CF_Bms_ChgSts" type="string"/>
             </schema>
         </stream>
-        <box name="InputAdapter" type="inputadapter">
-            <output port="1" stream="out:InputAdapter_1"/>
+        <box name="Init" type="inputadapter">
+            <output port="1" stream="out:Init_1"/>
             <param name="start:state" value="true"/>
             <param name="javaclass" value="com.streambase.sb.adapter.once.Once"/>
             <param name="OutputField" value="time"/>
         </box>
+        <box name="addParam" type="map">
+            <input port="1" stream="InputStream"/>
+            <output port="1" stream="out:addParam_1"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="CF_OBC_DCChargingStat"/>
+                    <include field="chargingNow"/>
+                    <include field="messageID"/>
+                    <include field="realTime"/>
+                    <include field="rootCount"/>
+                    <include field="terminalID"/>
+                    <include field="vehicleKeyID"/>
+                    <declare field="vbMax">getCCPMaxFieldValue(RawParsed.rawCellData)</declare>
+                    <declare field="vbMin">getCCPMinFieldValue(RawParsed.rawCellData)</declare>
+                    <declare field="tbMax">getCCPMaxFieldValue(RawParsed.rawMsrTBData)</declare>
+                    <declare field="tbMin">getCCPMinFieldValue(RawParsed.rawMsrTBData)</declare>
+                </item>
+                <expressions>
+                    <include field="rawParam">append(maplist(function(f FieldType) { f.fieldValue }, RawParsed.rawCellData), long(RawParsed.rawIBM), RawParsed.rawISOL, vbMax, vbMin, tbMax, tbMin, (vbMax-vbMin), (tbMax-tbMin))</include>
+                    <include field="routingIndex">indexof(VIDs, vehicleKeyID)</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Split" type="split">
+            <input port="1" stream="out:Init_1"/>
+            <output port="1" stream="out:Split_1"/>
+            <output port="2" stream="out:Split_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <box name="AggParamPerCar" type="aggregate">
+            <input dispatch="numerical" key="routingIndex" port="1" stream="out:addParam_1"/>
+            <output port="1" stream="out:AggParamPerCar_1"/>
+            <param name="parallel" value="true"/>
+            <multiplicity number="${COUNT_CAR}" type="concrete"/>
+            <param name="dimension-name.0" value="Dimension1"/>
+            <param name="dimension-type.0" value="Predicate"/>
+            <param name="dimension-partial.0" value="no"/>
+            <param name="dimension-close-predicate.0" value="chargingNow !=1 || CF_OBC_DCChargingStat != '1.000' || rootCount != firstval(rootCount) || count() == 200"/>
+            <param name="dimension-emit-close-first.0" value="false"/>
+            <param name="output-group-by" value="true"/>
+            <target-list>
+                <expressions>
+                    <include field="count">count()</include>
+                    <include field="xInput">aggregatelist(rawParam)</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="GetVIDs" type="map">
+            <input port="1" stream="out:Split_2"/>
+            <output port="1" stream="OutputVarStream"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="CCPVIDs">maplist(function(e string) {long(e)}, GetFilenameListInPath("${RESOURCE_ROOT}/evt", 'evt'))</include>
+                </expressions>
+            </target-list>
+        </box>
         <box name="InitModel" type="map">
-            <input port="1" stream="out:InputAdapter_1"/>
+            <input port="1" stream="out:Split_1"/>
             <output port="1" stream="out:InitModel_1"/>
             <target-list>
                 <item name="input" selection="none"/>
                 <expressions>
-                    <include field="inputVars.modelFolder">"${RESOURCE_ROOT}/NE_LSTM_AE_V8"</include>
-                    <include field="inputVars.command">"Load"</include>
+                    <include field="inputVars.pickleFile">"${RESOURCE_ROOT}/LM_V2/OCSVM_model_pickle"</include>
+                    <include field="inputVars.kerasPath">"${RESOURCE_ROOT}/LM_V2/autoencoder"</include>
                 </expressions>
             </target-list>
         </box>
+        <output-stream name="OutputVarStream"/>
+        <box name="checkCount" type="filter">
+            <input port="1" stream="out:AggParamPerCar_1"/>
+            <output port="1" stream="out:checkCount_1"/>
+            <output port="2" stream="OutputNonMatchStream"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="count==200"/>
+            <param name="expression.1" value="true"/>
+        </box>
+        <box name="LoadModel" type="java">
+            <input port="1" stream="out:InitModel_1"/>
+            <output port="1" stream="OutputLoadModelStream"/>
+            <error stream="ErrorOutputStream"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.python.PythonAdapter"/>
+            <param name="Asynchronous" value="false"/>
+            <param name="GlobalInstanceId" value="python_nn_instance"/>
+            <param name="InstanceType" value="Global"/>
+            <param name="LocalInstanceId" value="nn_instance"/>
+            <param name="LogLevel" value="INFO"/>
+            <param name="OutputVarsSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema&gt;&#13;&#10;    &lt;field name=&quot;output&quot; type=&quot;string&quot;/&gt;&#13;&#10;&lt;/schema&gt;&#13;&#10;"/>
+            <param name="Script" value="import tensorflow as tf&#13;&#10;from tensorflow import keras&#13;&#10;import pickle&#13;&#10;&#13;&#10;PICKLE_MODEL = None&#13;&#10;KERAS_MODEL = None&#13;&#10;&#13;&#10;with open(pickleFile, 'rb') as f:&#13;&#10;    PICKLE_MODEL = pickle.load(f) # deserialize using load()&#13;&#10;&#13;&#10;KERAS_MODEL = tf.keras.models.load_model(kerasPath)&#13;&#10;# Summary = model.summary()&#13;&#10;&#13;&#10;output = &quot;OK Loaded&quot;&#13;&#10;"/>
+            <param name="ScriptFile" value=""/>
+            <param name="ScriptSource" value="Script text"/>
+            <param name="amsRequiredOnStartup" value="false"/>
+            <param name="artifactName" value=""/>
+            <param name="artifactVersion" value=""/>
+            <param name="enableControlPort" value="false"/>
+        </box>
+        <error-output-stream name="ErrorOutputStream"/>
+        <output-stream name="OutputLoadModelStream"/>
+        <output-stream name="OutputNonMatchStream"/>
         <box name="pack" type="map">
-            <input port="1" stream="InputStream"/>
+            <input port="1" stream="out:checkCount_1"/>
             <output port="1" stream="out:pack_1"/>
             <target-list>
                 <item name="input" selection="all"/>
                 <expressions>
-                    <include field="inputVars.x_input">x_input</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="ReInitModel" type="map">
-            <input port="1" stream="ControlStream"/>
-            <output port="1" stream="out:ReInitModel_1"/>
-            <target-list>
-                <item name="input" selection="none"/>
-                <expressions>
-                    <include field="inputVars.command">command</include>
-                    <include field="inputVars.modelFolder">if(isempty(modelFolder) || isempty(trim(modelFolder))) then "${RESOURCE_ROOT}/NE_LSTM_AE_V8" else trim(modelFolder)</include>
+                    <include field="inputVars.x_input">xInput</include>
                 </expressions>
             </target-list>
         </box>
@@ -79,33 +210,7 @@
             <param name="LocalInstanceId" value="nn_instance"/>
             <param name="LogLevel" value="INFO"/>
             <param name="OutputVarsSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema&gt;&#13;&#10;    &lt;field name=&quot;y_predict&quot; type=&quot;list&quot;&gt;&#13;&#10;        &lt;element-type type=&quot;double&quot;/&gt;&#13;&#10;    &lt;/field&gt;&#13;&#10;&lt;/schema&gt;&#13;&#10;"/>
-            <param name="Script" value="import numpy as np&#13;&#10;&#13;&#10;x_input_data = np.array(x_input)&#13;&#10;x_input_data = x_input_data.reshape(1,-1)&#13;&#10;&#13;&#10;y_output_predict = KERAS_MODEL.predict(x_input_data)&#13;&#10;y_predict = list(y_output_predict[0])&#13;&#10;&#13;&#10;        "/>
-            <param name="ScriptFile" value=""/>
-            <param name="ScriptSource" value="Script text"/>
-            <param name="amsRequiredOnStartup" value="false"/>
-            <param name="artifactName" value=""/>
-            <param name="artifactVersion" value=""/>
-            <param name="enableControlPort" value="false"/>
-        </box>
-        <box name="Union" type="union">
-            <input port="1" stream="out:ReInitModel_1"/>
-            <input port="2" stream="out:InitModel_1"/>
-            <output port="1" stream="out:Union_1"/>
-            <param name="strict" value="false"/>
-        </box>
-        <box name="LoadModel" type="java">
-            <input port="1" stream="out:Union_1"/>
-            <output port="1" stream="OutputLoadModelStream"/>
-            <error stream="ErrorOutputStream"/>
-            <param name="start:state" value="true"/>
-            <param name="javaclass" value="com.streambase.sb.adapter.python.PythonAdapter"/>
-            <param name="Asynchronous" value="false"/>
-            <param name="GlobalInstanceId" value="python_nn_instance"/>
-            <param name="InstanceType" value="Global"/>
-            <param name="LocalInstanceId" value="nn_instance"/>
-            <param name="LogLevel" value="INFO"/>
-            <param name="OutputVarsSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema/&gt;&#13;&#10;"/>
-            <param name="Script" value="import tensorflow as tf&#13;&#10;&#13;&#10;COMMAND = command&#13;&#10;MODEL_PATH = modelFolder&#13;&#10;KERAS_MODEL = None&#13;&#10;&#13;&#10;if COMMAND.upper() == 'LOAD' or COMMAND.upper() == 'RELOAD':&#13;&#10;    imported_model = tf.keras.models.load_model(MODEL_PATH)&#13;&#10;    KERAS_MODEL = imported_model&#13;&#10;    # KERAS_MODEL.summary()&#13;&#10;"/>
+            <param name="Script" value="import numpy as np&#13;&#10;&#13;&#10;x_input_data = np.array(x_input)&#13;&#10;&#13;&#10;# for test&#13;&#10;y_predict = x_input_data.tolist()&#13;&#10;&#13;&#10;# for pickle&#13;&#10;# what should i do?&#13;&#10;&#13;&#10;# for keras&#13;&#10;# x_input_data = x_input_data.reshape(1,200,-1)&#13;&#10;# y_output_predict = KERAS_MODEL.predict(x_input_data)&#13;&#10;# y_predict = list(y_output_predict[0])&#13;&#10;&#13;&#10;        "/>
             <param name="ScriptFile" value=""/>
             <param name="ScriptSource" value="Script text"/>
             <param name="amsRequiredOnStartup" value="false"/>
@@ -123,8 +228,6 @@
                 </expressions>
             </target-list>
         </box>
-        <error-output-stream name="ErrorOutputStream"/>
-        <output-stream name="OutputLoadModelStream"/>
         <output-stream name="OutputStream"/>
     </add>
 </modify>

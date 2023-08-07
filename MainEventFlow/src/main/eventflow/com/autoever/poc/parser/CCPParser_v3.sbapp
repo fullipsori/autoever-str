@@ -18,16 +18,16 @@
                 <field name="fieldValue" type="long"/>
             </schema>
             <schema name="CCPRawParsedSchema">
-                <field name="cellData" type="list">
+                <field name="rawCellData" type="list">
                     <element-type type="tuple" value="FieldType"/>
                 </field>
-                <field name="msrTBData" type="list">
+                <field name="rawMsrTBData" type="list">
                     <element-type type="tuple" value="FieldType"/>
                 </field>
-                <field name="SOC" type="double"/>
-                <field name="IBM" type="double"/>
-                <field name="chargingNow" type="long"/>
-                <field name="ISOL" type="long"/>
+                <field name="rawSOC" type="double"/>
+                <field name="rawIBM" type="double"/>
+                <field name="rawChargingNow" type="long"/>
+                <field name="rawISOL" type="long"/>
             </schema>
         </named-schemas>
         <parameter-definitions>
@@ -230,7 +230,7 @@
             <target-list>
                 <item name="input" selection="all"/>
                 <expressions>
-                    <replace field="RawParsed.msrTBData">sublist(RawParsed.msrTBData, 0, 7)</replace>
+                    <replace field="RawParsed.rawMsrTBData">sublist(RawParsed.rawMsrTBData, 0, 7)</replace>
                     <include field="matchedTuple">getCCPMatchedTupleByInterval(kafkaMessage, RawParsed, RawHeader.BaseTime + RawHeader.DeltaTime, 0.0, 2.0)</include>
                 </expressions>
             </target-list>
@@ -241,12 +241,12 @@
             <target-list>
                 <item name="input" selection="all"/>
                 <expressions>
-                    <include field="deltaVol">getCCPDeltaValue(RawParsed.cellData)</include>
-                    <include field="dVols">getCCPDVol(RawParsed.cellData)</include>
+                    <include field="deltaVol">getCCPDeltaValue(RawParsed.rawCellData)</include>
+                    <include field="dVols">getCCPDVol(RawParsed.rawCellData)</include>
                     <include field="RESs">emptylist(double())</include>
-                    <include field="deltaTB">getCCPDeltaValue(RawParsed.msrTBData)</include>
-                    <include field="maxTB">getCCPMaxFieldValue(RawParsed.msrTBData)</include>
-                    <include field="cellDiffs">if(!isnull(matchedTuple)) then maplist(function(f1 FieldType, f2 FieldType){f2.fieldValue-f1.fieldValue}, RawParsed.cellData , matchedTuple.cellData) else emptylist(long(null))</include>
+                    <include field="deltaTB">getCCPDeltaValue(RawParsed.rawMsrTBData)</include>
+                    <include field="maxTB">getCCPMaxFieldValue(RawParsed.rawMsrTBData)</include>
+                    <include field="cellDiffs">if(!isnull(matchedTuple)) then maplist(function(f1 FieldType, f2 FieldType){f2.fieldValue-f1.fieldValue}, RawParsed.rawCellData , matchedTuple.rawCellData) else emptylist(long(null))</include>
                 </expressions>
             </target-list>
         </box>
@@ -327,16 +327,17 @@
                     <include field="deltaTime">RawHeader.DeltaTime</include>
                     <include field="realTime">long(GetLocalTime(kafkaMessage.BaseTime + long(RawHeader.DeltaTime), ''))</include>
                     <include field="rootCount">kafkaMessage.RootCount</include>
-                    <include field="*">RawParsed.*</include>
                     <replace field="RESs">"NA"</replace>
-                    <replace field="cellData">joinCCPCellTuples(RawParsed.cellData)</replace>
+                    <include field="cellData">joinCCPCellTuples(RawParsed.rawCellData)</include>
                     <include field="cellDiffData">joinCCPNumberList(cellDiffs)</include>
-                    <replace field="msrTBData">joinCCPMsrTBTuples(RawParsed.msrTBData)</replace>
+                    <include field="msrTBData">joinCCPMsrTBTuples(RawParsed.rawMsrTBData)</include>
                     <include field="dVol">joinCCPNumberList(dVols)</include>
                     <include field="maxDVolVal">tMaxDVolVal</include>
                     <include field="maxDVolCells">getCCPMaxDVolCells(dVols, tMaxDVolVal)</include>
-                    <replace field="SOC">round(RawParsed.SOC * 1.0)/10.0</replace>
-                    <replace field="IBM">round(RawParsed.IBM * 1.0)/10.0</replace>
+                    <include field="SOC">round(RawParsed.rawSOC * 1.0)/10.0</include>
+                    <include field="IBM">round(RawParsed.rawIBM * 1.0)/10.0</include>
+                    <include field="chargingNow">RawParsed.rawChargingNow</include>
+                    <include field="ISOL">RawParsed.rawISOL</include>
                     <replace field="deltaTB">deltaTB/10.0</replace>
                     <replace field="maxTB">maxTB/10.0</replace>
                     <include field="maxCDiffVal">tMaxCDiffVal</include>
@@ -409,38 +410,6 @@
             <param name="expression.4" value="maxTB &gt; 32"/>
             <param name="expression.5" value="maxCDiffVal &gt; 4"/>
         </box>
-        <box name="MapToCCP" type="map">
-            <input port="1" stream="out:Split_1"/>
-            <output port="1" stream="out:MapToCCP_1"/>
-            <target-list>
-                <item name="input" selection="none">
-                    <include field="baseTime"/>
-                    <include field="cellData"/>
-                    <include field="cellDiffData"/>
-                    <include field="chargingNow"/>
-                    <include field="deltaTB"/>
-                    <include field="deltaTime"/>
-                    <include field="deltaVol"/>
-                    <include field="dVol"/>
-                    <include field="IBM"/>
-                    <include field="ISOL"/>
-                    <include field="maxTB"/>
-                    <include field="messageID"/>
-                    <include field="mgmtNO"/>
-                    <include field="msrTBData"/>
-                    <include field="realTime"/>
-                    <include field="RESs"/>
-                    <include field="rootCount"/>
-                    <include field="SOC"/>
-                    <include field="terminalID"/>
-                    <include field="vehicleKeyID"/>
-                    <include field="maxDVolCells"/>
-                    <include field="maxDVolVal"/>
-                    <include field="maxCDiffCells"/>
-                    <include field="maxCDiffVal"/>
-                </item>
-            </target-list>
-        </box>
         <module-reference name="PublishPerf">
             <input name="InputStream" port="1" stream="out:EndedCCPProc_1"/>
             <output name="OutputStream" port="1" stream="out:PublishPerf_1"/>
@@ -451,68 +420,8 @@
                 <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
             </parameter-bindings>
         </module-reference>
-        <box name="MapCellDiff" type="map">
-            <input port="1" stream="out:FilterToCCPTrig_1"/>
-            <output port="1" stream="out:MapCellDiff_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="matchFlag">'cellDiffs'</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="MapDeltaTB" type="map">
-            <input port="1" stream="out:FilterToCCPTrig_3"/>
-            <output port="1" stream="out:MapDeltaTB_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="matchFlag">"deltaTB"</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="MapDeltaVol" type="map">
-            <input port="1" stream="out:FilterToCCPTrig_2"/>
-            <output port="1" stream="out:MapDeltaVol_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="matchFlag">'deltaVol'</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="MapISOL" type="map">
-            <input port="1" stream="out:FilterToCCPTrig_4"/>
-            <output port="1" stream="out:MapISOL_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="matchFlag">"ISOL"</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="MapMaxCDiffVal" type="map">
-            <input port="1" stream="out:FilterToCCPTrig_6"/>
-            <output port="1" stream="out:MapMaxCDiffVal_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="matchFlag">"maxCDiffVal"</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="MapMaxTB" type="map">
-            <input port="1" stream="out:FilterToCCPTrig_5"/>
-            <output port="1" stream="out:MapMaxTB_1"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="matchFlag">"maxTB"</include>
-                </expressions>
-            </target-list>
-        </box>
         <box name="readDatas" type="query">
-            <input port="1" stream="out:MapToCCP_1"/>
+            <input port="1" stream="out:Split_1"/>
             <output port="1" stream="out:readDatas_1"/>
             <dataref id="querytable" name="CanLastestValueTable"/>
             <param name="operation" value="read"/>
@@ -574,6 +483,72 @@
                 </expressions>
             </target-list>
         </box>
+        <box name="MapCellDiff" type="map">
+            <input port="1" stream="out:FilterToCCPTrig_1"/>
+            <output port="1" stream="out:MapCellDiff_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="matchFlag">'cellDiffs'</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="MapDeltaTB" type="map">
+            <input port="1" stream="out:FilterToCCPTrig_3"/>
+            <output port="1" stream="out:MapDeltaTB_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="matchFlag">"deltaTB"</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="MapDeltaVol" type="map">
+            <input port="1" stream="out:FilterToCCPTrig_2"/>
+            <output port="1" stream="out:MapDeltaVol_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="matchFlag">'deltaVol'</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="MapISOL" type="map">
+            <input port="1" stream="out:FilterToCCPTrig_4"/>
+            <output port="1" stream="out:MapISOL_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="matchFlag">"ISOL"</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="MapMaxCDiffVal" type="map">
+            <input port="1" stream="out:FilterToCCPTrig_6"/>
+            <output port="1" stream="out:MapMaxCDiffVal_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="matchFlag">"maxCDiffVal"</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="MapMaxTB" type="map">
+            <input port="1" stream="out:FilterToCCPTrig_5"/>
+            <output port="1" stream="out:MapMaxTB_1"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="matchFlag">"maxTB"</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Split3" type="split">
+            <input port="1" stream="out:AssignFields_1"/>
+            <output port="1" stream="out:Split3_1"/>
+            <output port="2" stream="ToNNFlow"/>
+            <param name="output-count" value="2"/>
+        </box>
         <box name="Union2" type="union">
             <input port="1" stream="out:MapCellDiff_1"/>
             <input port="2" stream="out:MapDeltaVol_1"/>
@@ -583,6 +558,48 @@
             <input port="6" stream="out:MapMaxCDiffVal_1"/>
             <output port="1" stream="out:Union2_1"/>
             <param name="strict" value="false"/>
+        </box>
+        <output-stream name="ToNNFlow">
+            <param name="connection" value="'nnflow.InputStream'"/>
+            <param name="predicate" value="true"/>
+        </output-stream>
+        <box name="MapToCCP" type="map">
+            <input port="1" stream="out:Split3_1"/>
+            <output port="1" stream="out:MapToCCP_1"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="baseTime"/>
+                    <include field="cellData"/>
+                    <include field="cellDiffData"/>
+                    <include field="chargingNow"/>
+                    <include field="deltaTB"/>
+                    <include field="deltaTime"/>
+                    <include field="deltaVol"/>
+                    <include field="dVol"/>
+                    <include field="IBM"/>
+                    <include field="ISOL"/>
+                    <include field="maxTB"/>
+                    <include field="messageID"/>
+                    <include field="mgmtNO"/>
+                    <include field="msrTBData"/>
+                    <include field="realTime"/>
+                    <include field="RESs"/>
+                    <include field="rootCount"/>
+                    <include field="SOC"/>
+                    <include field="terminalID"/>
+                    <include field="vehicleKeyID"/>
+                    <include field="maxDVolCells"/>
+                    <include field="maxDVolVal"/>
+                    <include field="maxCDiffCells"/>
+                    <include field="maxCDiffVal"/>
+                    <include field="CF_Bms_ChgSts"/>
+                    <include field="CF_Clu_Odometer"/>
+                    <include field="CF_OBC_DCChargingStat"/>
+                    <include field="CF_Vcu_GarSelDisp"/>
+                    <include field="CR_Mcu_VehSpd_Kph"/>
+                    <include field="CR_Mcu_VehSpdDec_Kph"/>
+                </item>
+            </target-list>
         </box>
         <box name="MapToCCPTrig" type="map">
             <input port="1" stream="out:Union2_1"/>
@@ -612,32 +629,6 @@
                 </item>
             </target-list>
         </box>
-        <box name="PublishCP" type="outputadapter">
-            <input port="1" stream="out:AssignFields_1"/>
-            <output port="1" stream="out:PublishCP_1"/>
-            <param name="start:state" value="true"/>
-            <param name="javaclass" value="com.streambase.sb.adapter.liveview.LiveViewPublish"/>
-            <param name="ackPeriod" value="0"/>
-            <param name="adHoc" value="false"/>
-            <param name="bufferSize" value="1024"/>
-            <param name="connectInline" value="false"/>
-            <param name="connectionKey" value=""/>
-            <param name="deleteField" value=""/>
-            <param name="dynamicTableName" value="false"/>
-            <param name="enableCompressedConnection" value="false"/>
-            <param name="encapsulatingLV" value="false"/>
-            <param name="flushInterval" value="250"/>
-            <param name="logLevel" value="INFO"/>
-            <param name="lvTableName" value="CP_DataTable"/>
-            <param name="pubName" value=""/>
-            <param name="reliablePub" value="false"/>
-            <param name="seqField" value=""/>
-            <param name="shareConnection" value="true"/>
-            <param name="strictSchema" value="false"/>
-            <param name="throughPort" value="false"/>
-            <param name="uri" value="${LV_SERVER_URI}"/>
-            <param name="useRuntimeURI" value="false"/>
-        </box>
         <box name="PublishCCPTrig" type="outputadapter">
             <input port="1" stream="out:MapToCCPTrig_1"/>
             <output port="1" stream="out:PublishCCPTrig_1"/>
@@ -655,6 +646,32 @@
             <param name="flushInterval" value="250"/>
             <param name="logLevel" value="INFO"/>
             <param name="lvTableName" value="AutoCCPTrigDataTable"/>
+            <param name="pubName" value=""/>
+            <param name="reliablePub" value="false"/>
+            <param name="seqField" value=""/>
+            <param name="shareConnection" value="true"/>
+            <param name="strictSchema" value="false"/>
+            <param name="throughPort" value="false"/>
+            <param name="uri" value="${LV_SERVER_URI}"/>
+            <param name="useRuntimeURI" value="false"/>
+        </box>
+        <box name="PublishCP" type="outputadapter">
+            <input port="1" stream="out:MapToCCP_1"/>
+            <output port="1" stream="out:PublishCP_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.liveview.LiveViewPublish"/>
+            <param name="ackPeriod" value="0"/>
+            <param name="adHoc" value="false"/>
+            <param name="bufferSize" value="1024"/>
+            <param name="connectInline" value="false"/>
+            <param name="connectionKey" value=""/>
+            <param name="deleteField" value=""/>
+            <param name="dynamicTableName" value="false"/>
+            <param name="enableCompressedConnection" value="false"/>
+            <param name="encapsulatingLV" value="false"/>
+            <param name="flushInterval" value="250"/>
+            <param name="logLevel" value="INFO"/>
+            <param name="lvTableName" value="CP_DataTable"/>
             <param name="pubName" value=""/>
             <param name="reliablePub" value="false"/>
             <param name="seqField" value=""/>

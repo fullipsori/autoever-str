@@ -25,20 +25,20 @@ public class CCPPreProcessor implements PreProcessable {
 	private final int sizeMsrTBData = 9;
 
 	private class RawParsedData {
-		private List<Tuple> cellData = new ArrayList<>();
-		private List<Tuple> msrTBData = new ArrayList<>();
-		private Double SOC = null;
-		private Double IBM = null;
-		private Long chargingNow = null;
-		private Long ISOL = null;
+		private List<Tuple> rawCellData = new ArrayList<>();
+		private List<Tuple> rawMsrTBData = new ArrayList<>();
+		private Double rawSOC = null;
+		private Double rawIBM = null;
+		private Long rawChargingNow = null;
+		private Long rawISOL = null;
 		
 		private boolean validate() {
-			if(cellData.size() != sizeCellData) return false;
-			if(msrTBData.size() != sizeMsrTBData) return false;
-			if(SOC == null) return false;
-			if(IBM == null) return false;
-			if(chargingNow == null) return false;
-			if(ISOL == null) return false;
+			if(rawCellData.size() != sizeCellData) return false;
+			if(rawMsrTBData.size() != sizeMsrTBData) return false;
+			if(rawSOC == null) return false;
+			if(rawIBM == null) return false;
+			if(rawChargingNow == null) return false;
+			if(rawISOL == null) return false;
 			return true;
 		}
 		
@@ -48,20 +48,20 @@ public class CCPPreProcessor implements PreProcessable {
 					Tuple field = FieldType.createTuple();
 					field.setString(0, data.first);
 					field.setLong(1, data.second);
-					cellData.add(field);
+					rawCellData.add(field);
 				}else if(data.first.startsWith("msr_tb_")) {
 					Tuple field = FieldType.createTuple();
 					field.setString(0, data.first);
 					field.setLong(1, data.second);
-					msrTBData.add(field);
+					rawMsrTBData.add(field);
 				}else if("SOC".equals(data.first)) {
-					SOC = data.second * 1.0;
+					rawSOC = data.second * 1.0;
 				}else if("msr_data.ibm".equals(data.first)) {
-					IBM = data.second * 1.0;
+					rawIBM = data.second * 1.0;
 				}else if("chg_charging_now".equals(data.first)) {
-					chargingNow = data.second;
+					rawChargingNow = data.second;
 				}else if("msr_data.r_isol".equals(data.first)) {
-					ISOL =  data.second;
+					rawISOL =  data.second;
 				}
 			}catch(Exception e) {
 				e.printStackTrace();
@@ -72,12 +72,12 @@ public class CCPPreProcessor implements PreProcessable {
 			try {
 				if(validate()) {
 					Tuple ccpTuple = CCPPreProcessor.RawParsed.createTuple();
-					ccpTuple.setList("cellData", cellData);
-					ccpTuple.setList("msrTBData", msrTBData);
-					ccpTuple.setDouble("SOC", SOC);
-					ccpTuple.setDouble("IBM", IBM);
-					ccpTuple.setLong("chargingNow", chargingNow);
-					ccpTuple.setLong("ISOL", ISOL);
+					ccpTuple.setList("rawCellData", rawCellData);
+					ccpTuple.setList("rawMsrTBData", rawMsrTBData);
+					ccpTuple.setDouble("rawSOC", rawSOC);
+					ccpTuple.setDouble("rawIBM", rawIBM);
+					ccpTuple.setLong("rawChargingNow", rawChargingNow);
+					ccpTuple.setLong("rawISOL", rawISOL);
 					return ccpTuple;
 				}
 				return null;
@@ -93,12 +93,12 @@ public class CCPPreProcessor implements PreProcessable {
 
 	public final static Schema RawParsed = new Schema("RawParsed", 
 		List.of(
-			new Schema.Field("cellData", CompleteDataType.forList(CompleteDataType.forTuple(FieldType))),
-			new Schema.Field("msrTBData", CompleteDataType.forList(CompleteDataType.forTuple(FieldType))),
-			new Schema.Field("SOC", CompleteDataType.forDouble()),
-			new Schema.Field("IBM", CompleteDataType.forDouble()),
-			new Schema.Field("chargingNow", CompleteDataType.forLong()),
-			new Schema.Field("ISOL", CompleteDataType.forLong())
+			new Schema.Field("rawCellData", CompleteDataType.forList(CompleteDataType.forTuple(FieldType))),
+			new Schema.Field("rawMsrTBData", CompleteDataType.forList(CompleteDataType.forTuple(FieldType))),
+			new Schema.Field("rawSOC", CompleteDataType.forDouble()),
+			new Schema.Field("rawIBM", CompleteDataType.forDouble()),
+			new Schema.Field("rawChargingNow", CompleteDataType.forLong()),
+			new Schema.Field("rawISOL", CompleteDataType.forLong())
 		));
 	
 	public static void addSchemaField(List<Schema.Field> outputSchemaField) {
@@ -264,7 +264,7 @@ public class CCPPreProcessor implements PreProcessable {
 		// print 
 		tuples.stream().forEach(t -> {
 			try {
-				System.out.println("SOC:" + t.getDouble("SOC") + " ISOL:" + t.getDouble("ISOL"));
+				System.out.println("rawSOC:" + t.getDouble("rawSOC") + " rawISOL:" + t.getDouble("rawISOL"));
 			}catch(Exception e) {
 				e.printStackTrace();
 			}

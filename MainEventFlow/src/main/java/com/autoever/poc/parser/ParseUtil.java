@@ -11,10 +11,8 @@ import com.autoever.poc.parser.can.TriggerParser;
 import com.autoever.poc.parser.ccp.ODTParser;
 import com.autoever.poc.parser.ccp.ODTRepository;
 import com.streambase.sb.CompleteDataType;
-import com.streambase.sb.NullValueException;
 import com.streambase.sb.Schema;
 import com.streambase.sb.Tuple;
-import com.streambase.sb.TupleException;
 import com.streambase.sb.client.CustomFunctionResolver;
 import com.streambase.sb.util.Pair;
 
@@ -159,7 +157,7 @@ public class ParseUtil {
 		return CompleteDataType.forList(CompleteDataType.forTuple(PolicyRepository.trigDataSchema));
 	}
 	
-	public static Schema fieldSchema = new Schema(
+	public static Schema fieldStringSchema = new Schema(
 			null,
 			new Schema.Field("fieldName", CompleteDataType.forString()),
 			new Schema.Field("fieldValue", CompleteDataType.forString())
@@ -168,7 +166,7 @@ public class ParseUtil {
 	@CustomFunctionResolver("AddToFieldListCustomFunctionResolver0")
 	public static List<Tuple> AddToFieldList(List<Tuple> fieldList, String fieldName, String fieldValue) {
 		try {
-			Tuple tuple = fieldSchema.createTuple();
+			Tuple tuple = fieldStringSchema.createTuple();
 			tuple.setString(0, fieldName);
 			tuple.setString(1, fieldValue);
 			if(fieldList == null || fieldList.isEmpty()) {
@@ -192,7 +190,7 @@ public class ParseUtil {
 	}
 	
 	public static CompleteDataType AddToFieldListCustomFunctionResolver0(CompleteDataType fieldList, CompleteDataType fieldName, CompleteDataType fieldValue) {
-		return CompleteDataType.forList(CompleteDataType.forTuple(fieldSchema));
+		return CompleteDataType.forList(CompleteDataType.forTuple(fieldStringSchema));
 	}
 
 	@CustomFunctionResolver("GetValueInFieldListCustomFunctionResolver0")
