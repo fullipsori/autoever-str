@@ -35,13 +35,19 @@
             <parameter default="d:/projects/vdms/resources" name="RESOURCE_ROOT"/>
         </parameter-definitions>
         <dynamic-variables>
-            <dynamic-variable initial-expression="0.0" name="thresholdValue" setter-expression="newThresholdValue" setter-stream="ControlStream"/>
+            <dynamic-variable initial-expression="long(100)" name="T_CELLDIFF" setter-expression="coalesce(i_cellDiff, T_CELLDIFF)" setter-stream="ControlStream"/>
+            <dynamic-variable initial-expression="double(1.2)" name="T_DELTATB" setter-expression="coalesce(i_deltaTB, T_DELTATB)" setter-stream="ControlStream"/>
+            <dynamic-variable initial-expression="long(150)" name="T_DELTAVOL" setter-expression="coalesce(i_deltaVol, T_DELTAVOL)" setter-stream="ControlStream"/>
+            <dynamic-variable initial-expression="long(1500)" name="T_ISOL" setter-expression="coalesce(i_ISOL, T_ISOL)" setter-stream="ControlStream"/>
+            <dynamic-variable initial-expression="long(4)" name="T_MAXCDIFFVAL" setter-expression="coalesce(i_maxCDiffVal, T_MAXCDIFFVAL)" setter-stream="ControlStream"/>
+            <dynamic-variable initial-expression="double(32.0)" name="T_MAXTB" setter-expression="coalesce(i_maxTB, T_MAXTB)" setter-stream="ControlStream"/>
+            <dynamic-variable initial-expression="double(50.0)" name="T_SOC" setter-expression="coalesce(i_SOC, T_SOC)" setter-stream="ControlStream"/>
         </dynamic-variables>
         <table-schemas>
             <table-schema name="CCPParamsSchema">
                 <schema>
                     <field description="차량ID(kafka)" name="vehicleKeyID" type="long"/>
-                    <field description="기존에 파싱된 데이터 리스트(약 5초 분량)" name="prevData" type="tuple">
+                    <field description="기존에 파싱된 데이터 리스트(약 2초 분량)" name="prevData" type="tuple">
                         <schema>
                             <field name="params" type="string"/>
                             <field name="prevTuples" type="list">
@@ -60,7 +66,7 @@
                 </primary-index>
             </table-schema>
         </table-schemas>
-        <data connection="candbcflow.LastestValueTable" name="CanLastestValueTable" shared="false" source="connection" type="querytable">
+        <data connection="candbcflow.LatestValueTable" name="CanLatestValueTable" shared="false" source="connection" type="querytable">
             <param name="storage-method" value="transactional_memory"/>
             <param name="replicated" value="false"/>
             <table-schema>
@@ -99,7 +105,13 @@
         </data>
         <stream name="ControlStream">
             <schema>
-                <field name="newThresholdValue" type="double"/>
+                <field name="i_SOC" type="double"/>
+                <field name="i_cellDiff" type="long"/>
+                <field name="i_deltaVol" type="long"/>
+                <field name="i_deltaTB" type="double"/>
+                <field name="i_ISOL" type="long"/>
+                <field name="i_maxTB" type="double"/>
+                <field name="i_maxCDiffVal" type="long"/>
             </schema>
         </stream>
         <stream name="InputStream" schema="MainOutputSchema"/>
@@ -134,6 +146,23 @@
                 <item name="input" selection="all"/>
             </target-list>
         </box>
+        <box name="Map" type="map">
+            <input port="1" stream="ControlStream"/>
+            <output port="1" stream="UpdateVarStream"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="T_SOC">T_SOC</include>
+                    <include field="T_CELLDIFF">T_CELLDIFF</include>
+                    <include field="T_DELTAVOL">T_DELTAVOL</include>
+                    <include field="T_DELTATB">T_DELTATB</include>
+                    <include field="T_MAXCDIFFVAL">T_MAXCDIFFVAL</include>
+                    <include field="T_MAXTB">T_MAXTB</include>
+                    <include field="T_ISOL">T_ISOL</include>
+                </expressions>
+            </target-list>
+        </box>
+        <output-stream name="UpdateVarStream"/>
         <box name="Split2" type="split">
             <input port="1" stream="out:GetPrevDatas_1"/>
             <output port="1" stream="out:Split2_1"/>
@@ -142,7 +171,7 @@
         </box>
         <box name="LoadParams" type="map">
             <input port="1" stream="out:Split2_1"/>
-            <output port="1" stream="UpdateVarStream"/>
+            <output port="1" stream="UpdateParamsStream"/>
             <target-list>
                 <item name="input" selection="all"/>
                 <expressions>
@@ -159,7 +188,7 @@
                 </item>
             </target-list>
         </box>
-        <output-stream name="UpdateVarStream"/>
+        <output-stream name="UpdateParamsStream"/>
         <box name="GenCCPs" type="java">
             <input port="1" stream="out:RemoveUnsused_1"/>
             <output port="1" stream="out:GenCCPs_1"/>
@@ -403,12 +432,12 @@
             <output port="5" stream="out:FilterToCCPTrig_5"/>
             <output port="6" stream="out:FilterToCCPTrig_6"/>
             <param name="autogen-nomatch-port" value="false"/>
-            <param name="expression.0" value="SOC &gt;= 50 &amp;&amp; !isempty(cellDiffs) &amp;&amp; !isempty(filterlist(cellDiffs, function(d long){ d &gt; 150 }))"/>
-            <param name="expression.1" value="SOC &gt;= 50 &amp;&amp; deltaVol &gt;= 150"/>
-            <param name="expression.2" value="deltaTB &gt; 1.2"/>
-            <param name="expression.3" value="ISOL &lt;= 1500"/>
-            <param name="expression.4" value="maxTB &gt; 32"/>
-            <param name="expression.5" value="maxCDiffVal &gt; 4"/>
+            <param name="expression.0" value="SOC &gt;= T_SOC &amp;&amp; !isempty(cellDiffs) &amp;&amp; !isempty(filterlist(cellDiffs, function(d long){ d &gt; T_CELLDIFF }))"/>
+            <param name="expression.1" value="SOC &gt;= T_SOC &amp;&amp; deltaVol &gt;= T_DELTAVOL"/>
+            <param name="expression.2" value="deltaTB &gt; T_DELTATB"/>
+            <param name="expression.3" value="ISOL &lt;= T_ISOL"/>
+            <param name="expression.4" value="maxTB &gt; T_MAXTB"/>
+            <param name="expression.5" value="maxCDiffVal &gt; T_MAXCDIFFVAL"/>
         </box>
         <module-reference name="PublishPerf">
             <input name="InputStream" port="1" stream="out:EndedCCPProc_1"/>
@@ -423,7 +452,7 @@
         <box name="readDatas" type="query">
             <input port="1" stream="out:Split_1"/>
             <output port="1" stream="out:readDatas_1"/>
-            <dataref id="querytable" name="CanLastestValueTable"/>
+            <dataref id="querytable" name="CanLatestValueTable"/>
             <param name="operation" value="read"/>
             <param name="where" value="secondary-key"/>
             <param name="limit" value="70"/>
@@ -546,7 +575,7 @@
         <box name="Split3" type="split">
             <input port="1" stream="out:AssignFields_1"/>
             <output port="1" stream="out:Split3_1"/>
-            <output port="2" stream="ToNNFlow"/>
+            <output port="2" stream="out:Split3_2"/>
             <param name="output-count" value="2"/>
         </box>
         <box name="Union2" type="union">
@@ -559,10 +588,12 @@
             <output port="1" stream="out:Union2_1"/>
             <param name="strict" value="false"/>
         </box>
-        <output-stream name="ToNNFlow">
-            <param name="connection" value="'nnflow.InputStream'"/>
-            <param name="predicate" value="true"/>
-        </output-stream>
+        <box name="Disabled" type="filter">
+            <input port="1" stream="out:Split3_2"/>
+            <output port="1" stream="ToNNFlow"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="false"/>
+        </box>
         <box name="MapToCCP" type="map">
             <input port="1" stream="out:Split3_1"/>
             <output port="1" stream="out:MapToCCP_1"/>
@@ -629,6 +660,9 @@
                 </item>
             </target-list>
         </box>
+        <output-stream name="ToNNFlow">
+            <param name="connection" value="'nnflow.InputStream'"/>
+        </output-stream>
         <box name="PublishCCPTrig" type="outputadapter">
             <input port="1" stream="out:MapToCCPTrig_1"/>
             <output port="1" stream="out:PublishCCPTrig_1"/>

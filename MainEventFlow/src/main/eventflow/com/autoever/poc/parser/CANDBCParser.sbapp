@@ -30,7 +30,7 @@
             <param name="truncate" value="false"/>
             <preload format="csv" mode="empty"/>
         </data>
-        <data name="LastestValueTable" shared="false" source="input" type="querytable">
+        <data name="LatestValueTable" shared="false" source="input" type="querytable">
             <param name="storage-method" value="transactional_memory"/>
             <param name="replicated" value="false"/>
             <table-schema>
@@ -91,6 +91,7 @@
                 <item name="input" selection="all"/>
                 <item name="current" selection="none"/>
                 <item name="old" selection="none"/>
+                <item name="new" selection="none"/>
                 <expressions>
                     <include field="matchDBCs">aggregatelist(current as DBCDataSchema)</include>
                 </expressions>
@@ -332,16 +333,16 @@
                 <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
             </parameter-bindings>
         </module-reference>
-        <box name="Sequence2" type="seqnum">
+        <box name="Sequence" type="seqnum">
             <input port="1" stream="out:Iter_MatchedDatas_1"/>
-            <output port="1" stream="out:Sequence2_1"/>
+            <output port="1" stream="out:Sequence_1"/>
             <param name="output-field" value="sequence3_id"/>
             <param name="sequence-id" value="sequence3id"/>
             <param name="update-expression" value="sequence3id + 1"/>
         </box>
-        <box name="add_seq_3" type="map">
-            <input port="1" stream="out:Sequence2_1"/>
-            <output port="1" stream="out:add_seq_3_1"/>
+        <box name="add_seq" type="map">
+            <input port="1" stream="out:Sequence_1"/>
+            <output port="1" stream="out:add_seq_1"/>
             <target-list>
                 <item name="input" selection="all">
                     <remove field="sequence3_id"/>
@@ -352,14 +353,14 @@
             </target-list>
         </box>
         <box name="Split2" type="split">
-            <input port="1" stream="out:add_seq_3_1"/>
+            <input port="1" stream="out:add_seq_1"/>
             <output port="1" stream="out:Split2_1"/>
             <output port="2" stream="out:Split2_2"/>
             <param name="output-count" value="2"/>
         </box>
         <box name="InsertCanRaw" type="query">
             <input port="1" stream="out:Split2_1"/>
-            <dataref id="querytable" name="LastestValueTable"/>
+            <dataref id="querytable" name="LatestValueTable"/>
             <param name="operation" value="write"/>
             <param name="where" value="primary-key"/>
             <param name="key-field.0" value="vehicleKeyID"/>

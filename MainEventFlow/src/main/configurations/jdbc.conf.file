@@ -19,7 +19,7 @@ configuration = {
 				serverURL = "jdbc:postgresql://localhost:5432/postgres"	
 				operationTimeoutMilliseconds = 3000
 				operationBatchSize = 100
-				//Insert Into "CCPTRIG" VALUES ({messageID}, {mgmtNO}, {msrTBData}, {realTime}, {rootCount}, {terminalID}, {vehicleKeyID}, {matchFlag}, {IBM}, {ISOL}, {SOC}, {cellData}, {cellDiffData}, {chargingNow}, {dVol}, {deltaTB}, {deltaVol}, {maxTB})
+				//Insert Into "CCPTRIG" VALUES ({messageID}, {mgmtNO}, {msrTBData}, {realTime}, {rootCount}, {terminalID}, {vehicleKeyID}, {matchFlag}, {IBM}, {ISOL}, {SOC}, {cellData}, {cellDiffData}, {chargingNow}, {dVol}, {deltaTB}, {deltaVol}, {maxTB}, {maxCDiffCells}, {maxCDiffVal})
 			}	
 		}
 	}

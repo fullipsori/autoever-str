@@ -45,7 +45,13 @@
         <stream name="InputStream" schema="MainOutputSchema"/>
         <stream name="UpdateVarStream">
             <schema>
-                <field name="newThresholdValue" type="double"/>
+                <field name="i_SOC" type="double"/>
+                <field name="i_cellDiff" type="long"/>
+                <field name="i_deltaVol" type="long"/>
+                <field name="i_deltaTB" type="double"/>
+                <field name="i_ISOL" type="long"/>
+                <field name="i_maxTB" type="double"/>
+                <field name="i_maxCDiffVal" type="long"/>
             </schema>
         </stream>
         <box name="Initialize" type="inputadapter">
@@ -80,11 +86,11 @@
             <param name="waitForStartCommand" value="true"/>
         </box>
         <output-stream name="FeedStatusStream"/>
-        <box name="Split" type="split">
-            <input port="1" stream="out:InitMeta_1"/>
-            <output port="1" stream="out:Split_1"/>
-            <output port="2" stream="out:Split_2"/>
-            <param name="output-count" value="2"/>
+        <box name="Union" type="union">
+            <input port="1" stream="ControlStream"/>
+            <input port="2" stream="out:InitMeta_1"/>
+            <output port="1" stream="out:Union_1"/>
+            <param name="strict" value="false"/>
         </box>
         <box name="Union2" type="union">
             <input port="1" stream="out:InputAdapter_2"/>
@@ -92,43 +98,12 @@
             <output port="1" stream="out:Union2_1"/>
             <param name="strict" value="false"/>
         </box>
-        <box name="Union" type="union">
-            <input port="1" stream="ControlStream"/>
-            <input port="2" stream="out:Split_1"/>
-            <output port="1" stream="out:Union_1"/>
-            <param name="strict" value="false"/>
-        </box>
-        <box name="Union3" type="union">
-            <input port="1" stream="out:Split_2"/>
-            <input port="2" stream="UpdateVarStream"/>
-            <output port="1" stream="out:Union3_1"/>
-            <param name="strict" value="false"/>
-        </box>
-        <box name="LoadEVT" type="map">
-            <input port="1" stream="out:Union_1"/>
-            <output port="1" stream="OutputEVTLoadStream"/>
-            <target-list>
-                <item name="input" selection="all"/>
-                <expressions>
-                    <include field="evtResult">if(!isempty(evtFolder)) then InitODTRepository(evtFolder) else InitODTRepository("${RESOURCE_ROOT}/evt")</include>
-                </expressions>
-            </target-list>
-        </box>
-        <box name="RemoveUnused" type="map">
-            <input port="1" stream="out:Union3_1"/>
-            <output port="1" stream="out:RemoveUnused_1"/>
-            <target-list>
-                <item name="input" selection="none">
-                    <include field="newThresholdValue"/>
-                </item>
-            </target-list>
-        </box>
-        <output-stream name="OutputEVTLoadStream"/>
         <module-reference name="CCPParserModule">
-            <input dispatch="broadcast" name="ControlStream" port="1" stream="out:RemoveUnused_1"/>
+            <input dispatch="broadcast" name="ControlStream" port="1" stream="UpdateVarStream"/>
             <input dispatch="numerical" key="int(kafkaMessage.VehicleKeyID)" name="InputStream" port="2" stream="out:Union2_1"/>
             <output name="OutputParserStream" port="1" stream="OutputParserStream"/>
             <output name="OutputRawDataStream" port="2" stream="OutputRawDataStream"/>
+            <output name="UpdateVarStream" port="3" stream="OutputVarStream"/>
             <param name="parallel" value="true"/>
             <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
             <multiplicity number="4" type="concrete"/>
@@ -139,7 +114,19 @@
                 <binding name="RESOURCE_ROOT" value="${RESOURCE_ROOT}"/>
             </parameter-bindings>
         </module-reference>
+        <box name="LoadEVT" type="map">
+            <input port="1" stream="out:Union_1"/>
+            <output port="1" stream="OutputEVTLoadStream"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="evtResult">if(!isempty(evtFolder)) then InitODTRepository(evtFolder) else InitODTRepository("${RESOURCE_ROOT}/evt")</include>
+                </expressions>
+            </target-list>
+        </box>
+        <output-stream name="OutputEVTLoadStream"/>
         <output-stream name="OutputParserStream"/>
         <output-stream name="OutputRawDataStream"/>
+        <output-stream name="OutputVarStream"/>
     </add>
 </modify>

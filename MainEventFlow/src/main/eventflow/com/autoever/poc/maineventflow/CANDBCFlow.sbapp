@@ -28,7 +28,7 @@
                 <param name="data-mapper-type" value="round-robin"/>
             </table-partitioning>
         </data>
-        <data name="LastestValueTable" shared="true" source="concrete" type="querytable">
+        <data name="LatestValueTable" shared="true" source="concrete" type="querytable">
             <param name="storage-method" value="transactional_memory"/>
             <param name="replicated" value="false"/>
             <table-schema>
@@ -79,7 +79,7 @@
             <multiplicity number="5" type="concrete"/>
             <param name="file" value="com.autoever.poc.parser.CANDBCParser"/>
             <input-dataref name="DBCTable" table="DBCTable"/>
-            <input-dataref name="LastestValueTable" table="LastestValueTable"/>
+            <input-dataref name="LatestValueTable" table="LatestValueTable"/>
             <parameter-bindings>
                 <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
                 <binding name="RESOURCE_ROOT" value="${RESOURCE_ROOT}"/>

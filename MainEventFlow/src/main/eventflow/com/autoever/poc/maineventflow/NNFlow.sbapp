@@ -107,7 +107,7 @@
                     <declare field="tbMin">getCCPMinFieldValue(RawParsed.rawMsrTBData)</declare>
                 </item>
                 <expressions>
-                    <include field="rawParam">append(maplist(function(f FieldType) { f.fieldValue }, RawParsed.rawCellData), long(RawParsed.rawIBM), RawParsed.rawISOL, vbMax, vbMin, tbMax, tbMin, (vbMax-vbMin), (tbMax-tbMin))</include>
+                    <include field="rawParam">append(maplist(function(f FieldType) { f.fieldValue }, RawParsed.rawCellData), RawParsed.rawIBM, RawParsed.rawISOL, vbMax, vbMin, tbMax, tbMin, (vbMax-vbMin), (tbMax-tbMin))</include>
                     <include field="routingIndex">indexof(VIDs, vehicleKeyID)</include>
                 </expressions>
             </target-list>
@@ -210,7 +210,7 @@
             <param name="LocalInstanceId" value="nn_instance"/>
             <param name="LogLevel" value="INFO"/>
             <param name="OutputVarsSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema&gt;&#13;&#10;    &lt;field name=&quot;y_predict&quot; type=&quot;list&quot;&gt;&#13;&#10;        &lt;element-type type=&quot;double&quot;/&gt;&#13;&#10;    &lt;/field&gt;&#13;&#10;&lt;/schema&gt;&#13;&#10;"/>
-            <param name="Script" value="import numpy as np&#13;&#10;&#13;&#10;x_input_data = np.array(x_input)&#13;&#10;&#13;&#10;# for test&#13;&#10;y_predict = x_input_data.tolist()&#13;&#10;&#13;&#10;# for pickle&#13;&#10;# what should i do?&#13;&#10;&#13;&#10;# for keras&#13;&#10;# x_input_data = x_input_data.reshape(1,200,-1)&#13;&#10;# y_output_predict = KERAS_MODEL.predict(x_input_data)&#13;&#10;# y_predict = list(y_output_predict[0])&#13;&#10;&#13;&#10;        "/>
+            <param name="Script" value="import numpy as np&#13;&#10;&#13;&#10;x_input_data = np.array(x_input)&#13;&#10;&#13;&#10;# for test&#13;&#10;y_predict = list(x_input_data.shape)&#13;&#10;&#13;&#10;# for pickle&#13;&#10;# what should i do?&#13;&#10;&#13;&#10;# for keras&#13;&#10;# x_input_data = x_input_data.reshape(1,200,-1)&#13;&#10;# y_output_predict = KERAS_MODEL.predict(x_input_data)&#13;&#10;# y_predict = list(y_output_predict[0])&#13;&#10;&#13;&#10;        "/>
             <param name="ScriptFile" value=""/>
             <param name="ScriptSource" value="Script text"/>
             <param name="amsRequiredOnStartup" value="false"/>
