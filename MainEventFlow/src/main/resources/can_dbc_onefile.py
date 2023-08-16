@@ -180,7 +180,8 @@ dbcfilepath = 'd:/projects/vdms/resources/dbc/' + dbcFileName
 dbc_list = parsed_dbc(dbcfilepath)
 # print(dbc_list)
 
-filepath = 'd:/projects/vdms/autoever-str/MainEventFlow/src/main/resources/download/VM-21C-0074_219054_1_1688969218_1689731892318.dat'
+filepath = 'd:/projects/vdms/resources/download/VM-23D-0054_219054_1_1691972598_1691999129013.dat'
+# filepath = 'd:/projects/vdms/autoever-str/MainEventFlow/src/main/resources/download/VM-21C-0074_219054_1_1688969218_1689731892318.dat'
 # filepath = 'd:/projects/vdms/resources/download/BM-15C-0003_142683_1_1689049974_1689127350566.dat'
 raw = VDMSRAW(filepath, None, None)
 
@@ -193,6 +194,11 @@ counter=0
 output_size_multi = 0
 output_size = 0
 # for i in range (20):
+
+def get_epochtime_ms():
+    return round(datetime.datetime.utcnow().timestamp() * 1000)
+
+start_time = get_epochtime_ms()
 
 while True:
     counter = counter + 1
@@ -291,6 +297,9 @@ while True:
             # resultfile.write(f"#### {dataChannel} / {deltaTime:0.6f} / {msgInfo} / {msgId} / {dlc} / {fdata} / {baseTime} / {vehicleKey} / {policyVer} / {row['sig_name']} / {value} \n")
             # resultfile.write(f"#### {deltaTime:0.6f} / {msgInfo} / {msgId} / {fdata} / {baseTime} / {vehicleKey} / {row['sig_name']} / {value} \n")
 
+elapsed = get_epochtime_ms() - start_time
+
 # print(data_dict)
 print(output_size)
 print(output_size_multi)
+print(elapsed)
