@@ -9,7 +9,6 @@ import com.streambase.sb.Tuple;
 public class CanDBCPreProcessor implements PreProcessable {
 
 	public CanDBCPreProcessor() {
-		// TODO Auto-generated constructor stub
 	}
 
 	public static void addSchemaField(List<Schema.Field> outputSchemaField) {
@@ -32,8 +31,6 @@ public class CanDBCPreProcessor implements PreProcessable {
 	
 	@Override
 	public void initialize(Tuple kafkaMessage) {
-		// TODO Auto-generated method stub
-		
 	}
 
 }

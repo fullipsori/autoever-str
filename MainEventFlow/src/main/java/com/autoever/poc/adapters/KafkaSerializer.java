@@ -93,43 +93,43 @@ public class KafkaSerializer implements org.apache.kafka.common.serialization.Se
         
         int size = 0;
         try (ByteArrayOutputStream oStream = new ByteArrayOutputStream()) {
-        	size = AutoKafkaField.TerminalID.getsize();
+        	size = AutoKafkaField.TerminalID.getSize();
         	oStream.write(tuple.getString(TerminalID).getBytes(), 0, size);
-        	size = AutoKafkaField.SequenceNo.getsize();
+        	size = AutoKafkaField.SequenceNo.getSize();
         	oStream.write(NumUtils.getLittleByteArrayFromLong(tuple.getLong(SequenceNo), size), 0, size);
-        	size = AutoKafkaField.BodyLength.getsize();
+        	size = AutoKafkaField.BodyLength.getSize();
         	oStream.write(NumUtils.getLittleByteArrayFromLong(tuple.getLong(BodyLength), size), 0, size);
-        	size = AutoKafkaField.CIN.getsize();
+        	size = AutoKafkaField.CIN.getSize();
         	oStream.write(tuple.getString(CIN).getBytes(), 0, size);
-        	size = AutoKafkaField.VIN.getsize();
+        	size = AutoKafkaField.VIN.getSize();
         	oStream.write(tuple.getString(VIN).getBytes(), 0, size);
-        	size = AutoKafkaField.VehicleKeyID.getsize();
+        	size = AutoKafkaField.VehicleKeyID.getSize();
         	oStream.write(NumUtils.getLittleByteArrayFromLong(tuple.getLong(VehicleKeyID), size), 0, size);
-        	size = AutoKafkaField.PolicyVersion.getsize();
+        	size = AutoKafkaField.PolicyVersion.getSize();
         	oStream.write(NumUtils.getLittleByteArrayFromInt(tuple.getInt(PolicyVersion), size), 0, size);
-        	size = AutoKafkaField.RecordCount.getsize();
+        	size = AutoKafkaField.RecordCount.getSize();
         	oStream.write(NumUtils.getLittleByteArrayFromLong(tuple.getLong(RecordCount), size), 0, size);
-        	size = AutoKafkaField.RootCount.getsize();
+        	size = AutoKafkaField.RootCount.getSize();
         	oStream.write(NumUtils.getLittleByteArrayFromInt(tuple.getInt(RootCount), size), 0, size);
-        	size = AutoKafkaField.SubmitSequenceNo.getsize();
+        	size = AutoKafkaField.SubmitSequenceNo.getSize();
         	oStream.write(NumUtils.getLittleByteArrayFromLong(tuple.getLong(SubmitSequenceNo), size), 0, size);
-        	size = AutoKafkaField.SerialNo.getsize();
+        	size = AutoKafkaField.SerialNo.getSize();
         	oStream.write(tuple.getString(SerialNo).getBytes(), 0, size);
-        	size = AutoKafkaField.BaseTime.getsize();
+        	size = AutoKafkaField.BaseTime.getSize();
         	oStream.write(NumUtils.getLittleByteArrayFromLong(tuple.getLong(BaseTime), size), 0, size);
-        	size = AutoKafkaField.MessageType.getsize();
+        	size = AutoKafkaField.MessageType.getSize();
         	oStream.write(NumUtils.getLittleByteArrayFromInt(tuple.getInt(MessageType), size), 0, size);
         	
 			/** Variable sized Message */
-			size = AutoKafkaField.FirstPID.getsize();
+			size = AutoKafkaField.FirstPID.getSize();
         	oStream.write(tuple.getString(FirstPID).getBytes(), 0, size);
-        	size = AutoKafkaField.MsgSrcKeyID.getsize();
+        	size = AutoKafkaField.MsgSrcKeyID.getSize();
         	oStream.write(tuple.getString(MsgSrcKeyId).getBytes(), 0, size);
-        	size = AutoKafkaField.SyncSerID.getsize();
+        	size = AutoKafkaField.SyncSerID.getSize();
         	oStream.write(tuple.getString(SyncSerID).getBytes(), 0, size);
-        	size = AutoKafkaField.LoadDTM.getsize();
+        	size = AutoKafkaField.LoadDTM.getSize();
         	oStream.write(tuple.getString(LoadDTM).getBytes(), 0, size);
-        	size = AutoKafkaField.XctRedisInpDTM.getsize();
+        	size = AutoKafkaField.XctRedisInpDTM.getSize();
         	oStream.write(NumUtils.getLittleByteArrayFromLong(tuple.getLong(XctRedisInpDTM), size), 0, size);
         	
         	return oStream.toByteArray();

@@ -31,6 +31,6 @@ public enum AutoKafkaField {
     }
 
     public String getName() { return this.name; }
-    public int getsize() { return this.size; }
+    public int getSize() { return this.size; }
     public int getIndex() { return this.index; }
 }

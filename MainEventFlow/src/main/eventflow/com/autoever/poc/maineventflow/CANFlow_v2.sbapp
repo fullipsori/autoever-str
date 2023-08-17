@@ -115,7 +115,7 @@
             <param name="parallel-region-queue-wait-strategy" value="BLOCKING"/>
             <multiplicity number="3" type="concrete"/>
             <param name="file" value="com.autoever.poc.parser.CANParser_v3"/>
-            <input-dataref name="QueryTable" table="CanParamsTable"/>
+            <input-dataref name="CanParamsTable" table="CanParamsTable"/>
             <parameter-bindings>
                 <binding name="LV_SERVER_URI" value="${LV_SERVER_URI}"/>
                 <binding name="RESOURCE_ROOT" value="${RESOURCE_ROOT}"/>

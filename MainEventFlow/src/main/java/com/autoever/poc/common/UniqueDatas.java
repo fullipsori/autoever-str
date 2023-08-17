@@ -29,7 +29,7 @@ public class UniqueDatas extends AggregateWindow {
 		try {
 			return tuple.getString(index);
 		} catch(Exception e) {
-			return null;
+			return "";
 		}
 	}
 

@@ -88,9 +88,4 @@ public class NumUtils {
 		return n & 0xFFFFFFFFL;
 	}
 
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
-	}
-
 }

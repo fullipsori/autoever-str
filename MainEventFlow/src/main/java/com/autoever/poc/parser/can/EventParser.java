@@ -42,7 +42,6 @@ public class EventParser implements EventCallback, DataSavable {
 
 	@Override
 	public List<String> OnCalled(double time, Boolean status, String value) {
-		// TODO Auto-generated method stub
 		boolean rvalue = false;
 		
 		// Boolean == null : only 
@@ -98,19 +97,16 @@ public class EventParser implements EventCallback, DataSavable {
 
 	@Override
 	public void initData(int param) {
-		// TODO Auto-generated method stub
 		preTriggerCondition = null;
 	}
 
 	@Override
 	public Object toSave() {
-		// TODO Auto-generated method stub
 		return String.format("%s", (preTriggerCondition==null)? "" : preTriggerCondition.toString());
 	}
 
 	@Override
 	public void fromSave(Object saved) {
-		// TODO Auto-generated method stub
 		String savedData = (String)saved;
 		if(savedData == null || savedData.isEmpty()) preTriggerCondition = null;
 		preTriggerCondition = Boolean.parseBoolean(savedData);
@@ -118,12 +114,7 @@ public class EventParser implements EventCallback, DataSavable {
 
 	@Override
 	public Schema getSaveSchema() {
-		// TODO Auto-generated method stub
 		return null;
-	}
-
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 	}
 
 }

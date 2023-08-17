@@ -65,14 +65,4 @@ public class PolicyRepository {
 		}
 	}
 
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		PolicyRepository.getInstance().LoadPolicy("d:/projects/vdms/resources/policy", "xml");
-		PolicyRepository.getInstance().mPolicyMap.entrySet()
-			.forEach(entry -> {
-				System.out.println("filename:" + entry.getKey() + " size:" + entry.getValue().msgFilter.size());
-			});
-		System.out.println("Ended");
-		
-	}
 }

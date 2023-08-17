@@ -35,7 +35,6 @@ public class AWSAdapter {
 
 	private static final String accessKey = "MTE3OTY1OA==";
     private static final String secretKey = "2dd45bb153db94699c7b6a7b495f940f";
-//    private static final String regionName = "ap-northeast-2";
     private static final String regionName = "us-east-1";
     private static final String serviceName = "execute-api";
     
@@ -105,34 +104,4 @@ public class AWSAdapter {
 	    return authHeader;
 	}
 
-	public static void main(String[] args) {
-
-		try {
-			
-			LocalDateTime localDateTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(1665728124), ZoneId.of("UTC"));
-			String dateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd/HH/mm/SS"));
-			
-			System.out.println("dateTime:" + dateTime);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-//		String contentSha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-//		try {
-//			HttpRequest request = new HttpRequest("GET", new URI("https://vdmsdev.krcloud.s3.hmckmc.co.kr"));
-//
-//			String amzDate = TimeUtils.GetCurrUTCTime("yyyyMMdd'T'HHmmSS'Z'");
-//			String signature = Signer.builder()
-//					.awsCredentials(new AwsCredentials(accessKey, secretKey))
-//					.header("Host", "")
-//					.header("x-amz-date", amzDate)
-//					.header("x-amz-content-sha256", contentSha256)
-//					.buildS3(request, contentSha256)
-//					.getSignature();
-//			System.out.println("result:" + amzDate + " signature:" +  signature);
-//
-//		}catch(Exception e) {
-//			e.printStackTrace();
-//		}
-		
-	}
 }

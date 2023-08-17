@@ -7,12 +7,6 @@ import java.time.format.DateTimeFormatter;
 
 public class TimeUtils {
 
-	/**
-	* A StreamBase Simple Function. Use this function
-	* in StreamBase expressions using the <em>calljava</em> function, or 
-	* by an assigned alias. It can then be called directly 
-	* using the alias name instead of using calljava().
-	*/
 	public static String GetLocalTime(long timeSeconds, String format){
 	    // TODO Implement function here
 		LocalDateTime realTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(timeSeconds), ZoneId.of("Asia/Seoul"));
@@ -21,12 +15,6 @@ public class TimeUtils {
 		return realTime.format(DateTimeFormatter.ofPattern(format));
 	}
 
-	/**
-	* A StreamBase Simple Function. Use this function
-	* in StreamBase expressions using the <em>calljava</em> function, or 
-	* by an assigned alias. It can then be called directly 
-	* using the alias name instead of using calljava().
-	*/
 	public static String GetCurrUTCTime(String format){
 	    // TODO Implement function here
 		LocalDateTime realTime = LocalDateTime.ofInstant(Instant.now(), ZoneId.of("UTC"));
@@ -48,7 +36,6 @@ public class TimeUtils {
 
 	
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 		System.out.println("time:" + GetCurrUTCTime("yyyyMMDD'T'HHmmss'Z'"));
 	}
 }

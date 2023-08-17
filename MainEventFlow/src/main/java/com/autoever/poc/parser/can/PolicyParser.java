@@ -32,9 +32,7 @@ public class PolicyParser implements Parseable, DataSavable {
 	public String KeyStatus = "ON";
 	public TriggerParser KeyTrig;
 
-	private final static EventCallback eventCallback = (a,b,c) -> {
-		return null;
-	};
+	private final static EventCallback eventCallback = (a,b,c) -> null;
 	
 	/* Atomic 변수가 되어야 하는지 체크 필요함. */
 	public int rootCount = 0;
@@ -103,7 +101,6 @@ public class PolicyParser implements Parseable, DataSavable {
 
 		} catch (Exception e) {
 			System.out.println("Parse Exception:" + "filename:" + this.filename +  e.getMessage());
-			// TODO Auto-generated catch block
 		};
 	}
 
@@ -275,7 +272,6 @@ public class PolicyParser implements Parseable, DataSavable {
 
 	@Override
 	public Schema getSaveSchema() {
-		// TODO Auto-generated method stub
 		return saveSchema;
 	}
 

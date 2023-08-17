@@ -62,10 +62,6 @@ public class FileUtils {
 	}
 
 	public static CompleteDataType GetFilenameListInPathCustomFunctionResolver0(CompleteDataType dirPath, CompleteDataType ext) {
-//		Schema schema = new Schema(
-//				"fileMap", 
-//				new Field("filename", CompleteDataType.forString()),
-//				new Field("filePath", CompleteDataType.forString()) );
 		return CompleteDataType.forList(CompleteDataType.forString());
 	}
 	

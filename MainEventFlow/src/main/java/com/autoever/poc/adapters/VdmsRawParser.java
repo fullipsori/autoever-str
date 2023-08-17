@@ -10,7 +10,6 @@ import java.util.List;
 
 import com.autoever.poc.common.NumUtils;
 import com.autoever.poc.common.RawDataField;
-import com.autoever.poc.parser.AutoDataHeaderField;
 import com.autoever.poc.parser.DefaultPreProcessor;
 import com.autoever.poc.parser.PreProcessable;
 import com.autoever.poc.parser.can.CanDBCPreProcessor;
@@ -114,8 +113,6 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 		// typecheck: require a specific number of input ports
 		requireInputPortCount(inputPorts);
 
-		// TODO Ensure that all properties have valid values, and typecheck the input schemas here
-
 		try {
 			Schema kafkaSchema = getNamedSchema("KafkaVDMSDataSchema");
 			Schema inputSchema = getInputSchema(0);
@@ -143,9 +140,7 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 				DefaultPreProcessor.addSchemaField(outputSchemaField);
 			}
 			outputSchemaField.add(new Schema.Field("PassThroughs", CompleteDataType.forTuple(inputSchema)));
-				
 			Schema outputSchema = new Schema(null, outputSchemaField);
-
 			List<Schema.Field> fields = List.of(
 				new Schema.Field("TerminalID", CompleteDataType.forString()),
 				new Schema.Field("MessageType", CompleteDataType.forInt()),
@@ -248,17 +243,17 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 
 			while((sIndex + headerSize) < rawcount) {
 
-				int dlcIndex = NumUtils.getIntFromBig(hcpMessage, sIndex, AutoDataHeaderField.DataLength.getsize());
-				sIndex += AutoDataHeaderField.DataLength.getsize();
+				int dlcIndex = NumUtils.getIntFromBig(hcpMessage, sIndex, RawDataField.DLC.getSize());
+				sIndex += RawDataField.DLC.getSize();
 				int curIndex =  sIndex;
-				double deltaTime = (double)(NumUtils.getLongFromBig(hcpMessage, curIndex, AutoDataHeaderField.DeltaTime.getsize()) * 0.00005);
-				curIndex += AutoDataHeaderField.DeltaTime.getsize();
-				int dataFlag = NumUtils.getIntFromBig(hcpMessage, curIndex, AutoDataHeaderField.DataFlag.getsize());
-				curIndex += AutoDataHeaderField.DataFlag.getsize();
-				int dataChannel = NumUtils.getIntFromBig(hcpMessage, curIndex, AutoDataHeaderField.DataChannel.getsize());
-				curIndex += AutoDataHeaderField.DataChannel.getsize();
-				int dataId = NumUtils.getIntFromBig(hcpMessage, curIndex, AutoDataHeaderField.DataID.getsize());
-				curIndex += AutoDataHeaderField.DataID.getsize();
+				double deltaTime = (double)(NumUtils.getLongFromBig(hcpMessage, curIndex, RawDataField.DeltaTime.getSize()) * 0.00005);
+				curIndex += RawDataField.DeltaTime.getSize();
+				int dataFlag = NumUtils.getIntFromBig(hcpMessage, curIndex, RawDataField.MSGInfo.getSize());
+				curIndex += RawDataField.MSGInfo.getSize();
+				int dataChannel = NumUtils.getIntFromBig(hcpMessage, curIndex, RawDataField.DataChannel.getSize());
+				curIndex += RawDataField.DataChannel.getSize();
+				int dataId = NumUtils.getIntFromBig(hcpMessage, curIndex, RawDataField.DataID.getSize());
+				curIndex += RawDataField.DataID.getSize();
 				int dataSize = dlcSize[dlcIndex];
 				byte[] rawData = null; 
 				if(dataSize > 0) {
@@ -300,7 +295,6 @@ public class VdmsRawParser extends Operator implements Parameterizable {
 			
 		}catch(Exception e) {
 			e.printStackTrace();
-//			System.out.println("RawParser Exception:" + e.getMessage());
 			return tuples;
 		}
 		

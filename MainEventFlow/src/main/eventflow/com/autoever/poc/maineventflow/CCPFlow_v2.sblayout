@@ -18,7 +18,7 @@
     <component name="CCPParserModule">
         <param name="gui:x" value="77"/>
         <param name="gui:y" value="41"/>
-        <param name="gui:bends:1" value="51,41;55,61"/>
+        <param name="gui:bends:1" value="64,41;67,61"/>
         <param name="gui:bends:2" value="47,135;59,81"/>
     </component>
     <component name="CCPParamsTable">
@@ -66,16 +66,16 @@
     <component name="OutputParserStream">
         <param name="gui:x" value="249"/>
         <param name="gui:y" value="-40"/>
-        <param name="gui:bends:1" value="187,61;203,-10"/>
+        <param name="gui:bends:1" value="200,61;216,-10"/>
     </component>
     <component name="OutputRawDataStream">
         <param name="gui:x" value="249"/>
         <param name="gui:y" value="54"/>
-        <param name="gui:bends:1" value="181,71;183,84"/>
+        <param name="gui:bends:1" value="194,71;196,84"/>
     </component>
     <component name="OutputVarStream">
         <param name="gui:x" value="249"/>
         <param name="gui:y" value="148"/>
-        <param name="gui:bends:1" value="157,81;181,178"/>
+        <param name="gui:bends:1" value="170,81;194,178"/>
     </component>
 </application-layout>

@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import com.autoever.poc.common.NumUtils;
 import com.autoever.poc.parser.AutoKafkaField;
 import com.streambase.sb.Schema;
-import com.streambase.sb.StreamBaseException;
 import com.streambase.sb.Tuple;
 import com.streambase.sb.util.Base64;
 
@@ -37,92 +36,75 @@ public class KafkaDeserializer implements org.apache.kafka.common.serialization.
         int size;
 
         if(data == null) {
-        	return tuple;
+        	return null;
         }
 
         try {
-        	size = AutoKafkaField.TerminalID.getsize();
+        	size = AutoKafkaField.TerminalID.getSize();
 			tuple.setString(AutoKafkaField.TerminalID.getIndex(), new String(Arrays.copyOfRange(data, curIndex, size)));
 			curIndex += size;
-        	size = AutoKafkaField.SequenceNo.getsize();
+        	size = AutoKafkaField.SequenceNo.getSize();
 			tuple.setLong(AutoKafkaField.SequenceNo.getIndex(), NumUtils.getLongFromBig(data, curIndex, size));
 			curIndex += size;
-        	size = AutoKafkaField.BodyLength.getsize();
+        	size = AutoKafkaField.BodyLength.getSize();
 			tuple.setLong(AutoKafkaField.BodyLength.getIndex(), NumUtils.getLongFromBig(data, curIndex, size));
 			curIndex += size;
-        	size = AutoKafkaField.CIN.getsize();
+        	size = AutoKafkaField.CIN.getSize();
 			tuple.setString(AutoKafkaField.CIN.getIndex(), new String(Arrays.copyOfRange(data, curIndex, curIndex+size)));
 			curIndex += size;
-        	size = AutoKafkaField.VIN.getsize();
+        	size = AutoKafkaField.VIN.getSize();
 			tuple.setString(AutoKafkaField.VIN.getIndex(), new String(Arrays.copyOfRange(data, curIndex, curIndex+size)));
 			curIndex += size;
-        	size = AutoKafkaField.VehicleKeyID.getsize();
+        	size = AutoKafkaField.VehicleKeyID.getSize();
 			tuple.setLong(AutoKafkaField.VehicleKeyID.getIndex(), NumUtils.getLongFromBig(data, curIndex, size));
 			curIndex += size;
-        	size = AutoKafkaField.PolicyVersion.getsize();
+        	size = AutoKafkaField.PolicyVersion.getSize();
 			tuple.setInt(AutoKafkaField.PolicyVersion.getIndex(), NumUtils.getIntFromBig(data, curIndex, size));
 			curIndex += size;
-        	size = AutoKafkaField.RecordCount.getsize();
+        	size = AutoKafkaField.RecordCount.getSize();
 			tuple.setLong(AutoKafkaField.RecordCount.getIndex(), NumUtils.getLongFromBig(data, curIndex, size));
 			curIndex += size;
-        	size = AutoKafkaField.RootCount.getsize();
+        	size = AutoKafkaField.RootCount.getSize();
 			tuple.setInt(AutoKafkaField.RootCount.getIndex(), NumUtils.getIntFromBig(data, curIndex, size));
 			curIndex += size;
-        	size = AutoKafkaField.SubmitSequenceNo.getsize();
+        	size = AutoKafkaField.SubmitSequenceNo.getSize();
 			tuple.setLong(AutoKafkaField.SubmitSequenceNo.getIndex(), NumUtils.getLongFromBig(data, curIndex, size));
 			curIndex += size;
-        	size = AutoKafkaField.SerialNo.getsize();
+        	size = AutoKafkaField.SerialNo.getSize();
 			tuple.setString(AutoKafkaField.SerialNo.getIndex(), new String(Arrays.copyOfRange(data, curIndex, curIndex+size)));
 			curIndex += size;
-        	size = AutoKafkaField.BaseTime.getsize();
+        	size = AutoKafkaField.BaseTime.getSize();
 			tuple.setLong(AutoKafkaField.BaseTime.getIndex(), NumUtils.getLongFromBig(data, curIndex, size));
 			curIndex += size;
-        	size = AutoKafkaField.MessageType.getsize();
+        	size = AutoKafkaField.MessageType.getSize();
 			tuple.setInt(AutoKafkaField.MessageType.getIndex(),NumUtils.getIntFromBig(data, curIndex, size));
 			curIndex += size;
 
-        	size = AutoKafkaField.FirstPID.getsize();
+        	size = AutoKafkaField.FirstPID.getSize();
 			tuple.setString(AutoKafkaField.FirstPID.getIndex(), Base64.encodeBytes(Arrays.copyOfRange(data, curIndex, curIndex+size)));
 			curIndex += size;
 
-        	size = AutoKafkaField.MsgSrcKeyID.getsize();
+        	size = AutoKafkaField.MsgSrcKeyID.getSize();
 			tuple.setString(AutoKafkaField.MsgSrcKeyID.getIndex(), new String(Arrays.copyOfRange(data, curIndex, curIndex+size)));
 			curIndex += size;
-        	size = AutoKafkaField.SyncSerID.getsize();
+        	size = AutoKafkaField.SyncSerID.getSize();
 			tuple.setString(AutoKafkaField.SyncSerID.getIndex(), new String(Arrays.copyOfRange(data, curIndex, curIndex+size)));
 			curIndex += size;
-        	size = AutoKafkaField.LoadDTM.getsize();
+        	size = AutoKafkaField.LoadDTM.getSize();
 			tuple.setString(AutoKafkaField.LoadDTM.getIndex(), new String(Arrays.copyOfRange(data, curIndex, curIndex+size)));
 			curIndex += size;
-        	size = AutoKafkaField.XctRedisInpDTM.getsize();
+        	size = AutoKafkaField.XctRedisInpDTM.getSize();
 			tuple.setLong(AutoKafkaField.XctRedisInpDTM.getIndex(), NumUtils.getLongFromBig(data, curIndex, size));
 			curIndex += size;
-
-        } catch (StreamBaseException e) {
+			return tuple;
+        } catch (Exception e) {
             logger.error("Error deserializing topic '" + topic + "': " + e.getMessage(), e);
+            return null;
         }
-        return tuple;
     }
 
     @Override
     public void close() {
     }
 
-    /**
-    public static void main(String[] args) {
-		byte[] data = {0x01,0x05,(byte)0xff,(byte)0xff,(byte)0xff,(byte)0xff};
-		System.out.println("hex data:" + StringUtils.convertbytesToHex(data, 0, data.length));
-		String dataString;
-		try {
-			dataString = new String(data, "ISO8859-1");
-			byte[] data_2 = dataString.getBytes("ISO8859-1");
-			System.out.println("compare:" + Arrays.compare(data, data_2));
-			System.out.println("string data:" + StringUtils.convertStrToHexWithCharset(dataString, "ISO8859-1"));
-			System.out.println("string_sub data:" + StringUtils.convertbytesToHex(data_2, 0, data_2.length));
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	**/
 }

@@ -4,14 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.autoever.poc.common.NumUtils;
-import com.autoever.poc.common.StringUtils;
 import com.autoever.poc.parser.AutoKafkaField;
 import com.autoever.poc.parser.PreProcessable;
-import com.autoever.poc.parser.RawDataParser;
 import com.streambase.sb.CompleteDataType;
 import com.streambase.sb.Schema;
 import com.streambase.sb.Tuple;
-import com.streambase.sb.util.Base64;
 import com.streambase.sb.util.Pair;
 
 
@@ -23,6 +20,9 @@ public class CCPPreProcessor implements PreProcessable {
 	private RawParsedData rawParsedData = null;
 	private final int sizeCellData = 90;
 	private final int sizeMsrTBData = 9;
+
+	public CCPPreProcessor() {
+	}
 
 	private class RawParsedData {
 		private List<Tuple> rawCellData = new ArrayList<>();
@@ -106,11 +106,6 @@ public class CCPPreProcessor implements PreProcessable {
 		return;
 	}
 
-	public CCPPreProcessor() {
-		// TODO Auto-generated constructor stub
-	}
-
-
 	@Override
 	public boolean preProcess(Tuple inputTuple, Tuple dataTuple, int msgInfo, int channel, int id, byte[] rawData) {
 		// TODO Auto-generated method stub
@@ -160,40 +155,6 @@ public class CCPPreProcessor implements PreProcessable {
 		}catch(Exception e) {}
 	}
 
-	public Tuple checkProcess(long vehicleKeyID, Tuple dataTuple, byte[] rawData) {
-
-		if(rawData == null || rawData.length == 0) return null;
-
-		if(prevCmd != 0 ) {
-			if(prevCmd != 255 && ((rawData[0]&0xff) >= ccpStartCmd) && ((rawData[0]&0xff) <= ccpEndCmd)) {
-				prevCmd = rawData[0] & 0xff;
-				if(prevCmd == 0x14) {
-					System.out.println(StringUtils.convertbytesToHex(rawData, 0, rawData.length));
-				}
-				try {
-					ODTParser odtParser = ODTRepository.getInstance().mODTMap.get(String.valueOf(vehicleKeyID));
-					List<Pair<String, Long>> odtParsed = parseData(rawData, odtParser);
-					if(odtParsed != null) {
-						if(rawParsedData == null) rawParsedData = new RawParsedData();
-						odtParsed.stream().forEach(pair -> rawParsedData.addFieldData(prevCmd, pair));
-					}
-					if(prevCmd >= odtParser.ccpRawEndCmd && rawParsedData != null) { //adding tuple.
-						Tuple resTuple = rawParsedData.GetTuple();
-						rawParsedData = null;
-						return resTuple;
-					}
-					return null;
-					
-				}catch(Exception e) {
-					e.printStackTrace();
-					rawParsedData = null;
-					return null;
-				}
-			}
-		}
-		prevCmd = rawData[0] & 0xff;
-		return null;
-	}
 
 	@SuppressWarnings("unchecked")
 	public static List<Pair<String, Long>> parseData(byte[] rawdata, ODTParser evtParser) {
@@ -201,9 +162,9 @@ public class CCPPreProcessor implements PreProcessable {
 		if(evtParser == null) return null;
 
 		int cmd = rawdata[0] & 0xff;
-		Object[] odt = evtParser.odt_map.get(cmd-10);
 		List<Pair<String,Long>> resultList = new ArrayList<>();
-		if(((List<?>)odt[0]).isEmpty()) return null;
+		Object[] odt = evtParser.odt_map.get(cmd-10);
+		if(odt == null || ((List<?>)odt[0]).isEmpty()) return null;
 
 		int index = 1;
 		for(int i=0; i<((List<String>)odt[0]).size(); i++) {
@@ -230,46 +191,4 @@ public class CCPPreProcessor implements PreProcessable {
 		}
 		return resultList;
 	}
-
-	public static void main(String[] args) {
-		
-		String filepath= "D:/projects/vdms/resources/download/VM-21C-0074_219054_2_1686784306_1686785255628.dat";
-		ODTRepository.getInstance().LoadEVT("d:/projects/vdms/resources/evt", "evt");
-		long vehicleKeyID = 219054;
-		
-		List<Tuple> result = new RawDataParser(filepath, 0).getParsed();
-		
-		if(result.isEmpty()) {
-			System.out.println("empty");
-			return;
-		}
-		
-		List<Tuple> tuples = new ArrayList<>();
-		CCPPreProcessor ccpProcessor = new CCPPreProcessor();
-
-		System.out.println("Started:[" + result.size() + "]:-->");
-		for(Tuple tuple : result) {
-			byte[] rawdata;
-			try {
-				rawdata = Base64.decode(tuple.getString("DATA"));
-				Tuple ccpTuple = ccpProcessor.checkProcess(vehicleKeyID, tuple, rawdata);
-				if(ccpTuple != null) {
-					tuples.add(ccpTuple);
-				}
-			} catch (Exception e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-		}
-		// print 
-		tuples.stream().forEach(t -> {
-			try {
-				System.out.println("rawSOC:" + t.getDouble("rawSOC") + " rawISOL:" + t.getDouble("rawISOL"));
-			}catch(Exception e) {
-				e.printStackTrace();
-			}
-		});
-		System.out.println("tuple Count:" + tuples.size());
-	}
-
 }

@@ -1,7 +1,6 @@
 package com.autoever.poc.parser.ccp;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,7 +12,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -37,7 +35,7 @@ public class ODTParser implements Parseable, DataSavable {
 	
 	private List<Pair<String,String>> measurement_list;
 	public List<Object[]> odt_map = new ArrayList<>();
-	public int ccpRawEndCmd = 0x36;
+	public int ccpRawEndCmd = 0x36;  // genODT 에서 다시 계산된다.
 	
 	public ODTParser(Path filePath, DocumentBuilder documentBuilder) {
 		this.filePath = filePath;
@@ -86,7 +84,6 @@ public class ODTParser implements Parseable, DataSavable {
 				long cur = curCells.get(d).getLong(1);
 				return prev-cur;
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				return (long)0;
 			}
 		}).collect(Collectors.toList());
@@ -95,8 +92,6 @@ public class ODTParser implements Parseable, DataSavable {
 
 	@Override
 	public void parse() {
-		// TODO Auto-generated method stub
-		
 		if(rootNode == null) return;
 		try {
 			measurement_list = GetElement.apply(rootNode.getChildNodes(), "ChannelSetting")
@@ -166,26 +161,6 @@ public class ODTParser implements Parseable, DataSavable {
 		if(ccpRawEndCmd > CCPPreProcessor.ccpEndCmd) ccpRawEndCmd = CCPPreProcessor.ccpEndCmd;
 	}
 	
-	@SuppressWarnings("unchecked")
-	public static void main(String[] args) {
-		
-		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder documentBuilder;
-		try {
-			documentBuilder = factory.newDocumentBuilder();
-			
-			Path evtPath = Paths.get("d:/projects/vdms/autoever-str/MainEventFlow/src/main/resources/evt/219054.evt");
-			ODTParser evtParser =  new ODTParser(evtPath, documentBuilder);
-			
-			evtParser.odt_map.stream()
-				.forEach(el -> System.out.printf("[[%s],%d,%s]\n", String.join(",", ((ArrayList<String>)el[0])), (Integer)el[1], (String)el[2]));
-			System.out.printf("CCP End:0x%x\n" , evtParser.ccpRawEndCmd);
-			
-		}catch(Exception e) {
-			e.printStackTrace();
-		}
-	}
-
 	private static Schema prevTupleSchema = new Schema("", List.of(
 			new Schema.Field("realTime", CompleteDataType.forDouble()),
 			new Schema.Field("rawParsed", CompleteDataType.forTuple(CCPPreProcessor.RawParsed))));
@@ -197,14 +172,12 @@ public class ODTParser implements Parseable, DataSavable {
 
 	@Override
 	public void initData(int param) {
-		// TODO Auto-generated method stub
 		this.rootCount = param;
 		prevTuples.clear();
 	}
 
 	@Override
 	public Object toSave() {
-		// TODO Auto-generated method stub
 		try {
 			String params = String.format("%d", rootCount);
 			List<Tuple> prevs = prevTuples.stream().map(pair -> {
@@ -232,7 +205,6 @@ public class ODTParser implements Parseable, DataSavable {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void fromSave(Object saved) {
-		// TODO Auto-generated method stub
 		try {
 			if(saved == null) return;
 			String params = ((Tuple)saved).getString(0);
@@ -253,7 +225,6 @@ public class ODTParser implements Parseable, DataSavable {
 
 	@Override
 	public Schema getSaveSchema() {
-		// TODO Auto-generated method stub
 		return saveSchema;
 	}
 }

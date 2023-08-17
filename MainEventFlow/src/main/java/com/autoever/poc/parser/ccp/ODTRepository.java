@@ -22,7 +22,6 @@ public class ODTRepository {
 	}
 	
 	public ODTParser getMapper(Tuple kafkaMessage) {
-		
 		try {
 			long vehicleKeyID = kafkaMessage.getLong(AutoKafkaField.VehicleKeyID.getIndex());
 			return ODTRepository.getInstance().mODTMap.get(String.valueOf(vehicleKeyID));
@@ -55,19 +54,6 @@ public class ODTRepository {
 			System.out.println("LoadEVT Excep:" + e.getMessage());
 			return false;
 		}
-	}
-
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-//		ODTRepository.InitODTRepository("d:/projects/vdms/resources/evt");
-//		ODTRepository.getInstance().mODTMap.entrySet()
-//			.forEach(entry -> {
-//				System.out.println("filename:" + entry.getKey() + " count:" + entry.getValue().odt_map.stream()
-//						.filter(el -> !((List<?>)el[0]).isEmpty())
-//						.count());
-//			});
-//		System.out.println("Ended");
-		
 	}
 
 }

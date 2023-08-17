@@ -1,12 +1,9 @@
 package com.autoever.poc.parser.can;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.IntStream;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -165,45 +162,6 @@ public class TriggerParser implements DataSavable {
 		return rawvalue*sigfactor + sigoffset;
 	}
 
-	public static int GetValue(String sigendian, byte[] rawdata, String sigtype, int sigstartbit, int siglength) {
-
-		int realLength = siglength / 8 + ((siglength % 8) == 0? 0 : 1);
-		int rawvalue = 0;
-		for(int i= 0; i < siglength; i++) {
-
-			int backwardIndex = (sigstartbit + siglength -1) - i;
-			int byteIndex = backwardIndex >> 3;
-			int bitshift= 7- backwardIndex%8;
-			rawvalue |= (((((0x1 << bitshift) & rawdata[byteIndex]) & 0xff) == 0x00)? 0x00 : 0x01) << i;
-		}
-
-		ByteBuffer byteBuffer = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt((int)rawvalue).rewind();
-		byte[] rawbytes = byteBuffer.array();
-
-		ByteBuffer resultBuffer = ByteBuffer.allocate(4).clear().order(ByteOrder.BIG_ENDIAN);
-		int putStartIndex = ("Little".equals(sigendian))? 0 : 4-realLength;
-		IntStream.range(0, realLength).forEach(i-> {
-			resultBuffer.put(putStartIndex+i, (byte)rawbytes[4-realLength+i]);
-		});
-		
-		int realvalue = 0;
-		if("Little".equals(sigendian)) {
-			realvalue = resultBuffer.order(ByteOrder.LITTLE_ENDIAN).getInt();
-		}else {
-			realvalue = resultBuffer.order(ByteOrder.BIG_ENDIAN).getInt();
-		}
-		
-		if("signed".equals(sigtype)) {
-			if((realvalue & (((int)1)<<(siglength - 1))) != 0)
-				realvalue = (-(((~realvalue) & ((((int)1)<<siglength) - 1)) + 1));
-		}
-
-//		System.out.printf("\nfinal:sigendian(%s), rawdata[%s],sigtype(%s), start(%d), length(%d),  %d, 0x%x", 
-//				sigendian, StringUtils.convertbytesToHex(rawdata, 0, rawdata.length), sigtype, sigstartbit, siglength, realvalue, realvalue);
-		return realvalue;
-	}
-
-				
 	@SuppressWarnings("unused")
 	public static Object EvalCAN(TriggerParser trigger, Tuple canmsg) {
 		try {
@@ -213,14 +171,6 @@ public class TriggerParser implements DataSavable {
 			int lastbyte = (trigger.sigstartbit + trigger.siglength -1) >> 3;
 			
 			trigger.time = canmsg.getDouble(RawDataField.DeltaTime.getIndex());
-
-
-			/**
-			int rawvalue2 = GetValue(trigger.sigendian, rawdata, trigger.sigtype, trigger.sigstartbit, trigger.siglength);
-			System.out.printf("\nfinal:rawvalue(%d)!=rawvalue(%d)    sigendian(%s), rawdata[%s],sigtype(%s), start(%d), length(%d)", rawvalue, rawvalue2,
-				trigger.sigendian, StringUtils.convertbytesToHex(rawdata, 0, rawdata.length), trigger.sigtype, trigger.sigstartbit, trigger.siglength);
-			 * 
-			 */
 
 			double value = GetRawValue(rawdata, trigger.sigendian, trigger.sigtype, trigger.sigstartbit, trigger.siglength, trigger.sigfactor, trigger.sigoffset); 
 			boolean rvalue = false;
@@ -413,19 +363,6 @@ public class TriggerParser implements DataSavable {
 		}
 	}
 	
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-//00ffde6cf9ffffff
-//		byte[] x = {(byte)0xf7,0x00,0x00,0x43,0x53,(byte)0xff,(byte)0xff,(byte)0xfa};
-//		byte[] x = {(byte)0x00,(byte)0xff,(byte)0xde,(byte)0x6c,(byte)0xf9,(byte)0xff,(byte)0xff,(byte)0xff};
-//		long rawvalue = TriggerParser.GetRawValue("Little", x, "unsigned", 16, 24);
-//		System.out.println("rawvalue:" + rawvalue);
-		String t = "1,,2,";
-		if(t.split(",",-1)[3].isEmpty()) {
-			System.out.println("ok");
-		}
-	}
-
 	@Override
 	public void initData(int param) {
 		// TODO Auto-generated method stub
@@ -481,7 +418,6 @@ public class TriggerParser implements DataSavable {
 
 	@Override
 	public Schema getSaveSchema() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 }

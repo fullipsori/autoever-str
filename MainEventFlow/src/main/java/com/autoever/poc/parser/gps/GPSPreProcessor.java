@@ -92,9 +92,4 @@ public class GPSPreProcessor implements PreProcessable {
 		}
 	}
 
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
-	}
-
 }
