@@ -105,6 +105,17 @@
             <field description="Policy Category" name="category" type="string"/>
             <field description="python 파싱 코드" name="status" type="string"/>
         </schema>
+        <schema name="CarDrivingTableSchema">
+            <field name="messageID" type="string"/>
+            <field name="mgmtNO" type="string"/>
+            <field name="terminalID" type="string"/>
+            <field name="vehicleKeyID" type="long"/>
+            <field name="rootCount" type="int"/>
+            <field name="baseTime" type="long"/>
+            <field name="messageType" type="int"/>
+            <field name="recordCount" type="int"/>
+            <field name="receivedTime" type="long"/>
+        </schema>
         <schema name="DiagDTCOutputSchema">
             <field description="sb 에서 생성한 메세지 Id (vehicleKeyID + timestamp + seq_num)" name="messageID" type="string"/>
             <field description="단말기 번호 (KafkaMessage)" name="terminalID" type="string"/>

@@ -21,6 +21,7 @@ configuration = {
 						FILE_TEMP_FOLDER = "d:/Projects/vdms/temp"
 						PYTHON_EXECUTABLE = "d:/Projects/vdms/tools/Python/Python311/python.exe"
 						RESOURCE_ROOT = "d:/Projects/vdms/resources"
+                        LV_SERVER_URI = "lv://localhost:11080"
 					}
 				}
 			}
